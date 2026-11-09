@@ -193,10 +193,11 @@ Agent 退出期间，到期调度会暂停；systemd 自动恢复和启动校正
 ### 2026-11-09｜安装并验证本机开发环境
 
 - **安装：**在 Ubuntu 26.04.1 LTS / amd64 安装 Go 1.27.3、Node.js 26.13.0 LTS（npm 11.20.0）、sqlc 1.31.1 和 SQLite CLI 3.46.1；四个上游发布二进制包（含下述 Mihomo）安装前均通过官方 SHA-256 校验。
+- **位置与使用：**Go、Node.js 和 sqlc 位于 `/opt/meshstrata-dev/`，命令链接已加入 `/usr/local/bin`，无需额外激活；SQLite CLI 位于 `/usr/bin/sqlite3`。下载地址与摘要保存在 `/opt/meshstrata-dev/install-manifest.json`。本机约 1.7 GiB 内存，Go 首次构建可用 `GOMAXPROCS=2 go build -p 2 ./...` 限制并发。
 - **Mihomo 隔离：**项目测试内核固定 v1.19.33，安装到 `/usr/local/libexec/meshstrata/mihomo-v1.19.33`，通过 `meshstrata-mihomo` 调用。保留宿主机已有 `/usr/local/bin/mihomo`、运行进程和监听，不安装项目常驻服务。
-- **前端验证：**临时工程使用 Vue 3、TypeScript、Vite、Naive UI 和 Vue I18n，类型检查及生产构建通过。
+- **前端验证：**临时工程使用 Vue 3.5.45、TypeScript 6.0.3、Vite 8.3.6、Naive UI 2.45.3 和 Vue I18n 11.4.18，类型检查及生产构建通过。
 - **后端验证：**sqlc 生成 SQLite 访问代码；使用 `modernc.org/sqlite` 1.62.0，在 `CGO_ENABLED=0` 下构建通过，数据库插入/查询和 Go 嵌入前端的 HTTP 响应检查通过；SQLite CLI 完整性检查通过。
 - **内核验证：**使用独立工作目录和完整配置执行 Mihomo `-t` 校验通过，未启动新的监听。此检查不覆盖四协议转发、配置热重载或生产部署验收。
 - **软件源处理：**原系统 HTTP 软件源更新无响应，本次临时指定 Ubuntu 官方 HTTPS 源安装 SQLite，未修改原软件源文件。
-- **文档：**新增[开发环境说明](Meshstrata_开发环境.md)，记录精确版本、安装路径、校验摘要、前端依赖版本及验证边界。
+- **范围：**环境验证工程位于 `/tmp/meshstrata-dev-check`，不属于项目源码；前端及 Go 库由后续工程的依赖文件管理。开发环境信息统一记录于本节，不另设说明文件。
 - **下一步：**按已确认顺序建立最小 Controller、Agent 和前端工程，在工程依赖与锁文件中固定版本。
