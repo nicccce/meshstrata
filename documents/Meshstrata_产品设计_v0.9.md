@@ -1,6 +1,6 @@
 # Meshstrata｜多地域分布式代理平台产品设计
 
-**版本：v0.12｜2026-11-09｜个人自用项目**
+**版本：v0.13｜2026-11-09｜个人自用项目**
 
 ## 1. 产品概览
 
@@ -361,6 +361,8 @@ Agent、Mihomo 的 stdout/文件日志以及 journald/容器日志均设置相�
 | Mihomo | Listener、Proxy、固定转发规则及本机管理 API。 |
 | 本地集成 | 按需配对本地 Mihomo，以及用于首段原始 RTT 的可选轻量探测。 |
 
+**Controller 与 Agent 保持独立。**Controller 首版不内置常驻 Agent 功能，也不另行实现一套本机节点管理流程；需要管理服务器同时承担代理节点时，在同机安装独立 Agent 与 Mihomo。本机和远端节点使用相同的入网、mTLS 控制通道、配置发布、运行校验、到期撤销及回滚机制。两个自研程序可共享 Go 数据模型、校验和证书工具包，运行职责与状态目录保持分离。
+
 核心对象：`Server`、`Listener`、`Link`、`Route`、`EgressTarget`、`EgressPolicy`、`RuleProfile`、`ServiceDomainSet`、`Subscription`、`SubscriptionEntry`、`Credential`、`MeasurementCache`、`ConfigRelease`。
 
 Server 保存本节点逐协议默认端口、端口池、实例统一的 `target_dns` 参数与修订号，以及可选 HTTPS 探测端点配置；Listener 保存实际监听地址、端口、底层传输和协议参数。RuleProfile 保存有序规则、兜底目标、修订号及 ServiceDomainSet 引用；ServiceDomainSet 保存稳定英文标识、纯域名成员集合和指定出口组，业务规则与 DNS 策略复用该关系。Subscription 关联一套规则方案、分组方式及初始选择；SubscriptionEntry 关联订阅、线路、身份、有效期和状态。Listener 引用由数据库维护。MeasurementCache 保存测量起止、方法、传输/HTTP 协议、数值、样本统计、环境上下文、端点配置版本、时间与过期时间，明确区分网络 RTT 与 HTTP 耗时。
@@ -426,6 +428,22 @@ TCP 443 和 UDP 443 分别检查。Hysteria 2 可与仅占用 TCP 443 的网站�
 
 安装和每次启动前先准备完整配置，并显式指定平台工作目录与配置文件；配置缺失时拒绝启动，避免 Mihomo v1.19.33 自行生成 `mixed-port: 7890`。Unix socket API 不验证 secret，且该版本会将 socket 文件设为 `0666`，必须预先创建仅服务身份或受限组可访问的父目录，以目录权限隔离本机访问。显式启用的管理 TCP 端口和所有业务、探测端口仍需检查冲突。已有 TUN/透明代理捕获平台出站的行为需另行验证，不自动修改管理员已有网络设置。[B21]
 
+### 3.5 安装角色与同机部署
+
+交付两个自研可执行程序 `meshstrata-controller`、`meshstrata-agent`，以及节点使用的固定版本 Mihomo。安装脚本根据角色选择对应架构的发布包，完成校验、安装和初始化；前端资源内嵌于 Controller，安装脚本执行完成后退出。
+
+| 安装角色 | 安装并运行的程序 | 行为 |
+| --- | --- | --- |
+| `controller` | Controller | 提供后台、订阅与节点管理，不自动安装 Agent 或 Mihomo。 |
+| `node` | Agent + Mihomo | 使用已提供的 Controller 地址、信任资料与短期一次性 token 注册节点。 |
+| `both` | Controller + Agent + Mihomo | 一次安装完成管理端和节点端部署，并自动完成本机节点注册。 |
+
+`both` 只改变安装编排，不合并进程或绕过节点身份验证。首次安装按顺序初始化 Controller、准备可信入网资料，再由本机 Agent 按 3.2 注册；本机连接仍验证证书、Controller 身份和节点身份。节点控制连接地址与向代理客户端公布的接入地址分别配置，不能把本机回环地址直接当作公网代理入口。
+
+三个程序分别由 `meshstrata-controller.service`、`meshstrata-agent.service`、`meshstrata-mihomo.service` 管理，权限和状态目录按职责分离。普通 Controller 更新、停止或重启不联动停止 Agent 或 Mihomo，本机 Agent 继续处理已有授权的到期撤销；普通 Agent 重启不联动重启 Mihomo。Agent 退出期间本地到期调度暂停，自动恢复后先处理过期和已知撤销身份。
+
+重复安装或重新运行安装脚本时复用已有 Controller 状态和节点身份，不重新初始化 CA、不重复注册同一节点，也不覆盖节点已有的其他 Mihomo 实例。安装失败时报告已完成的步骤及可重试状态，不把部分安装或注册失败显示为全部成功。
+
 ## 4. 首版验收标准
 
 - [ ] 文档中文；代码、API、错误码、默认 UI、自动命名及 YAML 示例英文。切换 UI 语言不会改变代理组或规则引用。
@@ -461,6 +479,7 @@ TCP 443 和 UDP 443 分别检查。Hysteria 2 可与仅占用 TCP 443 的网站�
 - [ ] Google 与 OpenAI 可分别选择 `Exit-HK-01`、`Exit-SG-01`；最终仅有一组 `rules` 和末尾兜底 `MATCH`。
 - [ ] 默认部署不监听公网 80/443；DNS-01 不要求节点开放这两个端口。
 - [ ] 与节点已有 Mihomo 使用独立程序、目录、服务和 socket；关闭通用代理入站，不默认监听 7890、9090 或宿主机 DNS 端口，不启用服务端 TUN/iptables 接管；配置缺失不能自动启动默认入站，Unix socket 父目录权限隔离有效，已有实例的监听和配置保持不变。
+- [ ] 安装支持 `controller`、`node`、`both` 三种角色；`both` 自动注册本机节点并沿用 mTLS 与统一发布流程，重复安装不重置身份或重复注册；普通 Controller 重启时 Agent 的到期处理与 Mihomo 转发继续运行。
 
 ## 5. 剩余 TODO
 
@@ -496,6 +515,7 @@ mTLS、密钥生命周期、开发英文命名、逐节点逐协议端口均是�
 | v0.10 | 2026-11-08 | 增加路径编辑区的可选出口路由，支持按目标 IP/CIDR 或全部目标使用已有网卡及 HTTP/SOCKS5 代理；同步出口分组、DNS 边界、Listener 隔离、数据模型及验收要求。 |
 | v0.11 | 2026-11-08 | 按可实现性审查改为节点实例统一目标 DNS、隔离 Hysteria 2 订阅入口、发布后运行校验；加入浏览器 HTTPS 首段估计与推荐降级模式，明确域名按解析结果选出口，并分开目标连通性与公网 IP 回显检测。 |
 | v0.12 | 2026-11-09 | 明确与已有 Mihomo 共存：禁用通用代理入站、服务端 TUN 和自动 iptables 接管，使用独立 Unix socket 管理接口及受限父目录，保留内部 DNS 而不开放 DNS 监听，防止缺失配置时自动生成 7890 入站。 |
+| v0.13 | 2026-11-09 | 确定 Controller 与 Agent 独立运行，支持 `controller`、`node`、`both` 安装角色；同机部署自动注册节点，沿用统一 mTLS、发布和到期撤销机制，补充重复安装与独立服务验收要求。 |
 
 ---
 

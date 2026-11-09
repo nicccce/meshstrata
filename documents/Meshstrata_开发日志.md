@@ -8,7 +8,7 @@
 
 本项目采用 **Go + Vue 3 + TypeScript + Vite + SQLite**。Mihomo 作为随安装器交付的独立程序运行，由 Agent 通过本机管理 API 管理。设计目标是轻量、低常驻资源、易部署，并使 Agent 的更新与代理转发进程相互独立。
 
-产品需求以 [Meshstrata_产品设计_v0.9.md](Meshstrata_产品设计_v0.9.md) 为依据；该文件正文当前版本为 **v0.12｜2026-11-09**。开发日志记录技术决策、实现进展和验证结果，不替代产品验收要求。
+产品需求以 [Meshstrata_产品设计_v0.9.md](Meshstrata_产品设计_v0.9.md) 为依据；该文件正文当前版本为 **v0.13｜2026-11-09**。开发日志记录技术决策、实现进展和验证结果，不替代产品验收要求。
 
 ### 1. 技术栈
 
@@ -44,15 +44,31 @@ Browser
                                                         └── Proxy Traffic
 ```
 
-- Controller 通常不运行 Mihomo；只有同机还承担代理节点职责时才安装节点组件。
+- Controller 与 Agent 独立编译、独立运行；Controller 首版不内置常驻 Agent 功能。需要同机承担代理节点职责时，由安装器额外安装独立 Agent 与 Mihomo。
+- 本机节点与远端节点沿用相同的入网、mTLS 控制通道、发布校验、到期撤销和回滚机制，不建立特殊的本机管理分支；Controller 与 Agent 可共享 Go 数据模型、校验与证书工具包。
 - 每台代理节点运行一个 Agent 和一个 Mihomo 实例；多条线路使用同一实例中的 Listener、Proxy 和规则，不按线路启动内核进程。
-- Agent 与 Mihomo 分别使用 `meshstrata-agent.service`、`meshstrata-mihomo.service`。systemd 负责保活；Agent 负责配置、健康确认及显式的内核升级、回滚操作，避免多个组件竞争管理进程。
+- Controller、Agent 与 Mihomo 分别使用 `meshstrata-controller.service`、`meshstrata-agent.service`、`meshstrata-mihomo.service`。systemd 负责保活；Agent 负责配置、健康确认及显式的内核升级、回滚操作，避免多个组件竞争管理进程。
+- 普通 Controller 更新、停止或重启不联动停止 Agent 或 Mihomo，本机节点仍由 Agent 执行到期处理；权限和状态目录按职责分离。
 - 普通 Agent 更新或重启不联动停止 Mihomo；内核升级、内核崩溃或 Listener 重建仍可能影响代理连接。
-- 首版采用安装器同时安装两个程序，不把 Mihomo 源码链接进 Agent，也不要求用户手动安装和配置内核。
+- 首版节点安装由安装器同时安装 Agent 与 Mihomo，不把 Mihomo 源码链接进 Agent，也不要求用户手动安装和配置内核。
 
 独立运行的收益主要是故障隔离和维护便利。当前没有资源实测，不承诺固定内存占用，也不以进程数量直接推断总资源消耗。
 
 ### 3. 部署、端口与本地文件
+
+#### 安装角色
+
+交付两个自研二进制 `meshstrata-controller`、`meshstrata-agent`；节点发布包另包含经过校验的固定版本 Mihomo。安装脚本根据角色下载对应架构的发布包，校验、安装并完成基础配置，执行结束后退出。
+
+| 安装角色 | 程序与行为 |
+| --- | --- |
+| `controller` | 仅安装并启动 Controller。 |
+| `node` | 安装 Agent + Mihomo，使用提供的 Controller 地址、信任资料与一次性 token 注册。 |
+| `both` | 在同机安装 Controller + Agent + Mihomo，并自动完成本机节点注册。 |
+
+`both` 复用常规入网与 mTLS 流程：首次安装先初始化 Controller，再准备可信入网资料并启动本机 Agent，不绕过证书和身份验证。控制连接地址与代理入口地址分开配置；重复安装复用已有状态和节点身份，不重置 CA、不重复注册。各服务独立运行，安装失败需保留并报告可重试状态。
+
+#### 端口与目录
 
 | 项目 | 默认约定 |
 | --- | --- |
@@ -201,3 +217,11 @@ Agent 退出期间，到期调度会暂停；systemd 自动恢复和启动校正
 - **软件源处理：**原系统 HTTP 软件源更新无响应，本次临时指定 Ubuntu 官方 HTTPS 源安装 SQLite，未修改原软件源文件。
 - **范围：**环境验证工程位于 `/tmp/meshstrata-dev-check`，不属于项目源码；前端及 Go 库由后续工程的依赖文件管理。开发环境信息统一记录于本节，不另设说明文件。
 - **下一步：**按已确认顺序建立最小 Controller、Agent 和前端工程，在工程依赖与锁文件中固定版本。
+
+### 2026-11-09｜确定安装角色与 Controller 同机节点方案
+
+- **决策：**Controller 与 Agent 保持独立进程，首版不内置常驻 Agent 功能；支持 `controller`、`node`、`both` 三种安装角色。
+- **同机部署：**`both` 一次安装 Controller、Agent 与独立 Mihomo，并自动按常规可信入网和 mTLS 流程注册本机节点；后续沿用统一发布、校验、撤销与回滚机制。
+- **运行边界：**普通 Controller 重启不暂停本机 Agent 的到期处理，也不联动停止 Mihomo；重复安装复用已有身份及状态。
+- **文档变更：**产品设计更新至 v0.13，增加安装角色、同机部署及验收要求；同步更新本日志开头的方案。
+- **验证范围：**本轮为文档修改，核对组件职责、mTLS、服务独立性和安装角色描述的一致性；安装器与服务故障场景尚未实现验证。
