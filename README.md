@@ -158,5 +158,5 @@ fails with `WEB_ASSETS_MISSING`; use `make build` or `make dev-controller` first
 
 ## Design references
 
-- [Product design](documents/Meshstrata_产品设计_v0.9.md) (body version v0.13).
+- [Product design](documents/Meshstrata_产品设计_v1.0.md) (v1.0).
 - [Development log and technical decisions](documents/Meshstrata_开发日志.md).
