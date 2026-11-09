@@ -1,6 +1,6 @@
 # Meshstrata｜多地域分布式代理平台产品设计
 
-**版本：v0.11｜2026-11-08｜个人自用项目**
+**版本：v0.12｜2026-11-09｜个人自用项目**
 
 ## 1. 产品概览
 
@@ -409,7 +409,7 @@ Controller 必须存储的代理凭据和 DNS API token 加密保存，节点文
 | --- | --- | --- |
 | Web 后台及订阅 | TCP `8443`，可修改 | Controller；普通 HTTPS。 |
 | 入网及管理控制 | TCP `9443`，可修改 | Controller；首次换证，后续 mTLS；Agent 主动连接。 |
-| Mihomo 管理 API | `127.0.0.1:9090`，可修改 | 各节点本机，仅 Agent 访问。 |
+| Mihomo 管理 API | 默认 Unix socket `/run/meshstrata/mihomo.sock` | 各节点本机，仅 Agent 访问，不占用 TCP 端口；可显式启用回环地址上的自定义 TCP 端口与随机 secret。 |
 | 代理 Listener | 逐节点、逐协议配置；初始自动端口池 `20000–29999` | 代理节点，根据协议使用 TCP、UDP 或二者；可手动选 443。 |
 | 辅助 RTT 端点 | 仅实际需要时分配 | 授权探测，不占用默认 80/443。 |
 | 浏览器 HTTPS 探测端点 | 按需启用并分配浏览器允许的端口，可复用已有 HTTPS 服务转发 | 各候选入口节点；短期任务、小响应、CORS 与 Timing-Allow-Origin，不开放管理功能。 |
@@ -421,6 +421,10 @@ Controller 必须存储的代理凭据和 DNS API token 加密保存，节点文
 **与现有网站共存：**后台可以继续使用 8443，也可以置于现有 HTTPS 反向代理后，本机回环连接后端。独立网站服务与 Trojan/VLESS Listener 不能同时绑定同一 IP 的 TCP 443；需换端口/IP 或单独配置复用器。首版不自动设计端口复用。
 
 TCP 443 和 UDP 443 分别检查。Hysteria 2 可与仅占用 TCP 443 的网站共存；如果网站已启用 HTTP/3，UDP 443 可能已被占用。[B13][B14] 冲突检查覆盖地址、协议、端口及 IPv4/IPv6 通配监听。发布前显示防火墙和云安全组需要开放的端口，检测失败明确提示；不能认为配置端口即自动开放外部防火墙。
+
+**与已有 Mihomo 共存：**平台内核使用独立程序路径、工作目录、systemd 服务及 Unix socket，不覆盖、停止或升级节点原有实例。服务端显式将 `port`、`socks-port`、`mixed-port`、`redir-port`、`tproxy-port` 设为 `0`，不默认监听 `7890` 等通用代理端口；禁用服务端 TUN 与自动 iptables 接管，只启用平台分配的协议 Listener。内部 `Target DNS` 解析仍然启用并按节点策略配置，但 `dns.listen` 留空，不占用宿主机 DNS 端口。客户端 TUN 配置不受此服务端约束影响。
+
+安装和每次启动前先准备完整配置，并显式指定平台工作目录与配置文件；配置缺失时拒绝启动，避免 Mihomo v1.19.33 自行生成 `mixed-port: 7890`。Unix socket API 不验证 secret，且该版本会将 socket 文件设为 `0666`，必须预先创建仅服务身份或受限组可访问的父目录，以目录权限隔离本机访问。显式启用的管理 TCP 端口和所有业务、探测端口仍需检查冲突。已有 TUN/透明代理捕获平台出站的行为需另行验证，不自动修改管理员已有网络设置。[B21]
 
 ## 4. 首版验收标准
 
@@ -456,6 +460,7 @@ TCP 443 和 UDP 443 分别检查。Hysteria 2 可与仅占用 TCP 443 的网站�
 - [ ] `All-Proxies` 和 `Exit-*` 成员只来自本配置，使用手动 `select`，不自动切换。
 - [ ] Google 与 OpenAI 可分别选择 `Exit-HK-01`、`Exit-SG-01`；最终仅有一组 `rules` 和末尾兜底 `MATCH`。
 - [ ] 默认部署不监听公网 80/443；DNS-01 不要求节点开放这两个端口。
+- [ ] 与节点已有 Mihomo 使用独立程序、目录、服务和 socket；关闭通用代理入站，不默认监听 7890、9090 或宿主机 DNS 端口，不启用服务端 TUN/iptables 接管；配置缺失不能自动启动默认入站，Unix socket 父目录权限隔离有效，已有实例的监听和配置保持不变。
 
 ## 5. 剩余 TODO
 
@@ -490,6 +495,7 @@ mTLS、密钥生命周期、开发英文命名、逐节点逐协议端口均是�
 | v0.9 | 2026-11-06 | 将文档正文和附录统一改为中文；保留英文开发约定、字段、界面命名和配置示例。 |
 | v0.10 | 2026-11-08 | 增加路径编辑区的可选出口路由，支持按目标 IP/CIDR 或全部目标使用已有网卡及 HTTP/SOCKS5 代理；同步出口分组、DNS 边界、Listener 隔离、数据模型及验收要求。 |
 | v0.11 | 2026-11-08 | 按可实现性审查改为节点实例统一目标 DNS、隔离 Hysteria 2 订阅入口、发布后运行校验；加入浏览器 HTTPS 首段估计与推荐降级模式，明确域名按解析结果选出口，并分开目标连通性与公网 IP 回显检测。 |
+| v0.12 | 2026-11-09 | 明确与已有 Mihomo 共存：禁用通用代理入站、服务端 TUN 和自动 iptables 接管，使用独立 Unix socket 管理接口及受限父目录，保留内部 DNS 而不开放 DNS 监听，防止缺失配置时自动生成 7890 入站。 |
 
 ---
 
@@ -656,6 +662,7 @@ mTLS、密钥生命周期、开发英文命名、逐节点逐协议端口均是�
 - **[B18]** [W3C Resource Timing](https://www.w3.org/TR/resource-timing/)、[WHATWG Fetch](https://fetch.spec.whatwg.org/)：HTTP 请求/响应时序、跨域时序授权、CORS 及请求缓存控制；三次采样、预热及混合估计属于本产品设计，不是浏览器对纯 RTT 的保证。
 - **[B19]** Mihomo v1.19.33 [规则解析流程](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/tunnel/tunnel.go)、[Listener 更新](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/listener/listener.go)、[Hysteria 2 服务关闭](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/listener/sing_hysteria2/server.go)及[配置 API](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/hub/route/configs.go)：全局目标解析、配置变化重建监听器及 API 成功不等于全部监听成功的依据；于 2026-11-08 核对。
 - **[B20]** Mihomo v1.19.33 [HTTP 出站](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/adapter/outbound/http.go)及[目标元数据](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/constant/metadata.go)：保留域名的目标地址可继续传给外部代理，不能将本地规则解析 IP 视为外部代理最终连接 IP。
+- **[B21]** Mihomo v1.19.33 [配置初始化](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/config/initial.go)、[管理 API 服务](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/hub/route/server.go)及[DNS 监听](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/dns/server.go)：缺失配置时生成 `mixed-port: 7890`，Unix socket API 不验证 secret 且 socket 文件权限设为 `0666`，DNS 监听地址为空时不创建网络监听；于 2026-11-09 核对。
 
 ---
 

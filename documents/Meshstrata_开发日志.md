@@ -6,7 +6,7 @@
 
 本项目采用 **Go + Vue 3 + TypeScript + Vite + SQLite**。Mihomo 作为随安装器交付的独立程序运行，由 Agent 通过本机管理 API 管理。设计目标是轻量、低常驻资源、易部署，并使 Agent 的更新与代理转发进程相互独立。
 
-产品需求以 [Meshstrata_产品设计_v0.9.md](Meshstrata_产品设计_v0.9.md) 为依据；该文件正文当前版本为 **v0.11｜2026-11-08**。开发日志记录技术决策、实现进展和验证结果，不替代产品验收要求。
+产品需求以 [Meshstrata_产品设计_v0.9.md](Meshstrata_产品设计_v0.9.md) 为依据；该文件正文当前版本为 **v0.12｜2026-11-09**。开发日志记录技术决策、实现进展和验证结果，不替代产品验收要求。
 
 ### 1. 技术栈
 
@@ -56,7 +56,7 @@ Browser
 | --- | --- |
 | Web 后台与订阅 | Controller TCP `8443`，普通 HTTPS，可修改。 |
 | 入网与控制通道 | Controller TCP `9443`；入网使用已验证的服务端 TLS 与一次性 token，后续管理使用 mTLS。 |
-| Mihomo 管理 API | 节点 `127.0.0.1:9090`，随机 secret，仅供本机 Agent 使用。 |
+| Mihomo 管理 API | 默认 Unix socket `/run/meshstrata/mihomo.sock`，不占用 TCP 端口；仅供本机 Agent 使用。显式启用 TCP 兼容模式时绑定回环地址、自定义端口并使用随机 secret。 |
 | 代理端口 | 逐节点、逐协议配置，初始自动端口池 `20000–29999`。 |
 | Controller 状态目录 | 建议 `/var/lib/meshstrata/controller/`，保存数据库和必要状态。 |
 | Agent 状态目录 | 建议 `/var/lib/meshstrata/agent/`，保存节点身份、授权状态及任务检查点。 |
@@ -68,11 +68,44 @@ Browser
 
 构建在开发环境或 CI 完成，提供对应 Linux 架构的发布包；VPS 只负责下载和运行。安装器验证发布产物来源与完整性，并保存实际 Agent、Mihomo 版本及摘要。
 
+#### 与节点已有 Mihomo 共存
+
+平台只管理自己安装的内核实例。使用独立可执行文件路径（建议 `/usr/local/libexec/meshstrata/mihomo`）、工作目录、systemd 服务名和 Unix socket，不复用或修改节点已有的 Mihomo 程序、服务、配置及缓存。停止或升级时按平台服务定位实例，不使用 `pkill mihomo` 等按通用进程名操作的方式。
+
+生成的服务端配置显式设置 `port`、`socks-port`、`mixed-port`、`redir-port` 和 `tproxy-port` 为 `0`，关闭通用 HTTP/SOCKS/mixed/透明代理入站，不默认监听 `7890` 等常见本地代理端口。首版服务端同时禁用 TUN 和自动 iptables 接管；这不改变客户端订阅中按需生成 TUN 的设计。代理业务仅通过平台显式分配的协议 Listener 接入。
+
+内部目标解析仍按节点 `Target DNS` 策略配置，但 `dns.listen` 默认留空，不占用宿主机 DNS 监听端口；禁用 DNS 监听不等于禁用内部域名解析。管理 API 的 TCP/TLS 地址默认留空，仅启用专属 Unix socket。v1.19.33 的 Unix socket API 不验证 secret，且内核会将 socket 文件权限设为 `0666`；必须由安装器/systemd 预先建立受限的 `/run/meshstrata/` 父目录（例如 `0700` 并采用匹配的服务身份，或使用受限组的 `0750`），以目录访问权限限制本机连接，不能只依赖 secret 或 umask。
+
+以下是共存约束片段，不是可直接启动的完整配置；DNS 上游、启动解析路径、Listener 和业务规则由生成器补齐：
+
+```yaml
+port: 0
+socks-port: 0
+mixed-port: 0
+redir-port: 0
+tproxy-port: 0
+allow-lan: false
+tun:
+  enable: false
+iptables:
+  enable: false
+dns:
+  enable: true
+  listen: ""
+external-controller: ""
+external-controller-tls: ""
+external-controller-unix: /run/meshstrata/mihomo.sock
+```
+
+安装和每次启动前必须先生成、检查平台完整配置，再以显式的 `-d`、`-f` 路径启动；配置缺失时停止并报告，不能让内核自行生成默认配置。v1.19.33 的初始化逻辑会在缺失配置时生成 `mixed-port: 7890`，因此只在正常配置里禁用端口还不够。
+
+端口冲突检查覆盖平台业务 Listener、按需探测端点和显式启用的管理 TCP 端口，按地址、TCP/UDP、IPv4/IPv6 通配绑定判断。固定端口冲突返回 `PORT_IN_USE`；自动分配只能在允许的端口池中选择并记录实际端口，不能停止已有服务或擅自迁移正在使用的 Listener。已有实例的 TUN/透明代理若捕获平台出站，也需按需验证并提示管理员调整，不能宣称仅避免端口冲突即可保证全部网络行为独立。
+
 ### 4. 配置发布与热重载
 
 日常新增线路、调整规则和撤销身份通过 **配置重载** 完成，不把重启整个 Mihomo 进程作为常规发布方式。修改 YAML 文件后必须主动通知内核加载。
 
-Agent 通过带 Bearer secret 的本机 API 调用 `PUT /configs?force=true`，传入候选配置的绝对路径。这里的 `force=true` 不代表重启进程。该接口用于应用代理、规则、DNS 和监听配置；管理 API 自身地址、认证等启动设置的变更需要另行设计，不能假定同一重载接口会同步更新它们。
+Agent 默认通过专属 Unix socket 上的 HTTP API 调用 `PUT /configs?force=true`，传入候选配置的绝对路径；显式启用 TCP 兼容模式时附带 Bearer secret。这里的 `force=true` 不代表重启进程。该接口用于应用代理、规则、DNS 和监听配置；管理 API 自身地址、认证等启动设置的变更需要另行设计，不能假定同一重载接口会同步更新它们。
 
 发布流程：
 
@@ -133,6 +166,7 @@ Agent 退出期间，到期调度会暂停；systemd 自动恢复和启动校正
 - [Go TLS](https://pkg.go.dev/crypto/tls)、[lego](https://github.com/go-acme/lego)。
 - [Mihomo API](https://wiki.metacubex.one/api/)。
 - Mihomo v1.19.33：[配置重载接口](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/hub/route/configs.go)、[配置执行](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/hub/executor/executor.go)、[Listener 更新](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/listener/listener.go)。
+- Mihomo v1.19.33：[缺失配置时的初始化](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/config/initial.go)、[Unix socket API 及权限](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/hub/route/server.go)、[DNS 监听](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/dns/server.go)。
 
 ## 日志记录
 
@@ -145,3 +179,11 @@ Agent 退出期间，到期调度会暂停；systemd 自动恢复和启动校正
 - **文档变更：**创建本开发日志，在开头记录技术栈、部署边界、配置热重载、发布校验、到期处理及首轮开发计划。
 - **验证范围：**对照产品设计 v0.11 和本次已核对的 Mihomo v1.19.33 接口与源码整理设计；当前没有实现代码、构建结果或资源基准数据。
 - **下一步：**搭建最小工程，并验证单节点配置发布、实际监听确认、身份撤销与失败恢复闭环。
+
+### 2026-11-09｜补充与节点已有 Mihomo 共存约束
+
+- **决策：**平台内核关闭通用代理入站、TUN 和自动透明代理接管，不默认监听 `7890` 等端口；管理 API 改为独立 Unix socket，DNS 保留内部解析但不监听宿主机端口。
+- **实例隔离：**程序、配置、状态、服务和 socket 使用平台专属位置；安装、升级和停止操作不修改节点已有 Mihomo 实例。
+- **启动约束：**先准备完整配置，缺失则拒绝启动，避免内核初始化生成默认 `mixed-port: 7890`；启动和重载均检查实际监听。
+- **文档变更：**同步产品设计至 v0.12，更新本日志的默认管理接口和配置发布描述。
+- **验证范围：**已核对 v1.19.33 的初始化、Unix socket API 和 DNS 监听源码；尚未实现安装器，也未执行双实例共存测试。Unix socket 的目录权限隔离、已有 TUN/透明代理影响和异常启动路径需纳入后续验收。
