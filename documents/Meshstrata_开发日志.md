@@ -253,3 +253,14 @@ Agent 退出期间，到期调度会暂停；systemd 自动恢复和启动校正
 - **实施拆分：**新增 `Meshstrata_前端实施任务_v1.0.md`，为基础设施 F00 与十个业务模块 P01–P10 明确文件归属、依赖、检查和交付规则；按用户允许的节奏先启动 F00，完成后由用户唤醒设计会话安排各业务会话。指定模型 GPT-6.1 Sol，推理强度 High。
 - **技术决定：**沿用 Vue/TS/Naive UI/Vue I18n；计划增加 hash 路由、公共布局和组件、共享演示 workspace、独立 feature 语言资源和页面占位入口，不需要为前端路由改 Go 静态服务器。
 - **验证范围：**本轮为设计与任务拆分，核对产品边界、路由/页面归属、文档链接及格式；前端实现和运行验收由后续任务完成。
+
+### 2026-11-10｜交付 F00 前端基础设施与页面契约
+
+- **导航与路由：**固定引入 Vue Router 4.6.4，使用 hash history；完成 19 个命名页面入口、根路径重定向、动态对象上下文、面包屑、活跃导航、页面标题、未知路径/对象提示、query 白名单与内部 returnTo 校验。采用 Overview、Nodes、Routes、Client Config（二级 Subscriptions / Rule Profiles）、Activity，Settings 位于侧栏底部；演示登录为独立布局。
+- **共享基础：**拆分应用 providers/layout、公共页面/状态/查询时间/错误/影响确认/实体链接/文字路径/校验与任务反馈组件。补齐全部 P01–P10 指定入口和两个出口抽屉的稳定 props/emits；业务页面明确显示 Pending implementation，没有实现业务算法或将占位检查标成成功。
+- **演示状态：**新增共享 domain 类型、只读响应式 workspace 与显式写命令，关联的本地 both Relay、HK/SG/JP Direct、Reverse、离线节点、线路/策略/规则/订阅/发布/用量 seeds；独立保存连接、验证、草稿/已发布修订和清理状态。提供 normal/empty/error/stale/offline/partial 可复现场景及重置入口，无随机结果。
+- **草稿与请求边界：**版本化保存非敏感演示对象与投影后的草稿，损坏/不可用存储提示重置，敏感输入独立保留内存。提供 Save Draft / Discard / Stay 离开保护、locale 日期/数字、保留旧快照的查询状态、可取消且卸载清理的一次性模拟任务。Settings 的基础设施沙盒用于后续浏览器检查。系统信息改为明确点击后才调用原 getSystem，带超时/中止，离线不阻断原型；没有业务 API 或自动探测请求。
+- **契约与文案：**新增 `web/FRONTEND_CONTRACT.md`，记录路由 helper、公共组件、抽屉接口、模型/读写命令、草稿/场景、i18n、文件归属和后续边界；feature 英语资源独立装载，同步更新 README 的离线运行说明。未修改 Go、产品设计、交互设计或业务任务书。
+- **验证：**通过 `npm --prefix web run typecheck`、`npm --prefix web run build`、`npm --prefix web run check:foundation`、`git diff --check`。基础逻辑检查覆盖全部命名路由、query 清理、returnTo 拒绝外链、内存路由返回、404、六种 seeds 与引用、持久化往返/损坏、敏感字段排除及重置。源码检查确认 fetch 只在显式 Controller 查询链路出现，无 setInterval；响应式 CSS 在 <=760px 收起侧栏并使用抽屉。
+- **验收限制：**宿主未提供可操作的浏览器工具或浏览器可执行文件，未进行浏览器 hash 刷新/前进后退、无效 ID 页面、草稿确认、焦点/窄屏渲染和网络面板实测；内存路由/源码检查不等价于这些交互验收。未重跑 Go 检查，因本轮不改 Go。所有 P01–P10 业务界面和出口检查逻辑仍待实施。
+- **后续：**由用户唤醒原设计会话审阅契约与构建，再按任务书启动业务页；本轮没有创建其他会话或发送跨会话消息。领域模型、query 或草稿字段扩展由集成会话协调。

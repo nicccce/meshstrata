@@ -67,12 +67,27 @@ The Vite server at <http://127.0.0.1:5173> supports frontend hot reload and prox
 `/api`, `/healthz`, and `/readyz` to Controller at `127.0.0.1:8443`.
 If the Controller address changes, update the Vite proxy accordingly.
 
-The workspace includes all seven planned navigation entries. Dashboard loads real
-Controller build information on entry and explicit refresh, with loading, error,
-and retry states. Other pages are labeled placeholders. There is no polling or
-background resource collection. English strings live in `web/src/locales/en.ts`;
-register new resources in `web/src/i18n.ts` and matching Naive UI locales in App.
-Navigation uses component state and resets to Dashboard on a full reload.
+The frontend now opens an offline **Prototype · Demo data** workspace with hash
+URLs, Overview/Nodes/Routes/Client Config/Activity navigation, and Settings at the
+bottom of the sidebar. All P01–P10 business pages are explicit placeholders.
+Controller information is available only through the optional query button in
+Settings; opening or refreshing any page makes no business API/probe request.
+
+For frontend-only work (Controller optional):
+
+```sh
+npm --prefix web ci
+npm --prefix web run dev
+npm --prefix web run check:foundation
+npm --prefix web run typecheck
+npm --prefix web run build
+```
+
+Open `http://127.0.0.1:5173/#/overview`. Demo Controls in the footer provide six
+repeatable scenarios and Reset Demo. Settings includes a non-sensitive draft and
+cancellable-task sandbox. Explicitly saved drafts survive refresh; secrets stay
+in memory. English feature resources live in each feature's `locales/en.ts`.
+See [frontend contract](web/FRONTEND_CONTRACT.md) before implementing business pages.
 
 ## Configuration and local state
 
@@ -123,10 +138,10 @@ under `.local/cache/` by default, avoiding large builds in a small `/tmp` tmpfs.
 Unknown Controller API paths return HTTP 404 with
 `{"error":{"code":"NOT_FOUND"}}`. Unsupported methods on known endpoints return
 HTTP 405 with `METHOD_NOT_ALLOWED`. Endpoints also accept HEAD. Missing static
-files return HTTP 404; this milestone has no client-side URL router.
+files return HTTP 404; frontend routes use hash history and do not require a server fallback.
 
 Build information defaults to `dev`/`unknown` when using Go directly. Make injects
-the version, source commit, and UTC build time. The dashboard formats dates using
+the version, source commit, and UTC build time. The frontend formats dates using
 the active locale.
 
 ## Checks and generation

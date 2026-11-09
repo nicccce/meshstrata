@@ -1,0 +1,3 @@
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n'; import { issueMessageKey, type Issue } from '../domain'; defineProps<{ issues: readonly Issue[] }>(); defineEmits<{ focus: [field: string] }>(); const { t } = useI18n()
+</script><template><section v-if="issues.length" role="alert"><h2>{{ t('common.invalid') }}</h2><ul><li v-for="(issue, i) in issues" :key="i"><button v-if="issue.field" class="text-button" @click="$emit('focus', issue.field)">{{ t(issueMessageKey(issue.code), issue.params ?? {}) }}</button><span v-else>{{ t(issueMessageKey(issue.code), issue.params ?? {}) }}</span></li></ul></section></template>
