@@ -1,0 +1,5 @@
+{
+  "listen_address": "127.0.0.1:8443",
+  "state_dir": ".local/controller",
+  "log_level": "info"
+}

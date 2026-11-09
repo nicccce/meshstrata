@@ -1,0 +1,7 @@
+/.local/
+/bin/
+/web/node_modules/
+/internal/webui/dist/*
+!/internal/webui/dist/.gitkeep
+*.test
+coverage.out
