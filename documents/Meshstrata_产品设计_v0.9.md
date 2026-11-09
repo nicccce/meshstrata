@@ -1,0 +1,794 @@
+# Meshstrata｜多地域分布式代理平台产品设计
+
+**版本：v0.11｜2026-11-08｜个人自用项目**
+
+## 1. 产品概览
+
+通过一个 Web 控制台管理分布在不同地区的 Linux 代理节点。创建线路时先选择最终出口，系统根据国内/国外接入环境、协议支持能力及已缓存的网络往返时延（RTT）推荐若干路径；没有本地原始 RTT 时，可用浏览器测得的 HTTP 往返耗时辅助入口排序，并标明为估计。管理员选定后命名、发布，并加入具有有效期的 Mihomo 订阅。
+
+默认由线路末端节点直接访问目标；可在创建或编辑线路时，通过次要入口 `Egress Routing` 为该线路配置出口路由，按目标 IP/CIDR 或全部目标转交末端节点上的指定网卡或 HTTP/SOCKS5 代理。末端节点是平台管理的最后一台服务器，实际公网出口可能位于它连接的外部隧道或代理之后。
+
+系统只有一位管理员，客户端与服务端统一采用 Mihomo。首版协议为 Shadowsocks 2022、Trojan + TLS、VLESS + REALITY/Vision、Hysteria 2。线路可为单节点或固定多跳，每一段独立选择协议；**不做自动改线**。Agent 与 Controller 使用 mTLS 通信，密钥和证书由系统维护。可以保存多套规则方案，生成配置时自动创建 `All-Proxies` 和按最终出口分组的 `Exit-*`，同时生成与出口相匹配的 DNS 策略。
+
+**运行原则：按需查询、按需检测、节点本地维护。**不使用控制台时，不持续扫描全网、不持续同步性能数据，也不进行带宽压测。节点继续处理代理流量，并在本地执行凭据到期、必要计数、证书维护及日志轮转。
+
+### 1.1 日常使用流程
+
+添加节点并查询位置 → 设置每个节点的协议及端口 → 选择出口与接入环境 → 查看推荐路径 → 选择并命名线路 → 验证与发布 → 编辑规则方案 → 创建订阅并选择线路、规则方案、代理组和有效期 → 导入 Mihomo。需要时再打开控制台查询用量、资源或重新测量。
+
+### 1.2 开发语言和国际化规范
+
+**本文档使用中文；开发时统一使用英文。**代码、变量、类名、数据库字段、API、错误码、状态码、日志字段、安装输出、默认界面文案、系统生成的节点/线路/代理组名称和配置示例均使用英文。前端从第一版预留多语言（i18n），首发英文资源文件，后续可以增加中文等语言。
+
+| 范围 | 英文约定与示例 |
+| --- | --- |
+| 导航菜单 | `Dashboard`、`Nodes`、`Routes`、`Rule Profiles`、`Subscriptions`、`Activity`、`Settings` |
+| 节点名称 | `HK-01`、`SG-01`、`JP-01`、`US-01` |
+| 线路名称 | `HK-Direct`、`JP-to-HK`、`SG-Direct`、`HK-to-SG` |
+| 规则方案 | `Default`、`Work`、`Singapore-Only` |
+| 订阅名称 | `Laptop`、`Phone` |
+| 自动代理组 | `All-Proxies`、`Exit-HK-01`、`Exit-SG-01` |
+| 数据模型及 API 字段 | `node_id`、`route_id`、`entry_id`、`listen_port`、`expires_at` |
+| 状态及错误码 | `draft`、`published`、`pending_cleanup`、`PORT_IN_USE` |
+
+前端文案使用资源键，例如 `nodes.actions.add`、`routes.errors.portInUse`，组件不直接硬编码显示字符串。后端使用稳定错误码及结构化参数，例如返回 `PORT_IN_USE`、节点、协议、端口，由前端根据界面语言翻译。日期、数字由前端按语言环境格式化。
+
+**更换界面语言不会改动配置数据。**节点 ID、线路 ID、自动代理组、Listener 名称、规则引用和数据库字段不做翻译。管理员可以自行命名对象；系统默认生成英文名称。默认出口组名与稳定节点 ID 关联，自定义出口另关联稳定出口策略 ID，名称冲突追加稳定后缀；手动重命名时检查并更新关联规则。
+
+## 2. 页面与功能
+
+### 2.1 总览（`Dashboard`）
+
+首页展示已登记节点、已发布线路、有效订阅数量和最近操作。资源、测速和用量展示**最近查询结果及时间**，点击 `Refresh` 才向相关节点发起查询。不默认生成依赖持续采样的实时曲线或 24 小时流量报表。
+
+节点状态分别展示控制连接是否存在、`Last Confirmed` 时间，以及最近一次查询是否失败；不会把很久之前的结果称为当前实时状态。
+
+### 2.2 节点管理（`Nodes`）
+
+**节点列表：**名称、国家/地区、城市、接入环境标签、IP/域名、Agent/Mihomo 版本、最近连接状态、关联线路数量。CPU、内存、磁盘和网络速率仅在打开详情或点击 `Query Status` 后拉取。
+
+**位置识别：**在 `Settings` 配置 IP 地理位置 API。节点加入、地址变化或管理员点击 `Update Location` 时查询并缓存；允许批量补全。API 只收到待查询公网 IP，服务商密钥保留在 Controller。管理员可以手动覆盖国家、城市及标签，自动更新不覆盖手填内容，节点名称始终可以修改。
+
+**添加节点：**输入名称及地址 → 生成安装信息 → 在 VPS 上执行安装 → Agent 验证 Controller 身份并注册 → 自动查询位置、版本。安装信息包含 Controller 地址、预置信任资料和一次性短期入网 token，首次连接见 3.2。
+
+**节点详情：**展示地址、位置、资源快照、协议设置、实际 Listener、占用端口、关联线路、已应用配置版本。提供 `Query Status`、`Test Protocol`、`Update Location`、`Edit`、`Remove`。移除前列出受影响的线路与订阅；确认后撤销节点管理身份并保留依赖记录，不自动把已有线路转到其他节点。
+
+**节点目标解析（`Target DNS`）：**每个节点的单个 Mihomo 实例统一设置目标解析 DNS，包括上游、其出站目标及启动解析路径，供该实例的 IP 规则解析和默认直连目标解析使用。首版不提供按线路或出口策略隔离的目标解析器；修改时列出全部受影响线路并按 2.10 验证发布。已有宿主机默认 DNS 只有显式选为节点策略后才使用，不能静默回退。浏览器 HTTPS 探测端点的地址、证书和端口按需配置，见 2.5。
+
+#### 逐节点协议与端口（`Protocols & Ports`）
+
+**每台服务器可独立设置每种协议的端口**，不同服务器上同一协议不必使用相同端口。每种协议允许配置多个 Listener。
+
+| 设置 | 功能 |
+| --- | --- |
+| `Protocol` / `Enabled` | 是否允许该节点新建 SS 2022、Trojan/TLS、VLESS/REALITY/Vision、Hysteria 2 Listener。 |
+| `Listen Address` | Listener 绑定的本地地址/网卡。 |
+| `Preferred Port` | 新增 Listener 的优先端口，或交由系统自动分配。 |
+| `Additional Port Pool` | 需要额外 Listener 时的允许端口范围；可继承节点或系统端口池。 |
+| `Transport` | 显示 TCP、UDP 或二者，另行标明能否转发业务 TCP/UDP。 |
+| `Listeners` | 查看实际监听器名称、端口、协议、下一跳、引用数量和发布状态。 |
+
+示例配置（非强制默认值）：
+
+| Node | Protocol | Preferred Port | Transport |
+| --- | --- | --- | --- |
+| `HK-01` | Shadowsocks 2022 | `22001` | TCP + UDP（启用时） |
+| `HK-01` | Trojan + TLS | `22443` | TCP |
+| `HK-01` | VLESS + REALITY/Vision | `22444` | TCP |
+| `HK-01` | Hysteria 2 | `22443` | UDP |
+| `SG-01` | Trojan + TLS | `23443` | TCP |
+
+只有符合 2.9 的共享条件才复用 Listener，否则从允许范围分配新端口。固定端口冲突时返回 `PORT_IN_USE`，不擅自换用其他端口；允许的端口不足时要求管理员重新指定。线路创建页显示实际分配端口，配置生成器将其写入上游 Proxy 和客户端订阅。[B13][B15]
+
+修改协议的默认端口**只影响新分配资源**；修改正在运行的 Listener 必须列出受影响线路和订阅，经过验证、发布后才生效，并使对应测量缓存过期。客户端下次更新订阅得到新端口。禁用协议只阻止新分配；关闭仍被使用的 Listener 是另一项需要依赖检查的操作。
+
+### 2.3 创建线路（`Create Route`）
+
+先选**最终出口**，不要求提前选择入口。
+
+| 步骤 | 页面行为 |
+| --- | --- |
+| `Exit Node` | 选择出口服务器，显示位置、可用协议、端口及最近状态。 |
+| `Access Environment` | 选择 `Mainland China` 或 `Outside Mainland China`，设置 `Allow UDP Transport`、`Require UDP Relay`，可保存默认值。 |
+| `Recommend Routes` | 优先使用未过期的缓存；本次需要但缺失的数据才按需测量。 |
+| `Select Paths` | 默认显示 3 条去重候选，可调整数量并展开同路径的协议组合。 |
+| `Name & Edit` | 选中一条或多条候选并命名；高级模式可编辑入口、中转顺序、逐跳协议和 Listener。 |
+| `Egress Routing`（可选） | 路径编辑区的小按钮，打开侧栏设置末端节点的出口目标、有序 IP 规则和未匹配目标；默认折叠。 |
+| `Validate & Publish` | 校验并生成、下发配置；应用后检查实际监听、协议认证及少量端到端流量，通过后确认发布。 |
+
+候选卡片显示：入口 → 中转 → 出口、每段协议及端口、业务 TCP/UDP 支持、各段测量值及方法、测量时间和简要推荐原因。完整网络 RTT 模式显示总估计 RTT；浏览器参考模式显示 `Browser HTTP Latency` 和 `Estimated Path Cost`，不将混合估计标为纯网络 RTT。缺少首段数据时显示 `Not Measured`，不把缺失值当成 0，具体降级行为见 2.5。
+
+保存线路记录稳定 ID、名称、固定节点顺序、各连接段协议和 Listener、入口参数及发布版本。改变路径必须显式编辑、验证和发布；查看推荐结果不会改变已经保存的线路。
+
+启用出口路由时同时保存出口策略 ID 与已发布修订号。候选卡片和线路详情补充 `Terminal Node`、`Egress Policy` 及最近观察到的公网出口；节点地理位置只描述该服务器，不能代替外部代理的实际出口位置。
+
+**失败处理：**在创建或人工测试时显示具体失败节点和协议，并排除该组合；后续探测失败不会自动删除、替换或切换已发布线路。客户端根据真实连接显示失败或超时。
+
+#### 2.3.1 可选出口路由（`Egress Routing`）
+
+**作用范围：本线路到达末端节点后的业务连接。**网卡名和 `127.0.0.1` 均相对于末端 Mihomo 所在的网络命名空间，不是管理员电脑或 Controller。首版节点采用主机网络部署；隔离容器需另行验证其网卡与回环可见性。本功能不接管整台服务器的流量，也不修改客户端规则方案。
+
+默认状态显示 `Node Default`，保持现有节点直连行为。点击小按钮打开侧栏，包含 `Targets`、`Rules`、`Unmatched Traffic`、节点 `Target DNS` 摘要及 `Validate`。DNS 摘要链接到节点设置，并提示其影响范围，不在本线路内保存独立 DNS 参数。配置后路径末尾显示简短摘要，例如 `HK-01 → Local-SOCKS` 或 `HK-01 → Custom Egress`，无需新增顶层导航。
+
+**出口目标：**
+
+| 类型 | 配置 | 前提与能力 |
+| --- | --- | --- |
+| `Node Default` | 使用末端节点现有的默认出站。 | 原有行为；仅在管理员明确选择为规则目标或兜底时使用，不作为其他目标故障时的自动回退。 |
+| `Network Interface` | 选择或填写 `wg0`、`tun0` 等网卡名。 | Agent 按需列出网卡、地址和状态；必须已有可用的接口、隧道及系统路由。绑定接口不等于创建 VPN 或保证该接口能到达所有目标。 |
+| `Proxy Endpoint` | 明确选择 `HTTP` 或 `SOCKS5`，填写地址、端口和可选认证，例如 `127.0.0.1:7890`。 | 端口号不能推断协议；mixed 端口需选定其中一种协议。HTTP 首版仅承诺 TCP CONNECT；SOCKS5 的业务 UDP 需另行验证。 |
+
+出口目标保存在末端节点范围内，认证信息按 3.3 加密管理，不进入客户端订阅。外部网卡、隧道和代理进程由管理员准备，Agent 只使用和验证；本功能不负责安装、启动或升级它们。`tun0` 若属于当前 Mihomo 自己的入站 TUN，应拒绝作为出口，避免回环；其他会重新捕获本平台出站的透明代理也需要排除。
+
+**规则表：**首版只支持目标 IPv4/IPv6 地址或 CIDR，以及唯一的末尾 `MATCH`。单个 IP 规范化为 `/32` 或 `/128`；IPv6 仅在已启用并验证时可用。字段为 `Destination`、`Target` 和 `Order`，从上到下首次匹配，允许排序，提示重叠或被前序规则完全覆盖的网段，不自动改成最长前缀优先。这里匹配的是网站/服务的目标 IP，不是客户端来源 IP 或下一跳服务器 IP。
+
+| 顺序 | 目标 | 出口 |
+| --- | --- | --- |
+| 1 | `203.0.113.0/24` | `Local-SOCKS`（`SOCKS5 127.0.0.1:7890`） |
+| 2 | `198.51.100.8/32` | `Tunnel-WG`（`wg0`） |
+| 末尾 | `MATCH` | `REJECT` |
+
+以上 IP 为文档示例。要让全部目标使用某个出口，只需将末尾 `MATCH` 指向它；也可添加少量 IP 例外，再将其他目标交给同一代理。启用自定义策略时，未匹配流量默认 `REJECT`，管理员可显式改为某个目标或 `Node Default`。**未匹配兜底与连接失败不同：已匹配出口不可用时直接失败，不继续尝试后续规则或默认直连。**
+
+**与既有路径和 Mihomo 的衔接：**入口和中转仍固定指向下一跳；仅在末端 Listener 使用专属 `rule` 子规则表，且不同时设置会直接指定出站的 `proxy`。网卡目标拟生成为命名的 `type: direct` 出站并设置 `interface-name`，代理目标生成为 `type: http` / `type: socks5` 出站。每个子规则表有且只有一条末尾 `MATCH`，不把不同线路的出口规则混入全局规则。上述机制有官方文档支持，实际字段、失败行为和 UDP 匹配需在固定内核版本完成验证。[B16][B17]
+
+**DNS 与能力边界：**目标本来是 IP 时直接匹配；目标是域名且需要按目标 IP 分流时，末端节点先通过该实例统一的 `Target DNS` 解析后判断。Mihomo v1.19.33 的 IP 规则解析调用全局解析器，Listener 子规则不会建立线路专属解析器，因此首版不承诺两条线路对同一域名使用不同的目标解析 DNS。节点 DNS 上游的出站及启动解析路径必须明确，禁止依赖尚未完成的业务 IP 判定形成循环；发布时校验节点设置，不能静默使用宿主机默认 DNS。`no-resolve` 会使尚未解析的域名跳过对应 IP 规则，应作为显式高级选项。若只有 `MATCH → Proxy Endpoint`，保留域名的 TCP 可交由该代理处理。按目标 IP 分流无法一般性地推导“DNS 与每个业务目标使用同一公网出口”，见 2.6 与附录 C。[B19]
+
+**IP 匹配语义：**域名目标按末端节点本次用于规则匹配的解析结果选择出口；之后 HTTP/SOCKS5 代理可能再次解析同一域名，实际连接 IP 可与规则判定 IP 不同。检测结果分别标明 `Rule Resolution IP` 与可观察到的实际连接信息，不能把前者显示成已确认的最终目标 IP。首版不承诺锁定外部代理的域名解析结果；需要按明确地址转发时使用 IP 字面量目标。严格固定域名对应连接 IP 的能力另行评估。[B20]
+
+HTTP 目标及未经验证的网卡/SOCKS5 目标不声明业务 UDP 可用；仍遵守首版默认拒绝业务 UDP。即便高级方案启用 UDP，末端也必须在出口选择前显式拒绝不能完整承载的流量，防止 Mihomo 因 UDP 不支持而继续匹配到其他出口。网络 RTT 推荐仍只计算到末端节点，外部代理和隧道部分标记 `Not Measured`，其完整体验与实际公网 IP 通过按需检查单独呈现。
+
+**验证与变更：**发布前按需检查规则、网卡存在及绑定权限、目标路由、代理协议与认证，并对各出口目标和代表性规则做少量端到端请求。检查明显的自指代理、Listener 回环和透明代理重复捕获；外部系统无法确认的行为显示 `Not Checked`。`Test Destination` 检查目标连通性、匹配规则、解析方式及选中出口；`Check Egress IP` 单独向回显服务查询公网 IP，并标明测试地址。普通目标不返回访问者 IP 时，不显示该目标已观察到公网出口，详见 2.11。出口策略变更需要验证、发布并更新受影响节点；共享资源先检查依赖，失败按 2.10 回滚。回滚只涵盖平台配置，不声称可以恢复外部进程或隧道。
+
+### 2.4 协议候选（`Protocol Selection`）
+
+| 场景 | 默认协议候选 |
+| --- | --- |
+| 大陆到境外入口，优先 TCP | VLESS + REALITY/Vision；Trojan + TLS 作为另一候选。 |
+| 大陆到境外入口，允许 UDP/QUIC | 增加 Hysteria 2，同时保留 TCP 路径。 |
+| 境外节点间 | 默认 SS 2022；允许 Trojan、Hysteria 2。 |
+| 高 RTT 或已知不稳定连接 | 将 Hysteria 2 加入候选，由管理员选择。 |
+| UDP 不可达 | 排除外层传输必须使用 UDP 的协议。 |
+
+选型依据见附录 A。偏好只控制协议候选与排序时的同等条件取舍，不虚构协议额外时延。最终仍需校验实际参数和连接。
+
+协议配置使用「公共字段 + 协议字段」：地址、端口、认证引用、业务 TCP/UDP 能力为公共字段；SS 加密方法、TLS 证书/SNI、REALITY 公钥/short ID/flow、Hysteria 2 参数等按协议展开。常规凭据自动生成，高级参数默认折叠；不开发动态插件系统或第二套转发内核。
+
+### 2.5 RTT、浏览器 HTTP 测量、缓存和路径推荐
+
+**区分网络 RTT 与浏览器 HTTP 参考值。**有本地原始测量能力时按网络 RTT 排序；未接入时，默认尝试浏览器按需请求候选入口上的轻量 HTTPS 探测端点，取得 HTTP 往返耗时作为首段近似值。HTTP 值包含服务端处理等开销，不称为纯网络 RTT。每次少量采样，取中位数；协议认证与业务 UDP 可用性另行检查。
+
+| 数据 | 获取方式 | 用途 |
+| --- | --- | --- |
+| TCP RTT | 以目标真实地址及端口的 TCP 建连估计，或现有连接的内核 RTT；不计域名解析耗时。 | TCP 外层传输的边权。 |
+| UDP RTT | 少量经过授权的 UDP 请求/响应探测，或读取已有 QUIC 连接暴露的 RTT；记录端口和方法。 | UDP/QUIC 外层传输的边权。 |
+| 浏览器 HTTP 参考 | 浏览器请求候选入口专属 HTTPS 探测端点，优先使用 Resource Timing 的 `responseStart - requestStart`，记录实际 HTTP 协议。 | 近似首段成本，显示 `Browser HTTP Latency`；不能证明代理 Listener 或 UDP 可用。 |
+| 协议可用性 | 对实际 Listener 发起最小连接和身份验证；需要业务 UDP 时增加转发检查。 | 排除端口开放但协议不工作的链路。 |
+| 本地 Mihomo 延迟 | 通过本地 API 按需执行完整线路 URL 测试。 | 单独呈现客户端体验，不当作原始 RTT。 |
+
+辅助 UDP 探测端点仅响应授权的测量任务、限制频率，响应数据不大于请求；独立探测端口的结果标记为估计，发布前检查协议真实端口。
+
+**浏览器测量流程：**节点按需启用由 Agent 提供、或现有 Web 服务反代到本机 Agent 的 HTTPS 小响应端点；端点必须落在对应候选入口，不能经 Controller 中转或 CDN 代答。使用浏览器认可且域名匹配的证书和浏览器允许访问的可配置端口；没有可用 HTTPS 端点时提示配置，不改用会被 HTTPS 页面阻止的明文 HTTP，也不关闭证书校验。测量前通过控制通道下发短期、限次数且仅能访问探测端点的任务令牌；请求采用不附带 Cookie 的简单 GET，令牌不进入日志，不把节点管理 API 或 mTLS 凭据暴露给浏览器。
+
+每个候选默认先预热一次，再串行采样 3 次，取成功样本中位数并展示有效样本数及离散程度；失败和超时单独计数，不作为 0，样本不足时标记 `Incomplete`。端点立即返回很小的节点 ID/随机数回显，不访问外部业务目标。使用随机请求标识、`cache: no-store`、响应 `Cache-Control: no-store`，拒绝重定向，避免应用 Service Worker 接管探测请求；校验节点 ID 及随机数回显。浏览器不能强制每次复用或新建连接，首次请求耗时单独记录，结合可用的 DNS、连接与 TLS 时间识别样本差异，不把冷启动和预热后数据不加区分地混用。[B18]
+
+跨域端点同时配置针对控制台来源的 CORS 和 `Timing-Allow-Origin`；CORS 成功不等于详细时序可读。字段有效时用 `responseStart - requestStart` 表示发出 HTTP 请求到首字节的参考耗时，它仍受服务端处理、连接调度和网络波动影响。详细时序不可用时，可用 `performance.now()` 包围 `fetch()` 到响应头可用的过程，另标 `HTTP Fetch Duration`，注明可能含 DNS、TCP/TLS、排队及浏览器调度；不同口径分开排序，不把权限导致的零值当成实测延迟。[B18]
+
+**测量路径：**浏览器请求遵循当前系统代理、PAC、VPN/TUN 等设置，网页不能保证强制直连或指定底层 TCP/UDP。页面记录本次测量环境及已知代理状态，路径不能确认时标记 `Path Unverified`，结果只代表当前浏览器到探测端点的路径。HTTPS 端点与真实代理端口也可能受不同网络策略影响，发布前仍要验证实际协议；不能用 HTTP 成功推断 Hysteria 2 的 UDP 可达。页面关闭或任务结束后停止请求。
+
+**本地到入口：**Agent 负责节点间测量；本地原始 TCP/UDP RTT 仍可通过按需运行的本地辅助工具获取。普通网页无法建立任意原始 TCP/UDP 连接，浏览器 HTTP 和 Mihomo URL 延迟均不等于纯 RTT。[B1][B2] 浏览器参考模式无需安装本地工具；需要标注为 `Network RTT` 的首段数据时再使用辅助工具。
+
+**缓存：**成功结果默认有效 **96 小时**，可在 `Settings` 修改。缓存键包含来源及网络环境、目标 IP/端口、TCP/UDP、测量方式；协议可用性另按协议参数版本保存。换网络、地址、端口或相关配置时使结果过期。下次需要才重测。失败结果默认保留 5 分钟，可手动立即重试。
+
+浏览器样本另记录探测 URL、端点配置版本、时序口径、HTTP 协议、样本数及浏览器测量上下文。浏览器不能可靠识别全部 VPN/代理变化，界面提供 `Network Changed` 主动使首段缓存过期；无法确认环境一致时不跨浏览器会话复用。更换节点目标 DNS 时使相关解析/出口检查结果过期，不把 HTTP 探测缓存视为代理协议检查结果。
+
+**路径推荐：**候选节点及可用连接段组成有向带权图，采用非负边权最短路求不同入口到末端的候选路径并去重，不枚举所有路径；只在本次候选图和可用样本范围内比较，不宣称全网最优。按以下模式计算：
+
+| 模式 | 首段与排序行为 | 页面说明 |
+| --- | --- | --- |
+| `Network RTT` | 首段与后续各段都有对应传输的 RTT 时相加，求估计成本最小的路径。 | 展示总估计网络 RTT，协议认证另行验证。 |
+| `Browser Estimate` | 同一轮使用相同口径的浏览器 HTTP 首段参考值，加后续各段协议对应的网络 RTT；不同协议入口可共用该节点 HTTP 参考，但不据此推断其实际传输能力。 | 显示 `Estimated Path Cost`，列出组成，注明为混合估计；不能称为纯 RTT 或 UDP RTT。 |
+| `Partial Measurements` | 浏览器端点或必要后续样本不可用时，展示可用部分并允许人工选择；仅在首段缺失时可单列节点间成本排名。 | 不生成完整路径成本，不将缺失值当 0，不把未测路径与完整样本混排为同一最优榜单。 |
+
+首段测量优先级为本地原始 RTT、浏览器 HTTP 参考、未测；同一比较集合统一模式与口径，必要时分别展示。URL 测试保留为完整线路体验的独立结果。延迟接近时优先跳数更少、部署更简单的组合。
+
+测速只用于线路创建、编辑和手动查询，不用于后台自动切换。测量结果的 96 小时有效期与 DNS TTL、fake-IP 缓存无关。
+
+**本地 API：**在客户端设备明确配对本地 Mihomo 地址及 secret，默认使用回环地址，并限制可访问的页面来源。secret 不上传 Controller。只在用户操作时查询，操作完成停止；浏览器无法访问本地 API 时仍可手动查看 Mihomo 的结果。
+
+### 2.6 规则方案、自动代理组与 DNS
+
+#### 规则方案（`Rule Profiles`）
+
+可保存多套命名方案，例如 `Default`、`Work`、`Singapore-Only`。列表显示名称、说明、更新时间和引用它的订阅，提供 `New`、`Edit`、`Duplicate`、`Delete`、`Preview`。删除被引用方案前先处理订阅引用。
+
+每套方案保存名称、有序 Mihomo 规则文本和兜底目标。管理员可以直接编写规则行或粘贴完整 `rules:`，系统提取原顺序。旁边提供线路/组清单辅助插入目标名称；首版每份配置选择一套方案，不合并不同方案。
+
+**业务规则与 DNS 策略联动：**域名规则或纯域名 `RULE-SET` 指向某个出口组时，生成器同时建立域名 → DNS 出口映射。可以复用 `Service-Google`、`Service-AI` 等 `ServiceDomainSet` 作为业务规则与 `nameserver-policy` 的共同数据来源。对于按进程、IP、端口等条件选路的规则，提示 `DNS egress cannot be inferred from this rule`，不猜测解析应该走哪个出口。共享域名及重叠集合需要提示冲突。
+
+规则在客户端决定使用哪条线路或代理组，服务器按已发布固定路径转发，到达末端后再执行该线路的可选出口策略。网站域名归属由管理员维护，系统不擅自把网站改到另一个地区。
+
+#### 自动代理组
+
+创建订阅或下载配置时可分别启用下列选项，也可同时启用：
+
+| 选项 | 自动生成内容 | 成员来源 |
+| --- | --- | --- |
+| `All Routes Group` | `All-Proxies` | 本次配置中全部有效代理条目。 |
+| `Group by Exit Node` | 默认 `Exit-HK-01`、`Exit-SG-01`；自定义策略如 `Exit-HK-01-Egress-a1b2` | 按末端节点及出口策略分别分组，包含采用相同出口配置的不同入口和中转路径。 |
+
+默认线路仍按最终出口**节点 ID**分组；启用自定义出口后，分组键为 `terminal_node_id + egress_policy_id`，同组成员必须使用该策略的相同已发布修订号。UI 在 `Group by Exit Node` 旁提示 `Separate custom egress policies`。同一节点的默认直连、网卡出口和不同代理策略不能混为一组。自动名称绑定稳定 ID，地理位置、显示名、界面语言变化都不自动修改组名；手动改名时校验引用。一个策略可按不同目标选择不同公网出口，这类组显示 `Multiple Egress Targets`，不承诺组内所有业务目标都有相同公网 IP。
+
+代理组采用 Mihomo `select`。默认成员顺序取订阅中选中的线路顺序，可设置初始成员；不添加自动测试、自动回退或负载均衡。[B10] 只包含本订阅条目，不混入其他订阅凭据。**空组禁止发布**，并在固定版本支持时设置 `empty-fallback: REJECT`，避免 `COMPATIBLE` 默认回退（见附录 C）。
+
+例如 `HK-Direct`、`JP-to-HK` 的最终出口是 `HK-01`，`SG-Direct`、`HK-to-SG` 的出口是 `SG-01`：
+
+```yaml
+proxy-groups:
+  - name: All-Proxies
+    type: select
+    proxies: [HK-Direct, JP-to-HK, SG-Direct, HK-to-SG]
+    empty-fallback: REJECT
+  - name: Exit-HK-01
+    type: select
+    proxies: [HK-Direct, JP-to-HK]
+    empty-fallback: REJECT
+  - name: Exit-SG-01
+    type: select
+    proxies: [SG-Direct, HK-to-SG]
+    empty-fallback: REJECT
+
+rules:
+  - DOMAIN-SUFFIX,google.com,Exit-HK-01
+  - DOMAIN-SUFFIX,openai.com,Exit-SG-01
+  - DOMAIN-SUFFIX,chatgpt.com,Exit-SG-01
+  - MATCH,All-Proxies
+```
+
+此示例说明分组及分流关系，不代表完整的网站域名集合；实际域名由规则方案维护。
+
+#### 生成顺序与规则检查
+
+完整配置按「客户端网络/TUN → DNS 启动与域名出口策略 → 本订阅 `proxies` → 非空 `proxy-groups` → 用户有序规则与 UDP 防护 → **唯一末尾 `MATCH`**」的顺序生成。DNS 策略和业务规则由同一方案推导。Mihomo 规则从上到下匹配。[B11]
+
+如果粘贴规则已有一个 `MATCH`，提取其目标作为方案兜底，生成时放在最后；如果有多个，则要求管理员选择。其他规则不改变顺序。检查语法、线路或组引用、空组、重名，以及 `RULE-SET` 对应定义。目标组未在本次订阅生成时显示具体规则行和缺失名称，要求补选线路或修改规则。**不在 `MATCH,All-Proxies` 后追加第二个 `MATCH,REJECT`**，因为它不会执行。
+
+首版面向网页/API 的默认规则在用户规则前插入 `NETWORK,udp,REJECT`，拒绝**应用层业务 UDP**；不会阻断 Hysteria 2 自己使用的外层 QUIC。高级方案仅在全部连接段、DNS 和代理组满足业务 UDP 要求后允许开启。不能仅依赖 `disable-udp` 作为兜底拒绝措施。
+
+修改规则方案后，客户端下次更新订阅取得新内容；不主动推送，不重新测速，不改变服务器线路。完整 YAML 包含代理、组、规则和 DNS；单独导出 proxy-provider 时仅包含代理条目。
+
+#### DNS、出口和客户端网络模式
+
+**TCP 的目标解析优先在最终出口执行。**客户端依据域名分流，把保留的目标域名通过固定服务器中转路径交给最终出口 Mihomo，再由出口解析并连接网站。中间节点 Listener 固定下一跳，不重复执行可能提前解析的目标 IP 规则。应用已经只给真实 IP 时不适用该保证。
+
+服务器的 `Target DNS` 为每实例统一配置，仅约束该实例执行的目标解析；客户端仍可通过下述 `nameserver-policy` 按域名选择 DNS 查询所走的线路。二者属于不同位置的解析行为，不能将客户端的域名分流能力理解为服务端具备按入站线路隔离的解析器。
+
+**自定义出口策略的例外：**这里的“最终出口”默认指平台末端节点。开启 2.3.1 后，域名可能由末端节点为 IP 分流而解析，也可能交给外部代理解析。客户端 DNS 经 `#Exit-*` 到达末端后，连接 DNS 上游同样受该出口策略约束；按 DNS 上游 IP 命中的出口不一定等于业务 IP 命中的出口。因此只能推导客户端所用的线路/策略，不能自动保证外部最终公网出口一致。需要一致性时，优先采用全部目标指向单一出口的策略，并分别验证业务及 DNS 路径；IP 分流策略应显示该限制，不能继续标记为已保证一致。
+
+**客户端必须执行的真实 DNS 查询需要按域名显式绑定出口。**在 Mihomo v1.19.33 的核对范围内，四种首版协议的业务 UDP 出站可能在发送前解析目标，因此生成器须根据域名规则生成 `nameserver-policy`，使 Google 等查询经 `#Exit-HK-01`，OpenAI/Claude 等查询经 `#Exit-SG-01` 访问加密 DNS 上游。单独开启 `respect-rules` 不会自动继承目标域名的业务出口。[B3]详见附录 C。
+
+**完整客户端配置默认 TUN + fake-IP。**区分业务目标解析、代理服务器域名解析（`proxy-server-nameserver`）、DNS 上游启动解析（`default-nameserver`）。启动解析不能依赖尚未建立的代理。校验 `#...` 指向的组真实存在，不混用未经声明的本地和代理 DNS 回退，不主动生成 ECS，不关闭 TLS 证书验证。
+
+**IPv6：**默认生成目标流量 IPv4 优先方案（`ipv6: false` 和 `dns.ipv6: false`），但这些字段不是系统 IPv6 防火墙；需要客户端/操作系统对可能绕过代理的 IPv6 做接管或拒绝。仅对确认客户端和出口支持的环境开放 IPv6 方案，并按平台标记 `Verified`、`Incomplete` 或 `Not Checked`。已有的 IPv6 字面量目标也需要处理。
+
+**覆盖范围：**TUN 比系统代理覆盖更多流量，但依赖各操作系统的路由及 DNS 拦截实现。仅系统代理方案标记 `Limited Coverage`。浏览器或应用自己的 DoH/DoT/DoQ、WebRTC/STUN、TUN 范围外流量可能需要客户端单独配置。不能声称生成 Mihomo YAML 就自动启用了全系统防火墙或断网保护。
+
+**禁止意外出口回退：**不生成空代理组或未经请求的 `DIRECT`、`COMPATIBLE`、动态切换节点；默认业务 UDP 用显式早期拒绝规则。DNS 和出口检查只在生成、发布或管理员手动请求时执行，不变成持续监测服务。
+
+### 2.7 订阅、身份与有效期（`Subscriptions`）
+
+**创建订阅：**填写名称、有效期、说明，勾选线路并选择一套规则方案，启用 `All Routes Group` / `Group by Exit Node`（默认两项启用），确认各组初始线路。预览组成员、规则和校验信息后生成订阅 URL 或完整 YAML。
+
+每个 **`subscription × route`** 组合生成独立配置条目和入口认证凭据，同一线路属于不同订阅时凭据也不同。条目使用稳定 `entry_id`，服务端可用 `sub_<id>_entry_<id>` 作为入站身份标识并绑定独立 UUID/密码，用于撤销及用量归属；不是建立多用户账户系统。客户端仅输出协议实际支持的认证字段，改显示名称不等于建立身份。[B4]
+
+操作包括 `Copy URL`、`Download Config`、`Preview Config`、`Change Rule Profile`、`Edit Grouping`、`Extend Expiry`、`Delete Subscription`、`Reset Token`、`Query Usage`。下载链接使用独立随机 token，不携带管理员密码。修改规则/分组不更换凭据，不改变服务器固定路径。
+
+**到期与删除：**各配置条目入口权限继承订阅有效期。到期或删除时下载链接失效，入口凭据也被撤销。Agent 在本地保存到期时间并执行，不要求控制台持续在线；进程重启先过滤过期身份。删除后释放资源引用，按 2.9 回收。
+
+新的连接必须通过有效身份认证。撤销时关闭能够准确归属该条目的现有连接；复用会话能否精确关闭依赖固定 Mihomo 版本验证。首版 Hysteria 2 的订阅入口按 `subscription × route` 分配独立 Listener/端口及认证，避免移除某个用户时重建共享入口、影响其他订阅会话。Trojan、VLESS 等只有在固定版本验证增删身份、撤销存量会话不会影响其他条目后才允许共享入口，否则同样隔离。此规则是分配前置条件，不能先共享再等到到期时发现无法独立撤销。[B19]
+
+Controller 上删除链接立即生效；入口节点暂时离线时页面显示 `Link Revoked; Node Sync Pending`，待恢复控制连接后同步撤销。已经下发的有效期仍可由节点本地执行。
+
+**SS 2022 特殊情况：**普通 Listener 为单密码。[B5] 内部转发允许共享；需要每个订阅独立到期、统计、撤销时，应拆分 Listener/密钥，或改用支持多个独立入站身份的协议。
+
+### 2.8 按需用量与运行状态
+
+订阅详情点击 `Query Usage`，Controller 才向相关入口节点获取汇总，显示逐配置条目和总体数据、统计范围、最近查询时间、指标含义。多跳流量在入口只计一次。
+
+| 可获取的数据 | 页面显示 |
+| --- | --- |
+| 可准确关联身份的累计字节数 | 累计上传、下载及总流量。 |
+| 没有可靠字节数，但有可归属的连接建立事件 | Agent 在节点本地累计代理连接次数。 |
+| 只能读取活跃连接快照 | 当前连接数及其已传输字节，不冒充历史总用量。 |
+
+连接次数指代理连接/会话，不是网站 HTTPS 请求次数。Mihomo `/connections` 提供活跃连接，`/traffic` 不能直接作为每订阅的历史账本。[B2] 优先复用内核已有计数，必要时 Agent 本地累计并少量落盘，不持续上传、也不保存逐请求浏览记录。固定版本缺乏可靠来源时显示指标不可用。
+
+CPU、内存、磁盘按需读取；网络速率通过短时间间隔的两次网卡计数估算，不宣称它就是最大带宽。可以填写服务商标称带宽，不自动执行大流量测速。页面关闭后停止本次界面触发的刷新任务。
+
+事件仅保留节点加入/移除、配置发布、到期撤销、手动检测和错误，按需查看或清理，不默认采集连续性能历史。
+
+### 2.9 Listener 共享与回收
+
+同一节点上，只有当**协议及必要参数、实际下一跳配置、业务 TCP/UDP 能力和解析行为一致**时才允许共享 Listener。下一跳不仅是目标服务器 IP，还包括目标 Listener 及出站参数。末端还需校验出口策略 ID、修订号、规则、目标参数及 DNS 行为；相同端口目标但不同认证或策略不能视为同一出口。支持多凭据的入口可共享端口，每个订阅条目仍保持自己的身份。
+
+共享还须满足 2.7 的独立撤销条件：首版 Hysteria 2 订阅入口和普通 SS 2022 独立订阅入口不共享 Listener/端口；内部转发可在前述条件一致时共享。支持多凭据并不代表配置重载不会影响其他会话。各线路仍可填写同一优先端口，但实际分配须遵守隔离及固定端口冲突规则，并在创建订阅预览中展示新增端口。
+
+Controller 数据库保存引用关系及引用数。创建线路/条目增加引用；删除或到期先撤销该身份，再移除引用。有引用时保留 Listener、端口和内部密钥；引用数归零后发布删除，并在节点确认生效后回收端口和密钥。失败时标记 `Pending Cleanup`；重试不得重复减少引用数。
+
+相同剩余路径可以复用内部资源，不因“下一台服务器相同”就合并实际不同的后续路径。修改被共享 Listener 的公共参数时先检查引用，可能影响其他线路则新建资源并只迁移本次引用。
+
+### 2.10 配置发布
+
+保存草稿 → 校验参数并生成配置 → 验证语法及依赖 → 先后续节点、再入口节点应用 → 每个节点完成运行检查后确认版本 → 对实际线路执行少量端到端验证 → 展示每台服务器实际版本。新分配资源尚未监听时，不能只靠发布前测试判定可用。Agent 保存上一可用版本，失败时回滚并报告原因。发布、撤销及资源回收使用统一的确认机制。
+
+**发布成功条件：**`PUT /configs` 返回成功只表示应用流程已执行；v1.19.33 的部分 Listener 启动错误仅记录日志，API 仍可能返回成功。[B19] Agent 必须核对期望 Listener 的实际监听地址、TCP/UDP 与端口，并通过最小协议认证/转发请求确认新资源可用；按协议要求验证 UDP，不用“端口存在”代替认证检查。撤销还须确认新连接使用旧凭据会失败及应关闭的会话已处理；资源回收确认相应监听已消失。通过后才回报 `Applied & Verified`，记录配置摘要、检查结果及时间，Controller 才推进发布版本。
+
+检查失败时停止向前推进，报告失败节点、资源及原因，并回滚受影响节点；回滚后也需运行校验，未确认成功时显示 `Rollback Pending` / `Rollback Failed`，不显示发布成功。发布、回滚、重启和控制通道重连均重新合并本机已知的到期/撤销状态，不允许恢复旧配置时重新授权已失效条目。跨节点状态逐一确认，离线节点不能被标为已经回滚或撤销。
+
+配置状态和最近测速结果分开呈现。单次检测失败不会触发自动发布或修改已下发订阅；Controller 失联时，节点继续使用固定线路和仍有效的授权。
+
+### 2.11 按需出口检查（`Check Egress`）
+
+线路或订阅预览提供 `Check Egress`，指定要检查的入口/代理组（例如 `Exit-SG-01`），按需执行以下独立检查。结果标记 `Observed`、`Failed`、`Not Supported` 或 `Not Checked`，附线路、协议、测试地址及时间。**单看 IP 或解析器的地理标签不能判定泄漏。**
+
+| 操作 | 实际能够确认的内容 |
+| --- | --- |
+| `Test Destination` | 向指定业务目标发起少量请求，展示连通性、规则解析 IP、命中规则及选中出口；在可观测范围内附实际连接信息。目标未回显访问者 IP 时，公网出口一栏显示 `Not Checked`。 |
+| `Check Egress IP` | 经指定线路/组访问支持返回访问者地址的 HTTPS 服务，显示该回显地址实际看到的公网 IP、命中规则及出口；不把它自动归为其他业务目标的公网 IP。 |
+| `Check DNS Path` | 查询可观测的解析器连接路径及少量测试结果，并标明覆盖范围；浏览器和应用内部自解析能力单独标记。 |
+| 客户端覆盖检查 | 在已配对本地集成或浏览器可检测的范围内检查 IPv6/UDP/WebRTC；不支持则显示 `Not Supported` 或 `Not Checked`。 |
+
+存在自定义出口时，额外显示末端节点、出口策略修订号、测试目标及其命中规则/出口。回显服务本身也要经过策略匹配，可能与业务目标走不同出口；若直接绑定某个出口目标测试回显，标为 `Target-only Check`，说明绕过了业务规则选择，只验证该目标可用性。逐出口验证，不以一次公网 IP 查询代表整张 IP 分流表。网卡或代理服务的已知变更使相关检查结果过期，下次请求时重测。
+
+已配对本地 Mihomo 时，`Apply to New Connections` 只影响后续连接；`Reconnect Now` 为独立操作，在支持的范围内关闭对应连接并刷新相关 DNS 状态。不默认清空整个 fake-IP 映射，不改变服务器侧保存的路径，也不宣称可以远程清理全部浏览器连接池。本地 API 不可访问时显示简短的人工检查指引。
+
+### 2.12 日志与小磁盘节点
+
+系统设置中可以调整日志级别、单文件大小、保留文件数、保留时间和总占用上限；大小或时间任一条件达到即轮转，总量超限优先删除最旧文件。
+
+**默认值：**运行日志 warning/error；单文件 5 MiB，最多 4 份（含当前），总量不超过 20 MiB，最长保留 7 天，均可修改。短时 debug 需要设置持续时间，到时恢复原级别。
+
+Agent、Mihomo 的 stdout/文件日志以及 journald/容器日志均设置相应限额，避免另一份日志无限增长。按需只拉取指定尾部或字节范围，不自动上传全文。用量累计仅保存少量独立检查点，不依赖完整日志；查询时标明统计覆盖期和重置情况。
+
+## 3. 系统设计
+
+### 3.1 组件与数据模型
+
+| 组件 | 职责 |
+| --- | --- |
+| Controller | Web、单管理员登录、位置 API、线路推荐、配置和引用关系、订阅、发布任务及按需汇总。 |
+| Agent | 节点身份、本机 Mihomo 生命周期、按需探测及浏览器 HTTPS 探测响应、发布后运行校验、到期执行、轻量本地计数及日志管理。 |
+| Mihomo | Listener、Proxy、固定转发规则及本机管理 API。 |
+| 本地集成 | 按需配对本地 Mihomo，以及用于首段原始 RTT 的可选轻量探测。 |
+
+核心对象：`Server`、`Listener`、`Link`、`Route`、`EgressTarget`、`EgressPolicy`、`RuleProfile`、`ServiceDomainSet`、`Subscription`、`SubscriptionEntry`、`Credential`、`MeasurementCache`、`ConfigRelease`。
+
+Server 保存本节点逐协议默认端口、端口池、实例统一的 `target_dns` 参数与修订号，以及可选 HTTPS 探测端点配置；Listener 保存实际监听地址、端口、底层传输和协议参数。RuleProfile 保存有序规则、兜底目标、修订号及 ServiceDomainSet 引用；ServiceDomainSet 保存稳定英文标识、纯域名成员集合和指定出口组，业务规则与 DNS 策略复用该关系。Subscription 关联一套规则方案、分组方式及初始选择；SubscriptionEntry 关联订阅、线路、身份、有效期和状态。Listener 引用由数据库维护。MeasurementCache 保存测量起止、方法、传输/HTTP 协议、数值、样本统计、环境上下文、端点配置版本、时间与过期时间，明确区分网络 RTT 与 HTTP 耗时。
+
+EgressTarget 保存 `node_id`、`type`（`node_default` / `interface` / `http` / `socks5`）、网卡或端点参数、认证引用及已验证能力。EgressPolicy 保存稳定 ID、`terminal_node_id`、有序目标 IP 规则、兜底目标及修订号，不保存独立目标解析 DNS；Route 引用策略 ID 和已发布修订号，未启用时使用节点默认出口。首版在各线路侧栏编辑自身策略；如复用已有策略，须显式选择并展示关联线路，修改共享策略需要统一验证发布或另存为新策略，避免同组混用修订。出口目标和策略纳入引用计数及删除依赖检查；回收平台配置不会删除管理员维护的网卡或代理进程。ConfigRelease 按节点记录期望配置摘要、已应用/已验证状态和运行检查结果，API 成功与运行确认分开。
+
+代理组成员由本次订阅条目、末端节点 ID 及出口策略 ID 推导，并校验发布修订一致；对外生成的组名在不同界面语言之间保持稳定。业务数据不直接以 YAML 为唯一模型。
+
+Agent 主动连接 Controller，空闲时仅保留必要心跳和重连，不持续上传资源或全量状态。到期、证书更新与日志清理由本机执行。
+
+### 3.2 首次加入与 mTLS
+
+**Agent 与 Controller 使用双向 TLS（mTLS）。**Agent 验证 Controller，Controller 验证各 Agent 的独立证书，控制通道全程加密。[B6] 浏览器后台和订阅下载使用普通 HTTPS 与各自登录/token；Mihomo 代理客户端不需要管理证书。
+
+1. Controller 初始化生成管理 CA；管理员通过可信页面获取 CA 证书/指纹、Controller 地址和短期一次性入网 token。
+2. 安装器先验证软件来源。Agent 在发送 token 前，依据预置信任信息校验 Controller 证书和域名/IP，避免首次连接被伪造。[B7]
+3. Agent 本地生成私钥并提交签证请求。首次入网仅在已认证的服务端 TLS 上使用一次性 token 换取节点身份；其他管理操作必须通过 mTLS。
+4. Controller 消耗 token，签发绑定节点 ID 的证书。私钥保留节点本地，后续连接同时校验证书和节点启用状态。
+5. 临近到期自动续期。移除节点后拒绝新连接并断开旧控制会话；管理证书到期不会自动清除代理线路，长期离线无法续期则需重新入网。
+
+预置信任信息由可信后台页面或管理员手工提供；CA 私钥及必要备份加密保存。Agent 主动连接，无须为每个代理节点开放公网管理端口。
+
+Tailscale 可以作为已有部署的可选私有网络，不是依赖项，也不替代 mTLS 的节点身份；管理和代理数据面独立。
+
+### 3.3 密钥、证书与代理凭据
+
+采用**系统自动生成、自动续证、显式轮换**策略。
+
+| 对象 | 管理方式 |
+| --- | --- |
+| 后台/订阅、Trojan/Hysteria 2、可选 HTTPS 探测端点 TLS 证书 | 使用成熟 ACME 实现，默认 DNS-01 申请与续期；也可导入证书，不改变线路名和代理密码。浏览器探测证书须被浏览器信任。[B9][B12] |
+| REALITY 密钥 | 节点本地生成并保存私钥；Controller 保存公钥和引用。需要时手动触发轮换并更新客户端配置。 |
+| UUID、代理密码、SS 密钥 | 随机生成；客户端每订阅条目独立，内部转发按共享资源分配；到期撤销或按需轮换，不因下载订阅自动重置。 |
+| mTLS 管理证书 | 每个 Agent 独立，由内部 CA 签发并自动续期；不依赖公网 80/443。 |
+| 订阅 token | 独立随机值，支持有效期、重置、删除，不能当作代理密码。 |
+
+**DNS-01 接入：**在 `Settings` 选择域名、DNS 服务商和权限受限的 API 凭据。Controller 调度 ACME 操作，节点为本地私钥生成请求、接收证书；DNS API 凭据不下发普通节点。未接入 DNS API 时允许导入证书或由管理员显式选其他验证方式。[B12]
+
+Controller 必须存储的代理凭据和 DNS API token 加密保存，节点文件限制权限，不在日志写入私钥、密码及 token。到期和续期不依赖控制台是否打开；认证参数变更后由客户端更新订阅取得。
+
+### 3.4 部署和端口
+
+**默认不占用公网 80/443。**安装时展示端口计划并检查已有服务，管理和代理端口都可配置，不自动停止或覆盖其他程序。
+
+| 服务 | 默认分配 | 位置与用途 |
+| --- | --- | --- |
+| Web 后台及订阅 | TCP `8443`，可修改 | Controller；普通 HTTPS。 |
+| 入网及管理控制 | TCP `9443`，可修改 | Controller；首次换证，后续 mTLS；Agent 主动连接。 |
+| Mihomo 管理 API | `127.0.0.1:9090`，可修改 | 各节点本机，仅 Agent 访问。 |
+| 代理 Listener | 逐节点、逐协议配置；初始自动端口池 `20000–29999` | 代理节点，根据协议使用 TCP、UDP 或二者；可手动选 443。 |
+| 辅助 RTT 端点 | 仅实际需要时分配 | 授权探测，不占用默认 80/443。 |
+| 浏览器 HTTPS 探测端点 | 按需启用并分配浏览器允许的端口，可复用已有 HTTPS 服务转发 | 各候选入口节点；短期任务、小响应、CORS 与 Timing-Allow-Origin，不开放管理功能。 |
+
+`Nodes → <node> → Protocols & Ports` 负责协议默认端口和实际 Listener 端口；端口池只在无法复用时辅助分配，不能取代手动设置。不同服务器可独立选择端口，生成配置及订阅引用真实端口。[B13][B15]
+
+**证书验证：**DNS-01 通过 TXT 记录完成，不需要服务器开放 80/443；HTTP-01 需要公网 TCP 80，TLS-ALPN-01 使用 TCP 443。证书申请过程中向外发送 HTTPS 请求不等于监听本机 443。[B12]
+
+**与现有网站共存：**后台可以继续使用 8443，也可以置于现有 HTTPS 反向代理后，本机回环连接后端。独立网站服务与 Trojan/VLESS Listener 不能同时绑定同一 IP 的 TCP 443；需换端口/IP 或单独配置复用器。首版不自动设计端口复用。
+
+TCP 443 和 UDP 443 分别检查。Hysteria 2 可与仅占用 TCP 443 的网站共存；如果网站已启用 HTTP/3，UDP 443 可能已被占用。[B13][B14] 冲突检查覆盖地址、协议、端口及 IPv4/IPv6 通配监听。发布前显示防火墙和云安全组需要开放的端口，检测失败明确提示；不能认为配置端口即自动开放外部防火墙。
+
+## 4. 首版验收标准
+
+- [ ] 文档中文；代码、API、错误码、默认 UI、自动命名及 YAML 示例英文。切换 UI 语言不会改变代理组或规则引用。
+- [ ] 前端字符串通过 i18n 资源键管理；首发英文语言包，无须重写组件即可增加其他语言。
+- [ ] 每台节点可独立设置每种协议的默认端口和额外端口池；支持多个 Listener、共享检查、端口冲突和显式端口变更。
+- [ ] 首次加入时拒绝伪造的 Controller 身份；位置 API 查询和手工覆盖正常工作。
+- [ ] 先选出口再推荐若干协议/RTT 候选；可保存命名的固定多跳路径。
+- [ ] 路径编辑区通过次要 `Egress Routing` 按钮打开侧栏；默认不配置时保留节点原有出口。
+- [ ] 可按目标 IP/CIDR 分流到已有网卡或明确协议的 HTTP/SOCKS5 端点；可用单条末尾 `MATCH` 将全部目标交给一个出口。
+- [ ] 自定义策略未匹配默认拒绝；已匹配出口失败不改走默认直连，UDP 不支持时明确拒绝，检查网卡及代理回环。
+- [ ] 末端按线路隔离规则；Listener 共享、出口分组、DNS、引用回收及发布回滚均纳入出口策略身份与修订检查。
+- [ ] 分别保存 TCP/UDP RTT，成功缓存默认 96 小时；控制台空闲不重测，不把缺失样本当 0。
+- [ ] 无本地工具时可通过候选入口的 HTTPS 探测端点测浏览器 HTTP 参考值；验证证书、CORS、Timing-Allow-Origin、禁用缓存、回显身份及样本口径，不能把时序不可读的零值当 RTT。
+- [ ] 区分纯网络 RTT、浏览器混合估计与样本缺失三种推荐模式；HTTP 失败不直接判代理协议失败，HTTP 成功不推断 UDP 可用，当前代理/VPN 路径不明时标注。
+- [ ] 创建和检测时显示故障节点及协议；后续失败不自动修改线路或订阅。
+- [ ] 订阅条目独立身份和有效期，Agent 本地执行到期；删除链接并同步撤销入口授权。
+- [ ] 首版 Hysteria 2 订阅入口按条目隔离 Listener/端口；其他协议的共享必须先验证独立撤销及对其他条目会话的影响。
+- [ ] 用量按需查询，区分累计、当前或不可用；多跳不重复计数。
+- [ ] 删除一个订阅不影响仍被其他条目引用的共享 Listener；引用归零后须经节点确认才回收端口和密钥。
+- [ ] 默认出口下，保留域名的 TCP 目标在最终出口解析；客户端必要真实 DNS 查询按生成策略使用同一出口组。自定义出口按 2.3.1 明确解析位置，不把 IP 分流标记为已保证 DNS 与业务公网出口一致。
+- [ ] 分开处理目标、节点域名、DNS 启动解析；拒绝失效的 `#...` 组引用和解析循环。
+- [ ] 服务端目标解析 DNS 在节点实例级统一管理，不承诺按线路隔离；域名按末端解析结果选出口，不将规则解析 IP 冒充外部代理最终连接 IP。
+- [ ] 默认完整配置包含 TUN、fake-IP、IPv4 目标策略；IPv6、应用自解析和 WebRTC 的覆盖情况按客户端平台展示。
+- [ ] 默认拒绝应用 UDP，但不阻断 Hysteria 2 外层 QUIC；开启业务 UDP 必须验证逐跳能力及 DNS 路径。
+- [ ] 禁止发布空组；生成 `select` 组使用明确的空组拒绝，最终只生成一条 `MATCH`。
+- [ ] `Check Egress` 按需验证指定线路/组的 IP 和 DNS 路径，手动重连不修改服务器侧固定路径。
+- [ ] 目标连通性与出口 IP 回显分开检测，附实际测试地址与命中出口；回显结果不套用到其他 IP 分流目标，不可观测时显示 `Not Checked`。
+- [ ] 日志受大小、时间和总量限制；资源、网速按需读取。
+- [ ] 本地 Mihomo API 需要显式配对；配置发布失败可回滚。
+- [ ] 发布版本在应用后核对实际监听及协议认证才确认；配置 API 成功但监听失败不能发布成功，回滚也须验证且不能恢复已知过期/撤销身份。
+- [ ] 可以保存多套 Rule Profile，并在导出或订阅创建时选择；更新在下次订阅刷新时生效。
+- [ ] `All-Proxies` 和 `Exit-*` 成员只来自本配置，使用手动 `select`，不自动切换。
+- [ ] Google 与 OpenAI 可分别选择 `Exit-HK-01`、`Exit-SG-01`；最终仅有一组 `rules` 和末尾兜底 `MATCH`。
+- [ ] 默认部署不监听公网 80/443；DNS-01 不要求节点开放这两个端口。
+
+## 5. 剩余 TODO
+
+| 项目 | 需要落实的内容 |
+| --- | --- |
+| Mihomo 版本与接口 | 固定客户端/服务端版本、Linux 架构，核对协议、UDP 中继、身份字段、独立撤销和重载。 |
+| 浏览器首段 HTTP 测量 | 实现入口 HTTPS 小响应端点、任务令牌、CORS/Timing-Allow-Origin、缓存排除及三次采样；验证支持浏览器的时序精度、当前代理路径和回退口径。 |
+| 本地首段原始 RTT | 作为可选增强选择按需运行的轻量探测方式，区分浏览器 HTTP、URL 测试与真正 TCP/UDP RTT。 |
+| 订阅历史用量 | 确认是否有可归属的累计字节数或连接事件，据此提供历史流量、连接次数或仅当前快照。 |
+| 位置 API 与 ACME | 选一个地理位置服务和成熟 DNS-01 组件，先集成一个 DNS 服务商，保留手工位置及证书导入。 |
+| 客户端系统覆盖 | 针对实际支持的 OS 核对 TUN、DNS 接管、IPv6、应用 DoH、WebRTC 和核心退出后网络保护。 |
+| 服务域名集合 | 维护 Google、OpenAI、Claude 的实际域名和重叠认证/CDN 域名；只有域名类规则可以可靠推导 DNS 出口。 |
+| 业务 UDP 开放 | 对允许的协议组合检查少量 UDP 转发及提前解析路径；升级 Mihomo 后重新核对相关行为。 |
+| 本地重连能力 | 明确本地 API 可关闭哪些连接、如何重建 DNS 上游连接而不破坏仍被使用的 fake-IP 映射。 |
+| 自定义出口 | 在固定 Mihomo/Linux 版本验证 Listener 子规则、网卡绑定及路由/权限要求、HTTP CONNECT、SOCKS5 认证/UDP、不支持 UDP 时的拒绝和失败不回退；验证节点统一目标 DNS、域名二次解析语义、容器网络可见性及透明代理防回环。 |
+| 入口隔离与发布确认 | 验证 Hysteria 2 按条目隔离后的资源占用、其余协议的身份变更影响，以及端口启动失败、撤销和回滚的运行确认流程。 |
+
+mTLS、密钥生命周期、开发英文命名、逐节点逐协议端口均是确定需求。协议调研与场景排名在附录 A，技术资料在附录 B，DNS 与出口一致性研究在附录 C。
+
+## 6. 版本记录
+
+| 版本 | 日期 | 变更 |
+| --- | --- | --- |
+| v0.1 | 2026-11-05 | 建立节点、线路、订阅与安全初稿。 |
+| v0.2 | 2026-11-05 | 明确单管理员与逐段协议。 |
+| v0.3 | 2026-11-06 | 统一 Mihomo、首版四种协议与 Listener → Proxy。 |
+| v0.4 | 2026-11-06 | 细化页面、操作和验收，加入协议附录。 |
+| v0.5 | 2026-11-06 | 出口优先推荐、RTT 缓存 96 小时、按需操作、位置 API、入网安全、订阅有效期、资源共享与滚动日志。 |
+| v0.6 | 2026-11-06 | 确定 mTLS 与密钥管理，增加多套规则、自动代理组、端口配置及 DNS-01。 |
+| v0.7 | 2026-11-06 | 规定英文开发命名、默认英文 UI 和 i18n，逐节点逐协议端口页面。 |
+| v0.8 | 2026-11-06 | 纳入 DNS/出口一致性调研，补充 UDP、IPv6、按需检查与显式拒绝行为。 |
+| v0.9 | 2026-11-06 | 将文档正文和附录统一改为中文；保留英文开发约定、字段、界面命名和配置示例。 |
+| v0.10 | 2026-11-08 | 增加路径编辑区的可选出口路由，支持按目标 IP/CIDR 或全部目标使用已有网卡及 HTTP/SOCKS5 代理；同步出口分组、DNS 边界、Listener 隔离、数据模型及验收要求。 |
+| v0.11 | 2026-11-08 | 按可实现性审查改为节点实例统一目标 DNS、隔离 Hysteria 2 订阅入口、发布后运行校验；加入浏览器 HTTPS 首段估计与推荐降级模式，明确域名按解析结果选出口，并分开目标连通性与公网 IP 回显检测。 |
+
+---
+
+# 附录 A｜代理协议调研与选型
+
+**调研日期：2026-11-06。** 下述场景排序是对本平台连通性、部署成本、安全模型、性能潜力与维护复杂度的综合推荐，**不是未经测试的吞吐量排行榜**。
+
+## A.1 协议优先级
+
+| 协议 | 优先级 | 用途 |
+| --- | --- | --- |
+| Shadowsocks 2022 | P0 | 境外节点间默认轻量加密代理。 |
+| VLESS + REALITY + Vision | P0 | 复杂网络环境下的 TCP 入口。 |
+| Trojan + TLS | P0 | 通用 TLS/TCP 入口，兼容性备用。 |
+| Hysteria 2 | P0 | UDP 可用时的入口、高 RTT 链路。 |
+| TUIC v5 | P1 | 备选 QUIC 方案。 |
+| AnyTLS | P2 | 后续简洁 TLS 入口。 |
+| WireGuard | P2 | IP 层组网和隧道，不是普通代理 Listener 的等价替代。 |
+| VMess | 兼容项 | 兼容已有配置，不建议作为新建默认协议。 |
+
+## A.2 特性与通信效率
+
+| 协议 | 传输与效率特点 | 网络与流量特征 | 安全和运维成本 |
+| --- | --- | --- | --- |
+| **SS 2022** | TCP/UDP；代理封装较轻，无 TLS 握手。 | 不具备标准 TLS 外观；性能取决于 TCP/UDP 实际路径。 | AEAD + 预共享密钥；简单，但无前向保密，必须管理密钥。 |
+| **Trojan + TLS** | 通常 TCP+TLS；建连有 TLS 握手，持续传输成熟。 | 标准 TLS 类通信；TCP 丢包会引发重传延迟。 | TLS 证书和密码；运维复杂度中等。 |
+| **VLESS + REALITY/Vision** | 通常 TCP；Vision 可优化部分封装处理。 | TLS 类握手，不依赖 UDP。 | UUID、REALITY 公私钥、short ID、flow；版本兼容需核对。 |
+| **Hysteria 2** | UDP+QUIC，多路复用，支持不同拥塞控制。 | UDP 可用且高 RTT 时有潜力；UDP 受限时不可用。 | TLS 1.3、密码、证书；带宽与拥塞参数需合理配置。 |
+| **TUIC v5** | UDP+QUIC，支持多路流和 UDP 中继。 | 与 Hy2 场景重叠。 | QUIC/TLS、UUID/密码，额外维护成本。 |
+| **VMess** | TCP 等多种传输，内部有加密和认证处理。 | 依赖传输封装。 | 配置选项较多，与 VLESS 部分能力重合。 |
+| **WireGuard** | UDP IP 层隧道；Linux 内核实现可有较低系统开销。 | 不提供 TLS 外观，依赖 UDP 可达。 | Noise 密钥交换；需要管理虚拟 IP、Peer 和路由。 |
+
+**效率结论：**QUIC 并不必然比 TCP 快。高 RTT/丢包/多连接场景可以优先考虑 Hysteria 2，但在低丢包的优质链路上 Linux TCP 可能同样高效。SS 2022 省去 TLS 握手和证书维护，但其预共享密钥不提供前向保密。加密实现、连接复用、封装层数、CPU 和网络路径都会影响真实表现。Hysteria 2 的 Brutal 模式若错误配置带宽，可能加剧丢包。业务 UDP 能否跨 TCP 或 QUIC 代理链路传输，取决于各实现的中继方式，而非仅看底层是否使用 UDP。
+
+## A.3 五种场景的协议排序
+
+### 场景 A：大陆客户端 → 境外入口，普通复杂网络环境
+
+| 排名 | 协议 | 原因 |
+| --- | --- | --- |
+| 1 | **VLESS + REALITY + Vision** | TCP 入口，适合优先关注连通性与握手特征。 |
+| 2 | **Trojan + TLS** | 通用 TLS 方案，适合备用 TCP 入口。 |
+| 3 | **Hysteria 2** | UDP 可用时值得尝试。 |
+| 4 | TUIC v5 | QUIC 替代方案。 |
+| 5 | Shadowsocks 2022 | 轻量，但无标准 TLS 外观。 |
+
+**配置倾向：**VLESS/REALITY/Vision 作为主要 TCP 入口，Trojan/TLS 备用，Hysteria 2 作为 UDP 入口选项。
+
+### 场景 B：大陆客户端 → 境外入口，UDP 可用且 RTT 较高
+
+| 排名 | 协议 | 原因 |
+| --- | --- | --- |
+| 1 | **Hysteria 2** | QUIC 多路复用、拥塞控制值得先考虑。 |
+| 2 | TUIC v5 | 另一种 QUIC 候选。 |
+| 3 | VLESS + REALITY + Vision | 保留 TCP 路径。 |
+| 4 | Trojan + TLS | 稳定的 TCP 备用方案。 |
+| 5 | Shadowsocks 2022 | 低封装开销，但高 RTT 体验仍依赖实际链路。 |
+
+**配置倾向：**优先 Hysteria 2，同时保留 TCP 入口。
+
+### 场景 C：境外节点间，低 RTT、低丢包
+
+| 排名 | 协议 | 原因 |
+| --- | --- | --- |
+| 1 | **Shadowsocks 2022** | 配置简单、轻量、无需 TLS 证书。 |
+| 2 | Trojan + TLS | TLS 安全模型成熟，有额外证书和握手成本。 |
+| 3 | Hysteria 2 | 可用，但不一定改善性能。 |
+| 4 | TUIC v5 | 与 Hy2 功能重合。 |
+| 5 | VLESS + REALITY/Vision | 复杂握手外观不是此场景核心价值。 |
+
+**配置倾向：**SS 2022 默认；对前向保密有明确要求时选 TLS/QUIC 类方案。
+
+### 场景 D：境外节点间，高 RTT、较高丢包
+
+| 排名 | 协议 | 原因 |
+| --- | --- | --- |
+| 1 | **Hysteria 2** | 多连接和高 RTT 链路值得优先比较。 |
+| 2 | TUIC v5 | QUIC 备用。 |
+| 3 | **Shadowsocks 2022** | 简单可靠的性能基线。 |
+| 4 | Trojan + TLS | TCP/TLS 备用。 |
+| 5 | VLESS + REALITY/Vision | 特殊握手的主要价值不在于效率。 |
+
+**配置倾向：**SS 2022 和 Hysteria 2 二选一；默认 SS 2022，确认改善再改用 Hy2。
+
+### 场景 E：UDP 传输受限
+
+| 排名 | 协议 | 原因 |
+| --- | --- | --- |
+| 1 | **VLESS + REALITY + Vision** | TCP 方案。 |
+| 2 | **Trojan + TLS** | TCP/TLS 方案。 |
+| 3 | **Shadowsocks 2022 / TCP** | TCP 加密代理。 |
+| 不适用 | Hysteria 2、TUIC、原生 WireGuard | 直接依赖 UDP 传输。 |
+
+**配置倾向：**提供 TCP 线路，并单独检查代理协议如何承载应用 UDP。
+
+## A.4 Mihomo 能力和多跳
+
+| 能力 | Mihomo 机制 |
+| --- | --- |
+| 服务端入站 | `listeners`：SS 2022、Trojan、VLESS/REALITY、Hysteria 2。 |
+| 连接下一跳 | `proxies`：从上一段 Listener 交给下一段出站。 |
+| 固定转发 | Listener 的 `proxy` 设置。 |
+| 按身份或监听器路由 | `IN-USER`、`IN-NAME` 规则。 |
+| 应用配置 | Mihomo API `PUT /configs`，由本机 Agent 管理。 |
+| 监测 | `/connections`、`/traffic` 等接口；入口一次计数。 |
+
+跨协议示例：
+
+```text
+客户端 --Trojan--> 香港 Mihomo
+                   Listener → SS 2022 Proxy
+                                     ↓
+                             日本 Mihomo
+                             SS 2022 Listener → Hysteria 2 Proxy
+                                                       ↓
+                                               美国 Mihomo
+                                               Hy2 Listener → 出口
+```
+
+各节点终止上一段代理连接并新建下一段的代理传输，协议无需相同。**Shadowsocks 2022 普通 Listener 为单密码方案**，有不同下一跳或隔离需求时优先拆分 Listener/端口与密钥。Trojan、VLESS、Hysteria 2 可按各自 Listener 用户字段区分入站身份。Mihomo 的配置重载不保证所有存量连接完全无影响。REALITY/Vision 的扩展互通应以锁定版本的具体配置为准。
+
+## A.5 选型总结
+
+首版采用**统一 Mihomo + 四种协议 + 逐段 Listener/Proxy 配置**，避免增加第二套服务端代理进程。默认境外节点间使用 SS 2022；入口根据网络条件使用 VLESS/REALITY/Vision、Trojan/TLS 或 Hysteria 2；WireGuard、Tailscale、TUIC、AnyTLS 在明确需要时再引入。
+
+### 官方资料
+
+- [Mihomo Listener 文档](https://wiki.metacubex.one/config/inbound/)
+- [Mihomo 代理配置](https://wiki.metacubex.one/config/proxies/)
+- [Mihomo 路由规则](https://wiki.metacubex.one/config/rules/)
+- [Mihomo API](https://wiki.metacubex.one/api/)
+- [Shadowsocks 2022 规范](https://shadowsocks.org/doc/sip022.html)
+- [Hysteria 2 官方文档](https://v2.hysteria.network/zh/)
+- [TUIC 协议规范](https://github.com/tuic-protocol/tuic)
+- [WireGuard](https://www.wireguard.com/)
+- [Tailscale](https://tailscale.com/docs/)
+
+---
+
+# 附录 B｜实现依据
+
+以下资料用于正文中的接口能力与通信安全说明；正文里的默认值和操作流程是本产品的设计取值。
+
+- **[B1]** [Chrome Direct Sockets](https://developer.chrome.com/docs/iwa/direct-sockets)：普通网页的原始 TCP/UDP 访问限制。
+- **[B2]** [Mihomo API](https://wiki.metacubex.one/api/)：代理 URL 延迟测试、活跃连接与节点流量、连接关闭接口。累计订阅指标需另有可归属的数据来源。
+- **[B3]** [Mihomo DNS](https://wiki.metacubex.one/config/dns/)及[路由规则](https://wiki.metacubex.one/config/rules/)：节点域名解析、出口解析和 no-resolve 行为。
+- **[B4]** [Trojan Listener](https://wiki.metacubex.one/config/inbound/listeners/trojan/)、[VLESS Listener](https://wiki.metacubex.one/config/inbound/listeners/vless/)、[Hysteria 2 Listener](https://wiki.metacubex.one/config/inbound/listeners/hysteria2/)：协议身份字段及映射方式；Hysteria 2 的名称用于路由标识，密码参与认证。
+- **[B5]** [Shadowsocks Listener](https://wiki.metacubex.one/config/inbound/listeners/ss/)：普通 Listener 的 password 配置。
+- **[B6]** [RFC 8446](https://www.rfc-editor.org/rfc/rfc8446.html)与[RFC 9440](https://www.rfc-editor.org/rfc/rfc9440.html)：TLS 及基于证书的双向身份认证。
+- **[B7]** [RFC 9525](https://www.rfc-editor.org/rfc/rfc9525.html)：TLS 服务身份与域名/IP 校验。
+- **[B8]** [Tailscale 连接方式](https://tailscale.com/docs/reference/connection-types)：主机私网、直连与中继。
+- **[B9]** [Let’s Encrypt 集成指南](https://letsencrypt.org/docs/integration-guide/)：ACME 接入及证书续期维护。
+
+- **[B10]** [Mihomo select 代理组](https://wiki.metacubex.one/config/proxy-groups/select/)：手动选择成员；全部线路组和出口节点组由本系统根据订阅内容生成。
+- **[B11]** [Mihomo 路由规则](https://wiki.metacubex.one/config/rules/)：有序规则、DOMAIN-SUFFIX、MATCH 兜底及 no-resolve 行为。
+- **[B12]** [Let’s Encrypt 验证方式](https://letsencrypt.org/docs/challenge-types/)：DNS-01、HTTP-01、TLS-ALPN-01 的验证条件与 DNS API 权限管理。
+- **[B13]** [VLESS Listener](https://wiki.metacubex.one/config/inbound/listeners/vless/)、[Trojan Listener](https://wiki.metacubex.one/config/inbound/listeners/trojan/)、[Hysteria 2 Listener](https://wiki.metacubex.one/config/inbound/listeners/hysteria2/)：可配置监听地址、端口及协议参数。
+- **[B14]** [NGINX HTTP/3 模块](https://nginx.org/en/docs/http/ngx_http_v3_module.html)：同一端口号分别监听 QUIC 与 TCP/TLS；HTTP/3 使用的 UDP 监听需计入冲突检查。
+
+- **[B15]** [Mihomo Listener 通用字段](https://wiki.metacubex.one/config/inbound/listeners/)：各服务器的 Listener 可独立配置监听地址、端口及协议参数。
+
+- **[B16]** [Mihomo DIRECT 出站](https://wiki.metacubex.one/config/proxies/direct/)、[出站通用字段](https://wiki.metacubex.one/config/proxies/)、[HTTP](https://wiki.metacubex.one/config/proxies/http/)及[SOCKS](https://wiki.metacubex.one/config/proxies/socks/)：命名出站、网卡绑定与代理端点参数；绑定网卡仍依赖已有系统网络配置。
+- **[B17]** [Mihomo Listener 通用字段](https://wiki.metacubex.one/config/inbound/listeners/)、[子规则](https://wiki.metacubex.one/config/sub-rule/)及[路由规则](https://wiki.metacubex.one/config/rules/)：按 Listener 使用独立规则表、目标 IP 匹配及末尾兜底。B16/B17 于 2026-11-08 核对官方文档，固定发布版本仍需完成新增场景验证。
+- **[B18]** [W3C Resource Timing](https://www.w3.org/TR/resource-timing/)、[WHATWG Fetch](https://fetch.spec.whatwg.org/)：HTTP 请求/响应时序、跨域时序授权、CORS 及请求缓存控制；三次采样、预热及混合估计属于本产品设计，不是浏览器对纯 RTT 的保证。
+- **[B19]** Mihomo v1.19.33 [规则解析流程](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/tunnel/tunnel.go)、[Listener 更新](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/listener/listener.go)、[Hysteria 2 服务关闭](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/listener/sing_hysteria2/server.go)及[配置 API](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/hub/route/configs.go)：全局目标解析、配置变化重建监听器及 API 成功不等于全部监听成功的依据；于 2026-11-08 核对。
+- **[B20]** Mihomo v1.19.33 [HTTP 出站](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/adapter/outbound/http.go)及[目标元数据](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/constant/metadata.go)：保留域名的目标地址可继续传给外部代理，不能将本地规则解析 IP 视为外部代理最终连接 IP。
+
+---
+
+# 附录 C｜DNS、出口一致性与网站可观察信号
+
+**调研范围：Mihomo v1.19.33（2026-11-06 核对）；用于配置生成的技术依据。**这里的目标是按指定出口正确转发流量，而不是承诺网站无法识别 VPS 或代理。
+
+**v0.10 补充边界：**本附录原有示例采用节点默认出口。接入网卡或外部代理后的解析位置、按 IP 分流及多公网出口情形以 2.3.1 和 2.6 的约束为准，不能直接套用默认出口的一致性结论。
+
+**v0.11 补充边界：**服务端同一实例的目标解析 DNS 统一配置，首版不按线路隔离；域名 IP 规则使用的解析结果与外部代理再次解析后的连接 IP 可能不同。目标连通性和公网 IP 回显分别检测，结果只覆盖各自测试地址。
+
+## C.1 观察者与问题边界
+
+| 观察者 | 主要可见信息 | 注意事项 |
+| --- | --- | --- |
+| 目标网站/CDN/WAF | 业务连接源 IP、HTTPS 终止后的 TLS/HTTP 行为、账号与会话。 | 正常请求不会直接暴露系统 DNS 设置；网站可借随机测试域名与权威 DNS 日志关联部分查询。 |
+| 第三方脚本与服务 | 发往其自身的请求源 IP，以及浏览器允许收集的信息。 | 可能部署 WebRTC/STUN 或 DNS 测试。 |
+| DNS 递归解析器 | 域名、查询类型、时间及向它发起查询的网络来源。 | DoH 加密的是传输，不向解析器隐藏域名。 |
+| 权威 DNS | 递归解析器或转发链最终来源及可能的 ECS 信息。 | 缓存、Anycast 影响可见位置；通常不是终端原始 IP。 |
+| 本地接入网络 | 代理外层连接的目的地址、端口、时间、流量规模。 | 直接明文 DNS 还会暴露查询内容。 |
+
+**判断泄漏应看流量是否走了指定路径，而不只看解析器显示哪个国家。**Anycast 公共 DNS、递归上游位置、缓存以及 ECS 均会影响测试页的地理标签。业务源 IP 的 ASN、托管/VPN 分类、IP 信誉和网站地区政策是独立问题，不能靠调整 DNS 消除。
+
+## C.2 与 Mihomo 相关的关键行为
+
+| 项目 | 对本产品的影响 |
+| --- | --- |
+| 带域名的 TCP | 固定 Listener → Proxy 可以把目标域名传到最终出口，由出口解析并拨号。 |
+| 业务 UDP（v1.19.33） | SS 2022、Trojan、VLESS、Hy2 出站可能在发送 UDP 前解析目标；不能假设业务 UDP 一直以域名形式传到出口。 |
+| `respect-rules` / `#RULES` | 主要影响连接 DNS 上游时的选路，**不会自动按被查询域名匹配其业务出口**。 |
+| `nameserver-policy` + `#Exit-*` | 按域名或纯域名规则集选择 DNS 上游及其代理路径。 |
+| `proxy-server-nameserver` | 解析代理服务器域名，须能在代理尚未建立时工作。 |
+| `default-nameserver` | 供 DNS 上游自身域名启动解析，不是所有业务查询的统一出口。 |
+| `direct-nameserver` | 配置在最终出口服务器上，控制该节点直连出站的目标解析。 |
+| 服务端 IP 规则解析 | 调用该实例的全局解析器，不能仅用 Listener 子规则实现按线路隔离的目标 DNS。 |
+| 域名经外部 HTTP/SOCKS5 | 本地解析用于出口选择，外部代理仍可能再次解析；规则解析 IP 不代表已确认的最终连接 IP。 |
+| `no-resolve` | 只阻止该条目标 IP 类规则主动触发解析，会改变匹配语义，不能自动添加到全部规则。 |
+| UDP 不支持的匹配 | 规则可能继续向下匹配；需显式拒绝不支持的应用 UDP。 |
+| 空 `select` 组 | 可能默认回退到 `COMPATIBLE`；禁止生成空组并使用 `empty-fallback: REJECT`（固定版本确认后）。 |
+
+本次调研发现 UDP 远端解析相关提案 [PR #3352](https://github.com/MetaCubeX/mihomo/pull/3352)，不能在没有核对固定发布版本前生成 `udp-remote-resolve` 配置项。
+
+## C.3 多出口场景的 DNS 生成
+
+平台从选定的 `RuleProfile` 与 `ServiceDomainSet` 同时生成业务分流规则和 DNS 策略。举例：`Service-Google → Exit-HK-01`，`Service-AI → Exit-SG-01`，客户端确实需要执行的 DNS 查询也经对应代理组访问加密解析器。同一出口组中的直达与中转成员拥有相同最终出口。
+
+**客户端配置片段：**以下内容要求存在相应代理组，DNS 服务地址需按实际环境选择。示例中 `1.1.1.1` 仅作占位；节点 DNS 启动解析有单独路径。
+
+```yaml
+mode: rule
+ipv6: false
+
+dns:
+  enable: true
+  enhanced-mode: fake-ip
+  ipv6: false
+  respect-rules: false
+  default-nameserver:
+    - 1.1.1.1
+  proxy-server-nameserver:
+    - "https://1.1.1.1/dns-query#DIRECT"
+  nameserver:
+    - "https://1.1.1.1/dns-query#All-Proxies"
+  nameserver-policy:
+    "+.google.com":
+      - "https://1.1.1.1/dns-query#Exit-HK-01"
+    "+.openai.com":
+      - "https://1.1.1.1/dns-query#Exit-SG-01"
+    "+.chatgpt.com":
+      - "https://1.1.1.1/dns-query#Exit-SG-01"
+
+proxy-groups:
+  - name: All-Proxies
+    type: select
+    proxies: [HK-Direct, SG-Direct]
+    empty-fallback: REJECT
+  - name: Exit-HK-01
+    type: select
+    proxies: [HK-Direct]
+    empty-fallback: REJECT
+  - name: Exit-SG-01
+    type: select
+    proxies: [SG-Direct]
+    empty-fallback: REJECT
+
+rules:
+  - NETWORK,udp,REJECT
+  - DOMAIN-SUFFIX,google.com,Exit-HK-01
+  - DOMAIN-SUFFIX,openai.com,Exit-SG-01
+  - DOMAIN-SUFFIX,chatgpt.com,Exit-SG-01
+  - MATCH,All-Proxies
+```
+
+示例中的 `NETWORK,udp,REJECT` 拒绝**应用业务 UDP**，不阻断 Hysteria 2 外层 QUIC；`#DIRECT` 只用于代理服务器域名的启动解析，不是业务故障回退。保持 DNS 上游 TLS 证书验证，校验所有 `#...` 组名真实存在，否则某些配置可能被当作网卡名。升级为 `RULE-SET` 时应确保引用定义及 domain 行为匹配。配置末尾只能有**一条**兜底 `MATCH`。
+
+最终出口服务器使用其自己的 DNS 设置解析保留域名的 TCP 目标。中转服务器只按 Listener 指定下一跳，不自行重复目标 IP 规则。浏览器和应用自己的 DoH/DoT/DoQ 仍可能绕过域名级分流，单靠拦截 53 端口无法接管其加密查询。
+
+**规则生成限制：**域名 → 出口的绑定可以推导 DNS 路径；`PROCESS-*`、`IP-CIDR`、按端口等规则不一定提供 DNS 查询所需的同类上下文，不能承诺每次查询都对应业务出口。重复或重叠域名归属需要提示管理员，不静默改写 `no-resolve` 或用户自定义规则。
+
+## C.4 默认客户端与故障策略
+
+- **网络覆盖：**优先按操作系统生成 TUN + fake-IP 配置，接管或显式处理 TCP/UDP 53；单纯系统代理模式标记 `Limited Coverage`。客户端/OS 是否能防旁路要单独确认。
+- **IPv6：**默认业务目标 IPv4；`ipv6: false` 与 `dns.ipv6: false` 不等于防火墙，客户端应接管或拒绝本地 IPv6 旁路。可选 IPv6 需要端到端验证。
+- **应用 UDP：**默认 `Reject`；开启时要求整条路径都支持 UDP 中继，并将必要的提前 DNS 解析绑定到同一出口；不支持时明确拒绝，不继续落入另一个出口。
+- **代理组：**只有非空 `select`，不放未经请求的 `DIRECT` / `COMPATIBLE`，不自动测速或改线；根据末端节点与出口策略 ID 校验成员及发布修订一致性。
+- **现有连接：**手动切换组通常主要影响新连接；旧应用连接、DNS 缓存、持久 DoH 与浏览器连接池可能留在旧路径。可提供 `Apply to New Connections`、`Reconnect Now`；不默认清空全部 fake-IP 映射。
+- **Mihomo 退出：**生成的 YAML 本身不能提供全系统 kill switch，若需要断网保护，应依赖客户端与 OS 集成，不把超时机制称为防旁路保证。
+
+## C.5 按需检查及结果解释
+
+| 检查项 | 结果 |
+| --- | --- |
+| 生成配置 | Mihomo 语法、非空组、唯一末尾 `MATCH`、DNS 组引用和无启动解析环路。 |
+| 目标连通性 | 对业务目标显示连通性、规则解析 IP 和命中出口；目标不回显访问者地址时不宣称已观察其公网出口。 |
+| 出口 IP 回显 | 指定线路/组访问回显服务，记录测试地址、命中出口及服务返回的公网 IP；不作为其他业务目标的出口证明。 |
+| DNS 路径 | 按服务组查询解析器连接路径与少量测试结果；解析器国家不同不直接判泄漏。 |
+| IPv6 / WebRTC | 客户端可检测的公网 IPv6、STUN/WebRTC 路径；不支持则显示 `Not Checked`。 |
+| 关联域名 | 可按需检查服务登录/API 及实际命中的出口组；不做持续逐网站监控。 |
+| 故障与重连 | 手动确认线路不可达时失败，而非转到其他非预期出口。 |
+
+只保存必要结果与时间。`Connection Timeout`、`DNS Resolution Error`、`TLS Error`、`HTTP Access Denied` 应分别报告，不能把单次错误直接判断为代理被识别。RTT/HTTP 测量结果默认 **96 小时有效期**与 DNS TTL、fake-IP 缓存时间完全独立。
+
+## C.6 剩余实现事项
+
+- 对各客户端操作系统确认 TUN、DNS 拦截、IPv6 与核心退出后的网络封锁行为。
+- 维护 `Service-Google`、`Service-AI`（OpenAI/Claude）域名及共享认证/CDN 资源归属。
+- 启用业务 UDP 前，对实际协议组合完成小流量 UDP 和提前解析路径检查。
+- 确认 Mihomo 本地 API 的连接关闭、DNS 上游重新连接与保留已使用 fake-IP 映射的行为。
+- 更换固定内核版本时重新核对 `Base.ResolveUDP`、空组回退和规则继续匹配，不依赖未合并配置项。
+
+### 研究参考
+
+- [Mihomo DNS 文档](https://wiki.metacubex.one/en/config/dns/)、[规则文档](https://wiki.metacubex.one/en/config/rules/)、[代理组回退](https://wiki.metacubex.one/en/config/proxy-groups/)。
+- [Mihomo v1.19.33 UDP 解析源码](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/adapter/outbound/base.go)、[DNSDialer](https://github.com/MetaCubeX/mihomo/blob/v1.19.33/tunnel/dns_dialer.go)、[UDP 远端解析提案](https://github.com/MetaCubeX/mihomo/pull/3352)。
+- [RFC 8484（DoH）](https://www.rfc-editor.org/rfc/rfc8484.html)、[RFC 9076（DNS 隐私）](https://www.rfc-editor.org/rfc/rfc9076.html)、[RFC 7871（ECS）](https://www.rfc-editor.org/rfc/rfc7871.html)、[RFC 8828（WebRTC 地址）](https://www.rfc-editor.org/rfc/rfc8828.html)。
+- [Google Public DNS FAQ](https://developers.google.com/speed/public-dns/faq)、[MaxMind IP 分类](https://dev.maxmind.com/geoip/docs/databases/anonymous-ip/)、[Cloudflare JA3/JA4 说明](https://developers.cloudflare.com/bots/additional-configurations/ja3-ja4-fingerprint/)。
