@@ -1,4 +1,4 @@
-import { reactive, readonly, watch, ref } from 'vue'
+import { computed, reactive, readonly, watch, ref } from 'vue'
 import type { Workspace, Scenario, EntityCollection, CollectionEntity, Draft } from '../domain'
 import { createSeed } from './seeds'
 import { projectDraftData } from './draft-data'
@@ -78,4 +78,5 @@ export const commands = {
 }
 // Separate memory-only storage; never passed to persistence or router.
 export const sessionSecrets = reactive(new Map<string, string>())
-export function useWorkspace() { return { workspace, commands, persistenceIssue, sessionSecrets } }
+export const localClientPaired = computed(() => !!state.settings.localClient?.paired && sessionSecrets.has('settings:paired-secret'))
+export function useWorkspace() { return { workspace, commands, persistenceIssue, sessionSecrets, localClientPaired } }

@@ -69,7 +69,8 @@ If the Controller address changes, update the Vite proxy accordingly.
 
 The frontend now opens an offline **Prototype · Demo data** workspace with hash
 URLs, Overview/Nodes/Routes/Client Config/Activity navigation, and Settings at the
-bottom of the sidebar. All P01–P10 business pages are explicit placeholders.
+bottom of the sidebar. All P01–P10 modules now provide layouts, navigation,
+forms, saved drafts and bounded local workflow simulations.
 Controller information is available only through the optional query button in
 Settings; opening or refreshing any page makes no business API/probe request.
 
@@ -78,16 +79,16 @@ For frontend-only work (Controller optional):
 ```sh
 npm --prefix web ci
 npm --prefix web run dev
-npm --prefix web run check:foundation
-npm --prefix web run typecheck
-npm --prefix web run build
+bash web/scripts/check-pages.sh
 ```
 
 Open `http://127.0.0.1:5173/#/overview`. Demo Controls in the footer provide six
-repeatable scenarios and Reset Demo. Settings includes a non-sensitive draft and
-cancellable-task sandbox. Explicitly saved drafts survive refresh; secrets stay
+repeatable scenarios and Reset Demo. The route wizard leads through exit, paths,
+options and release review; subscriptions can visit the rule editor and return
+with their draft intact. Explicitly saved drafts survive refresh; secrets stay
 in memory. English feature resources live in each feature's `locales/en.ts`.
-See [frontend contract](web/FRONTEND_CONTRACT.md) before implementing business pages.
+See the [frontend contract](web/FRONTEND_CONTRACT.md) and
+[integration acceptance record](documents/frontend-delivery/集成验收.md) before wiring APIs.
 
 ## Configuration and local state
 

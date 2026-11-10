@@ -84,4 +84,5 @@ export interface DraftData {
   route?: { exitNodeId: ID; environment: AccessEnvironment; allowUdpTransport: boolean; requireUdpRelay: boolean; selectedPaths: { id: ID; name: string; revision: RouteRevision }[]; currentPathId?: ID }
   subscription?: { description: string; expiresAt: string; grouping: GroupingOptions; client: ClientOptions; selections: { group: string; routeId: ID }[] }
   profile?: { description: string; text: string; fallback: string; domainSetIds: ID[] }
+  egress?: { custom: boolean; name: string; noResolve: boolean; ipv6: boolean; targets: EgressTarget[]; rules: EgressPolicy['rules']; fallback: ID; selectedPolicy: ID | null }
 }

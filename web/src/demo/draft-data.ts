@@ -8,6 +8,7 @@ const mask: Mask = {
   route: { exitNodeId: true, environment: true, allowUdpTransport: true, requireUdpRelay: true, currentPathId: true, selectedPaths: [{ id: true, name: true, revision }] },
   subscription: { description: true, expiresAt: true, grouping: { allRoutes: true, byExit: true }, client: { mode: true, ipv6: true, allowBusinessUdp: true, platform: true }, selections: [{ group: true, routeId: true }] },
   profile: { description: true, text: true, fallback: true, domainSetIds: [true] },
+  egress: { custom: true, name: true, noResolve: true, ipv6: true, targets: [{ id: true, name: true, updatedAt: true, nodeId: true, type: true, interfaceName: true, host: true, port: true, tcp: true, udp: true }], rules: [{ id: true, destination: true, targetId: true }], fallback: true, selectedPolicy: true },
 }
 function project(value: unknown, fields: Mask): unknown {
   if (fields === true) return value === null || ['string', 'number', 'boolean'].includes(typeof value) ? value : undefined

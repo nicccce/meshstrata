@@ -1,8 +1,7 @@
 # Meshstrata frontend contract — F00
 
 Baseline: 2026-11-10. This is the shared contract for P01–P10. The UI is an offline
-**Prototype · Demo data** workspace. Feature pages are deliberately marked
-**Pending implementation**. Simulated state does not verify Controller, Agent,
+**Prototype · Demo data** workspace. P01–P10 provide interactive frontend modules. Simulated state does not verify Controller, Agent,
 Mihomo, frp, certificates, authentication, DNS or network reachability.
 
 ## Ownership and entry points
@@ -69,7 +68,7 @@ Call it again before consuming returnTo. It validates routes, not authorization
 or object existence. Use `pageLocation('overview')` as fallback.
 
 `/` redirects to overview, `/client-config` to subscriptions. Unknown paths show
-Not Found. Dynamic placeholders check their collection for the requested ID;
+Not Found. Entity pages check their collection for the requested ID;
 missing IDs display Not Found with the parent-list link. Feature implementations
 must preserve that behavior and never silently select another entity. Page
 metadata controls breadcrumbs, active parents and translated document title.
@@ -97,7 +96,7 @@ at app level; use `useMessage()` / `useDialog()` in descendants.
 | ValidationSummary | issues: readonly Issue[] | focus(field: string) |
 | TaskFeedback | state: idle/running/success/error/cancelled | cancel() |
 | FeaturePlaceholder | feature, page: string | common pending wrapper; replace in business pages |
-| ControllerInfo | none | explicit optional read; used in Settings placeholder |
+| ControllerInfo | none | explicit optional read; used in Settings |
 
 ConfirmImpactDialog's caller performs the action and closes show on completion;
 confirm does not close it or mutate data. Issue is `{code, params?, field?}`.
@@ -206,8 +205,7 @@ explicit; unsaved changes are not silently persisted. Discard restores the last
 saved baseline. Use one editor instance per draft ID; feature routes must key or
 recreate it when the ID changes. Before subscription → rules, save the subscription
 draft, pass draftId and validated returnTo, then return with profileId via the
-helper; rehydrate the same draft and update that selection. This flow is a future
-P07/P08 implementation, not an implemented business wizard.
+helper; rehydrate the same draft and update that selection. P07/P08 implement this handoff using separate subscription and profile draft IDs.
 
 `useQueryState<T>()` exposes data/loading/error/queriedAt and run(async query).
 It prevents duplicate concurrent starts and retains the previous successful data
@@ -267,11 +265,10 @@ projection and reset. Memory history tests do not prove browser hash history,
 refresh, drawer focus, mobile rendering or observed network traffic. No browser
 was available in F00; these still require interactive acceptance after integration.
 
-Pending implementation: all P01–P10 business pages, real drawer logic, algorithms,
-forms, publish/revoke flows and authentication. Do not count placeholders as final
-business delivery. Proposed domain extensions, query filters and draft fields
-must be coordinated before feature implementation. No product-boundary conflict
-was found; API design and deeper business validation remain later work.
+P01–P10 now implement the frontend layouts, navigation, forms and bounded offline
+simulations. Real authentication, APIs, node operations, runtime measurements and
+configuration deployment remain future work. See the integration acceptance record
+in documents/frontend-delivery/集成验收.md for checks and current limitations.
 
 ## Integration review before P01–P10
 
@@ -335,3 +332,28 @@ The integration session exclusively handles Git after review. Each page chat
 records its own actual checks and issues in `documents/frontend-delivery/Pxx.md`.
 This is the selected parallel handoff rule, overriding the ordinary per-chat
 commit timing (not the repository requirement to eventually commit and push).
+
+## P01–P10 integration
+
+All ten feature directories now contain working offline pages. Run
+`bash web/scripts/check-pages.sh` for foundation, cross-feature rules/allocation,
+activity lifecycle, TypeScript and production build checks.
+
+- `Draft.data.egress` explicitly projects non-sensitive drawer fields. Each route
+  draft/path/terminal has a separate drawer draft. Authentication is memory-only
+  and cleared on save or close. Saving the drawer form differs from returning a
+  policy to the route editor for publication review.
+- `localClientPaired` requires both the stored preference and the current
+  session's secret. A refresh never leaves client actions falsely paired.
+- Fixed protocol ports fail on conflict; automatic allocation respects the
+  protocol pool. Published snapshots remain usable after a failed edit. Successful
+  route paths leave the pending draft; failed paths remain for retry.
+- Node Default clears the policy ID on a route. Custom policies are saved as
+  independent drafts to protect existing published revisions. Shared batch policy
+  updates are visibly unavailable until a coordinated publication contract exists.
+- Rule targets include published route names and valid groups. Attached DomainSets
+  generate both RULE-SET entries before MATCH and DNS policy mappings. Configuration
+  previews contain credential placeholders and are not deployable configurations.
+- Activity retries deliberately update task records only; the page explains this.
+  They do not reconstruct previous route revisions or free referenced resources.
+  Pending cleanup and offline confirmations remain explicit.

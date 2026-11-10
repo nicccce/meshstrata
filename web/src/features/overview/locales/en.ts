@@ -1,6 +1,48 @@
 export default {
-  "OverviewPage": {
-    "title": "Overview",
-    "goal": "Resource summaries, pending tasks and manual snapshots."
-  }
+  OverviewPage: { title: 'Overview', goal: 'Your workspace at a glance. Review pending work and open the next action.' },
+  createRoute: 'Create Route',
+  statistics: {
+    label: 'Workspace totals', nodes: 'Registered nodes', routes: 'Published routes', subscriptions: 'Effective subscriptions',
+    nodesHint: 'Registered records, excluding removed nodes. Connection state is separate.',
+    routesHint: 'A published revision is retained, including when a later attempt fails.',
+    subscriptionsHint: 'Active or expiring with a future expiry. Open all subscriptions to review.',
+  },
+  guide: {
+    stage: 'Getting started · Step {value} of 3',
+    nodes: { title: 'Start with a node', description: 'Register a Direct or Reverse demo node, then configure its protocols and ports.', action: 'Add Node' },
+    routes: { title: 'Build your first route', description: 'Choose an exit node, review the path, and simulate publication. Saved drafts appear below.', action: 'Create Route' },
+    subscriptions: { title: 'Prepare a client configuration', description: 'Select published routes, a rule profile, and an expiry for your first subscription.', action: 'Create Subscription' },
+  },
+  todos: {
+    title: 'Needs attention', hint: 'Open the exact object or task to review impact and continue. Actions are simulated.',
+    tasks: 'All tasks', all: 'All categories', search: 'Search pending work', searchHint: 'Object name or stable ID', category: 'Category',
+    results: '{value} matching items', noMatches: 'No matching items', noMatchesHint: 'Try another name, ID, or category.',
+    clear: 'Nothing pending', clearHint: 'No pending work is recorded in this workspace. This does not verify network health.',
+    openTask: 'Open task', pagination: 'Pending work pages', revoke: 'Revocation needs confirmation', expiring: 'Review expiry',
+    categories: { publish: 'Draft to publish', offline: 'Node offline', expiry: 'Expiry / revocation', rollback: 'Rollback needs attention', cleanup: 'Pending Cleanup', sync: 'Pending sync', failure: 'Failed task' },
+  },
+  recent: { title: 'Recent operations', all: 'All events', empty: 'No operations recorded yet. Start with the next step above.', missing: 'Object no longer exists; its history is retained.', context: 'Object history', tasks: 'Recent tasks' },
+  snapshots: {
+    title: 'Saved query snapshots', hint: 'Choose one object before Refresh. This reads existing demo records only; it does not probe nodes or create new measurements.',
+    kind: 'Snapshot type', target: 'Single-object scope', choose: 'Choose a node, subscription, or route', chooseHint: 'Select one object to see its saved snapshot and enable Refresh.',
+    resources: 'Node resources', usage: 'Subscription usage', measurements: 'Route measurements',
+    scope: 'Scope: {kind} · {name}. One object only; no network requests.', noTargets: 'No objects are available for this snapshot type.',
+    refresh: 'Refresh · Simulated', loading: 'Reading selected demo snapshots…', read: 'Simulated read complete. Observation values and timestamps are unchanged.',
+    cancelled: 'Simulated read cancelled. Previous snapshots are retained.', readAt: 'Last local read: {time}',
+    failureHint: 'The simulated read failed. The previous saved snapshot remains visible. Error and Offline scenarios are reproducible through Demo controls.',
+    details: 'Open details', bytes: '{value} B', cpu: 'CPU', memory: 'Memory used', disk: 'Disk used', network: 'Network rate snapshot',
+    percent: '{value}%', perSecond: '{value}/s', ms: '{value} ms', revision: 'Revision {value}', samples: '{value} samples',
+    resourceStale: 'Stale: older than the workspace cache window ({hours} hours).',
+    sourceFailed: 'The source records a failed query. Any values below are from the retained snapshot.',
+    resourceHint: 'Unknown values were not queried. A rate snapshot is not a bandwidth limit or a live series.',
+    noUsage: 'Not Queried. No saved usage snapshots exist for this subscription.', noMeasurements: 'Not Queried. No saved measurements exist for this route.',
+    usageHint: 'Records are shown separately with scope and coverage. Different scopes, metrics, and resets are not added together. Open details for older records.',
+    cacheHint: 'Stale uses the workspace cache window ({hours} hours). A local read does not extend snapshot validity.',
+    complete: 'Complete coverage', partial: 'Partial coverage', reset: 'Counter reset',
+    scopes: { entry: 'Entry scope', node: 'Node scope', tunnel: 'Tunnel scope' },
+    metrics: { cumulative_bytes: 'Cumulative traffic', connection_count: 'Connection count', active_snapshot: 'Active connection snapshot', unavailable: 'Unavailable' },
+    measurementKinds: { network_rtt: 'Network RTT', browser_http: 'Browser HTTP timing', path_cost: 'Path cost estimate' },
+  },
+  states: { draft: 'Draft', validating: 'Validating', applying: 'Applying', verifying: 'Verifying', published: 'Published', failed: 'Failed', rolling_back: 'Rolling Back', rolled_back: 'Rolled Back', rollback_pending: 'Rollback Pending', rollback_failed: 'Rollback Failed', active: 'Active', expiring: 'Expiring', expired: 'Expired', revoked: 'Revoked', pending: 'Pending', synced: 'Synced', success: 'Simulated completion', succeeded: 'Simulated completion', confirmed: 'Confirmed', cancelled: 'Cancelled', pending_cleanup: 'Pending Cleanup' },
+  footer: 'Prototype · Demo data. Totals reflect saved records, not a live network scan.', controllerInfo: 'Settings and Controller information',
 }
