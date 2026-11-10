@@ -190,9 +190,9 @@ stored snapshot untouched until reset. Reload can still open an in-memory normal
 seed. Do not use this as production storage or a cross-tab synchronization system.
 
 Draft fields: id, feature, objectId?, name, nodeIds, routeIds, profileId?, step?,
-updatedAt. `saveDraft` explicitly projects this list; arbitrary form payloads are
-not accepted. Extend it through integration when a feature needs more non-sensitive
-fields. `safeJson` also strips sensitive property names recursively as defense in
+updatedAt and optional typed `data: DraftData`. `saveDraft` explicitly projects
+these fields and the nested form whitelist in `demo/draft-data.ts`; arbitrary form
+payloads are not accepted. `safeJson` also strips sensitive property names recursively as defense in
 depth. Never place passwords, proxy auth, install tokens, secrets, private keys,
 or YAML containing them into a persistent object, URL, message, error or download.
 `sessionSecrets: Map<string,string>` is memory-only; features must clear their keys
@@ -272,3 +272,66 @@ forms, publish/revoke flows and authentication. Do not count placeholders as fin
 business delivery. Proposed domain extensions, query filters and draft fields
 must be coordinated before feature implementation. No product-boundary conflict
 was found; API design and deeper business validation remain later work.
+
+## Integration review before P01–P10
+
+The integration session re-ran F00 checks and build and expanded the minimal
+contract before dispatch. Existing F00 snapshots remain readable; new fields are
+optional. Features must supply documented defaults when these are absent.
+
+- `Draft.data.node/route/subscription/profile` holds the respective non-sensitive
+  form data. Use the exact exported `DraftData` shape and `useDraft`; arbitrary
+  feature payloads are deliberately dropped. Base Draft fields still hold name,
+  selected node/route/profile IDs and current step. Step changes should update
+  both the draft and URL. Never put secrets into these fields.
+- `Node.protocolDefaults` now uses `ProtocolSettings` with optional autoPort,
+  listenAddress, portPool and public protocol parameters. It is the only protocol
+  defaults source; do not introduce a second protocols collection.
+- Optional node fields cover location overrides, versions, snapshots, DNS routing,
+  DNS draft, probe endpoint and removal. `targetDns` remains the applied DNS;
+  `dnsDraft` is pending change, and `dnsRouting` supplies applied outbound/bootstrap.
+- Optional Settings cover all eight settings sections. Defaults remain the design
+  values (96h/5min, port pool 20000–29999, 8443/9443, warning logs, 5MiB × 4,
+  20MiB total/7 days). Passwords/API keys/local secrets remain sessionSecrets only.
+- `RuleLine.type` supports parsed Mihomo rule names as strings. Feature validation
+  decides supported syntax and reports unsupported lines; do not silently accept
+  arbitrary types. Rules can carry options; profiles support description/sourceText.
+- Subscription grouping/client preferences, downloadVersion (a non-sensitive
+  demo URL revision), entry cleanup, release stages/times/node scope and detailed
+  usage metric fields are available. P07/P09 consume the same shared Release model.
+- `domain/groups.ts` exports `exitGroupName(revision)` using stable terminal and
+  policy IDs. P07 generates groups and P08 offers targets using this helper. It
+  does not validate members or matching policy revisions; callers must do that.
+- Egress props/emits are unchanged. P06 may write target drafts to the shared
+  targets collection on explicit save and return a policy to the owner; this does
+  not publish it. Existing policies remain unchanged until their owner handles the
+  policy save and review, especially for shared revisions.
+- Query adds node-new.draftId, routes.exitNodeId/protocol/udp and
+  profile-new/profile-edit.subscriptionId. Activity uses `tab`, not `view`.
+- Storage validation now accepts interface/node-default targets without host/port
+  and subscription/node releases without routeId. Required entry.routeId remains
+  required. Typed draft data is projected both on save and restore.
+- Fresh seeds offer all four direct-node protocol defaults; reverse remains SS
+  TCP. Subscription SS entries have isolated listeners/ports. The generic mixed
+  group is correctly named All-Proxies. Reset Demo loads these improved seeds;
+  existing user-edited demo storage is never silently replaced.
+
+### Parallel implementation and serialized checks
+
+All ten page chats may edit their assigned directories concurrently, against this
+frozen contract. P04/P05/P07 may import P06's existing stable drawers immediately;
+they must not wait by polling another chat's files. Do not edit a sibling feature.
+Missing shared requirements go in the task's delivery report for integration.
+
+Run `bash /root/meshstrata/web/scripts/check-pages.sh` for foundation checks,
+typecheck and build. It acquires `.local/frontend-check.lock` with flock, so only
+one check/build process runs at a time. Do not launch other npm builds/installers,
+package changes or Vite servers concurrently. A check may observe an in-progress
+sibling edit: report the exact external error without changing that sibling; final
+integration repeats the checks once all feature edits settle.
+
+The page chats do **not** commit, push, stage, revert or clean the shared checkout.
+The integration session exclusively handles Git after review. Each page chat
+records its own actual checks and issues in `documents/frontend-delivery/Pxx.md`.
+This is the selected parallel handoff rule, overriding the ordinary per-chat
+commit timing (not the repository requirement to eventually commit and push).

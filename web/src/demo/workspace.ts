@@ -1,6 +1,7 @@
 import { reactive, readonly, watch, ref } from 'vue'
 import type { Workspace, Scenario, EntityCollection, CollectionEntity, Draft } from '../domain'
 import { createSeed } from './seeds'
+import { projectDraftData } from './draft-data'
 export const storageKey = 'meshstrata.demo.v1'
 export const persistenceIssue = ref(false)
 const scenarios: Scenario[] = ['normal', 'empty', 'error', 'stale', 'offline', 'partial']
@@ -24,15 +25,28 @@ export function decodeWorkspace(raw: string): Workspace {
   }
   if (!v.settings || typeof v.settings.relayNodeId !== 'string') throw Error('DEMO_STORAGE_INVALID')
   // Validate runtime field shapes against the seed to reject corrupted snapshots.
-  function shape(sample: unknown, value: unknown): boolean {
+  const optionalPaths = new Set([
+    'nodes[].address', 'routes[].published', 'routes[].draft.policyId', 'routes[].draft.policyRevision',
+    'routes[].published.policyId', 'routes[].published.policyRevision',
+    'routes[].draft.links[].tunnelId', 'routes[].draft.links[].tunnelRevision',
+    'routes[].published.links[].tunnelId', 'routes[].published.links[].tunnelRevision',
+    'targets[].host', 'targets[].port', 'targets[].interfaceName', 'releases[].routeId',
+    'releases[].subscriptionId', 'releases[].nodes[].issue',
+  ])
+  function shape(sample: unknown, value: unknown, path = ''): boolean {
     if (sample === null || sample === undefined) return true
-    if (Array.isArray(sample)) return Array.isArray(value) && (!sample.length || value.every(item => shape(sample[0], item)))
-    if (typeof sample === 'object') return !!value && typeof value === 'object' && Object.entries(sample).every(([key, item]) => ((value as Record<string, unknown>)[key] === undefined && ['published', 'address', 'policyId', 'policyRevision', 'tunnelId', 'tunnelRevision', 'issue', 'objectId', 'profileId', 'step'].includes(key) || shape(item, (value as Record<string, unknown>)[key])))
+    if (Array.isArray(sample)) return Array.isArray(value) && (!sample.length || value.every(item => shape(sample[0], item, `${path}[]`)))
+    if (typeof sample === 'object') return !!value && typeof value === 'object' && Object.entries(sample).every(([key, item]) => {
+      const childPath = path ? `${path}.${key}` : key
+      const child = (value as Record<string, unknown>)[key]
+      return (child === undefined && optionalPaths.has(childPath)) || shape(item, child, childPath)
+    })
     return typeof sample === typeof value
   }
   if (!shape(seed, v)) throw Error('DEMO_STORAGE_INVALID')
   for (const draft of v.drafts) {
     if (typeof draft.feature !== 'string' || typeof draft.name !== 'string' || typeof draft.updatedAt !== 'string' || !Array.isArray(draft.nodeIds) || !draft.nodeIds.every(id => typeof id === 'string') || !Array.isArray(draft.routeIds) || !draft.routeIds.every(id => typeof id === 'string')) throw Error('DEMO_STORAGE_INVALID')
+    draft.data = projectDraftData(draft.data)
   }
   return JSON.parse(safeJson(v)) as Workspace
 }
@@ -57,8 +71,8 @@ export const commands = {
   remove(collection: EntityCollection, id: string) { const items = state[collection]; const i = items.findIndex(item => item.id === id); if (i >= 0) items.splice(i, 1) },
   saveDraft(draft: Draft) {
     // Explicit projection: free-form feature payloads and sensitive inputs are excluded.
-    const { id, feature, objectId, name, nodeIds, routeIds, profileId, step } = draft
-    this.upsert('drafts', { id, feature, objectId, name, nodeIds: [...nodeIds], routeIds: [...routeIds], profileId, step, updatedAt: new Date().toISOString() })
+    const { id, feature, objectId, name, nodeIds, routeIds, profileId, step, data } = draft
+    this.upsert('drafts', { id, feature, objectId, name, nodeIds: [...nodeIds], routeIds: [...routeIds], profileId, step, data: projectDraftData(data), updatedAt: new Date().toISOString() })
   },
   updateSettings(patch: Partial<Workspace['settings']>) { Object.assign(state.settings, patch) },
 }

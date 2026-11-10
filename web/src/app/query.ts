@@ -8,9 +8,9 @@ const enums: Record<string, Record<string, string[]>> = {
   activity: { tab: ['events', 'releases', 'logs'] }, settings: { section: ['general', 'ports', 'relay', 'location', 'certificates', 'client', 'logs', 'admin'] },
 }
 const refs: Record<string, string[]> = {
- nodes: ['mode', 'location', 'status', 'environment'], routes: ['nodeId', 'status'], 'route-new': ['exitNodeId', 'draftId'], 'route-edit': ['draftId'],
+ nodes: ['mode', 'location', 'status', 'environment'], 'node-new': ['draftId'], routes: ['nodeId', 'exitNodeId', 'protocol', 'status', 'udp'], 'route-new': ['exitNodeId', 'draftId'], 'route-edit': ['draftId'],
  subscriptions: ['status', 'sync', 'routeId'], 'subscription-new': ['routeIds', 'profileId', 'draftId', 'returnTo'], 'subscription-edit': ['profileId', 'draftId', 'returnTo'],
- 'profile-new': ['draftId', 'returnTo'], 'profile-edit': ['draftId', 'returnTo'], activity: ['kind', 'entityType', 'entityId', 'status'], login: ['returnTo'],
+ 'profile-new': ['draftId', 'returnTo', 'subscriptionId'], 'profile-edit': ['draftId', 'returnTo', 'subscriptionId'], activity: ['kind', 'entityType', 'entityId', 'status'], login: ['returnTo'],
 }
 const lists = ['nodes', 'routes', 'subscriptions', 'rule-profiles', 'activity']
 export function sanitizeQuery(name: string, query: LocationQuery | LocationQueryRaw): LocationQueryRaw {
