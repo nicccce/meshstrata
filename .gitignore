@@ -1,7 +1,7 @@
 /.local/
 /bin/
-/web/node_modules/
-/internal/webui/dist/*
-!/internal/webui/dist/.gitkeep
+/controller/web/node_modules/
+/controller/internal/webui/dist/*
+!/controller/internal/webui/dist/.gitkeep
 *.test
 coverage.out

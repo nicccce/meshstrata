@@ -2,7 +2,7 @@
 
 **版本：v1.0｜2026-11-10｜阶段：可交互前端原型**
 
-依据 [产品设计 v1.0](Meshstrata_产品设计_v1.0.md)，将节点接入、线路发布、客户端配置和故障处理组织为可连续操作的页面。按用户授权优化导航与交互；产品中的协议、出口、身份、DNS、发布与撤销边界保持一致。默认英文 UI，本文使用中文。
+依据 [产品设计 v1.0](Meshstrata_产品设计_v1.0.md)，将节点接入、线路发布、客户端配置和故障处理组织为可连续操作的页面。按用户授权优化导航与交互；产品中的协议、出口、身份、DNS、发布与撤销边界保持一致。UI 提供英文/简体中文，无明确保存偏好时跟随浏览器，本文使用中文。
 
 本阶段实现布局、URL 路由、表单、前端校验、关联跳转及明确标记的模拟状态变化。使用本地演示数据，不接业务接口，不执行安装、探测、真实发布、撤销或本地 Mihomo 操作。完整 YAML 仅作带演示标记的预览，不承诺可用于生产。开发任务与文件归属见 [前端实施任务](Meshstrata_前端实施任务_v1.0.md)。
 
@@ -120,7 +120,7 @@ flowchart LR
 
 ### 3.2 Nodes 列表与接入
 
-列表主列：名称/位置、接入方式、接入地址、连接摘要、关联线路数、最近确认；Agent/Mihomo 版本可作次级列。搜索名称/IP，筛选 Direct/Reverse、位置、接入环境、状态。点击名称进入详情，线路数进入 `/routes?nodeId=…`。按需批量 Update Location/Query Status 要先选择节点并显示结果汇总。
+列表主列：名称/位置、接入方式、接入地址、连接摘要、关联线路数、最近确认；Agent/Mihomo 版本可作次级列。搜索名称/IP，筛选 Direct/Reverse、位置、网络监管级别、状态。点击名称进入详情，线路数进入 `/routes?nodeId=…`。按需批量 Update Location/Query Status 要先选择节点并显示结果汇总。
 
 接入向导为三步：
 
@@ -160,14 +160,16 @@ Overview 展示路径和业务能力；Measurements 展示分段测量、来源�
 
 ### 3.5 Create Route 与 Edit Route
 
-四步向导，底部固定 Back、Save Draft、Next/Simulate Publish。右侧始终展示出口、环境、路径、UDP、出口策略和待处理问题摘要。
+四步向导，底部固定 Back、Save Draft、Next/Simulate Publish。右侧始终展示出口、客户端监管级别、路径、UDP、出口策略和待处理问题摘要。
 
 | 步骤 | 内容 | 前进条件 |
 | --- | --- | --- |
-| 1. Exit & Environment | 先选最终出口，再选 Mainland/Outside、Allow UDP Transport、Require UDP Relay；可读取默认偏好。 | 存在可用候选出口；Reverse 不允许 Require UDP Relay。 |
+| 1. Exit Node | 先选最终出口。默认继承 Settings 的强监管/弱监管与 UDP 偏好，在默认折叠的 Recommendation Preferences 中可单独覆盖；监管级别不是出口位置。 | 存在可用候选出口；Reverse 不允许 Require UDP Relay。 |
 | 2. Choose Paths | Recommend Routes、3 条默认去重候选、调整数量、测量模式分区、展开协议组合、手工路径入口。 | 至少选中一个结构有效候选；不将测量缺失当零或自动最佳。 |
 | 3. Route Options | 每条路径命名；默认折叠高级逐跳编辑；小按钮 Egress Routing；实际 Listener/端口分配预览。 | 名称不冲突，路径/协议/端口与出口策略的前端校验通过。 |
 | 4. Review & Publish | 配置差异、受影响节点/订阅、待开放端口、能力与检查清单；显示模拟验证。 | 阻断问题已处理；明确显示哪些仅是模拟或 Not Checked。 |
+
+客户端监管级别用于首跳协议建议和测量样本分组；强监管优先建议 VLESS/Trojan，弱监管优先建议 SS 2022。节点标签独立于客户端条件，不根据地理位置推断。修改草稿偏好不重写已经选择的 Listener 或已发布路径；旧草稿中的地区枚举兼容转换成新级别。
 
 多选候选时第 3 步用可切换的路径草稿列表分别命名，每条显示错误数；最终创建批次任务，各线路单独报告结果。一个失败不冒充整批成功，不实现跨线路假原子事务。
 
@@ -277,7 +279,7 @@ Reverse 任务增加远端 Listener、Relay 授权、隧道与映射建立、映
 保留 Vue 3、TypeScript、Naive UI、Vue I18n、Vite 与 Go embed 构建位置。增加固定版本 Vue Router；不引入第二套 UI 框架或重型全局状态库。基础设施完成后各业务会话只写自己的 feature 目录，统一路由和共享模型由基础设施/集成任务维护。
 
 ```text
-web/src/
+controller/web/src/
   app/                   # Router, navigation, providers, layout
   components/            # Shared page, status, state, confirmation and summary UI
   domain/                # Entities, enums, references, reusable pure checks
@@ -295,12 +297,12 @@ web/src/
     activity/
     settings/
     auth/
-  locales/               # Common resources; each feature owns locales/en.ts
+  locales/               # Common resources; each feature owns locales/{en,zh-CN}.ts
 ```
 
 公共组件至少包括 PageHeader、StatusBadge、QueryStamp、EmptyState、ErrorState、EntityLink、ConfirmImpactDialog、RoutePath、ValidationSummary、DemoNotice 和可取消任务反馈。表格、表单、抽屉等优先组合 Naive UI，不为现有库重造通用包装层。功能未实现时使用明确的 FeaturePlaceholder，不能伪装成正常空数据。
 
-所有显示文本通过 i18n，含校验、toast、空态、aria label、模拟错误。错误按稳定 code + params 表达，日期/数字用 locale 格式化；组名、ID、规则文本、用户命名不翻译。每 feature 独立英语资源，基础设施自动/集中装载，避免会话争抢一个语言文件。
+所有显示文本通过 i18n，含校验、toast、空态、aria label、模拟错误。错误按稳定 code + params 表达，日期/数字用 locale 格式化；组名、ID、规则文本、用户命名不翻译。每 feature 独立的 en / zh-CN 资源由基础设施集中装载。Settings 的界面语言选择即时保存，刷新和 Reset Demo 后保留；Naive UI、页面标题、HTML lang 与日期/数字同步，中文变体归一为简体中文，不支持的语言回退英文。资源键与插值应匹配，不以英文回退掩盖中文缺项。
 
 ### 4.2 演示数据与状态
 

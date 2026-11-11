@@ -1,0 +1,100 @@
+import assert from 'node:assert/strict'
+import { readFile, writeFile, mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
+import ts from 'typescript'
+import { nextTick } from 'vue'
+import { createRouter, createMemoryHistory } from 'vue-router'
+// Transpile only the pure foundation modules; no server, browser or API is started.
+const root = fileURLToPath(new URL('../', import.meta.url))
+const base = resolve(root, 'node_modules/.cache')
+await mkdir(base, { recursive: true })
+const temp = await mkdtemp(resolve(base, 'f00-'))
+try {
+ for (const [source, output] of [['app/query', 'query'], ['app/routes', 'routes'], ['demo/seeds', 'seeds'], ['demo/draft-data', 'draft-data'], ['domain/access-environment', 'access-environment'], ['demo/workspace', 'workspace']]) {
+  const raw = await readFile(resolve(root, `src/${source}.ts`), 'utf8')
+  const js = ts.transpileModule(raw, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText.replace("from './seeds'", "from './seeds.mjs'").replace("from './draft-data'", "from './draft-data.mjs'").replace("from '../domain/access-environment'", "from './access-environment.mjs'")
+  await writeFile(resolve(temp, `${output}.mjs`), js)
+ }
+ const { sanitizeQuery, createSafeReturnTo } = await import(resolve(temp, 'query.mjs'))
+ const { pageRoutes } = await import(resolve(temp, 'routes.mjs'))
+ const { createSeed } = await import(resolve(temp, 'seeds.mjs'))
+ const memory = new Map()
+ globalThis.localStorage = { getItem: key => memory.get(key) ?? null, setItem: (key, value) => memory.set(key, value) }
+ const { decodeWorkspace, safeJson, commands, workspace, storageKey, sessionSecrets, localClientPaired } = await import(resolve(temp, 'workspace.mjs'))
+ const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/', redirect: '/overview' }, ...pageRoutes.map(({ component, ...r }) => ({ ...r, component: {} })), { path: '/:pathMatch(.*)*', name: 'not-found', component: {} }] })
+ const safeReturnTo = createSafeReturnTo(router.resolve)
+ assert.deepEqual(sanitizeQuery('node-new', Object.fromEntries([['constructor', 'x'], ['__proto__', 'x'], ['toString', 'x']])), {})
+ assert.deepEqual(sanitizeQuery('node-detail', { tab: 'dns', password: 'redacted', page: '0', panel: 'admin' }), { tab: 'dns' })
+ assert.deepEqual(sanitizeQuery('route-new', { step: 'review', exitNodeId: 'hk', unknown: 'x' }), { step: 'review', exitNodeId: 'hk' })
+ assert.deepEqual(sanitizeQuery('nodes', { page: '2', sort: '-name', q: 'HK', token: 'redacted', status: ['online'] }), { page: '2', sort: '-name', q: 'HK' })
+ for (const bad of ['https://example.invalid', '//example.invalid', '/login', '/unknown', '/\\evil', '/nodes#secret', '/nodes\n']) assert.equal(safeReturnTo(bad), undefined, bad)
+ assert.equal(safeReturnTo('/nodes/hk?tab=dns&token=x'), '/nodes/hk?tab=dns')
+ for (const r of pageRoutes) { const path = r.path.replace(/:[A-Za-z]+/g, 'demo-id'); assert.equal(router.resolve(path).name, r.name, path); await router.push(path); assert.equal(router.currentRoute.value.name, r.name) }
+ await router.push('/overview'); await router.push('/nodes'); router.back(); await new Promise(r => setTimeout(r, 0)); assert.equal(router.currentRoute.value.name, 'overview')
+ assert.equal(router.resolve('/does-not-exist').name, 'not-found')
+ for (const scenario of ['normal', 'empty', 'error', 'stale', 'offline', 'partial']) {
+  const seed = createSeed(scenario); assert.deepEqual(decodeWorkspace(safeJson(seed)), JSON.parse(safeJson(seed)))
+  for (const route of seed.routes) {
+   for (const id of route.draft.nodeIds) assert.ok(seed.nodes.some(n => n.id === id))
+   assert.ok(seed.listeners.some(l => l.id === route.draft.entryListenerId))
+   for (const link of route.draft.links) { assert.ok(seed.listeners.some(l => l.id === link.listenerId)); if (link.tunnelId) assert.ok(seed.tunnels.some(t => t.id === link.tunnelId)) }
+   if (route.draft.policyId) assert.ok(seed.policies.some(p => p.id === route.draft.policyId && p.revision === route.draft.policyRevision))
+  }
+  for (const sub of seed.subscriptions) { assert.ok(seed.profiles.some(p => p.id === sub.profileId)); for (const id of sub.entryIds) assert.ok(seed.entries.some(e => e.id === id && e.subscriptionId === sub.id)) }
+ }
+ assert.throws(() => decodeWorkspace('{bad'))
+ const legacy = createSeed()
+ legacy.settings.environment = 'mainland_china'
+ legacy.nodes[0].environment = 'outside_mainland_china'
+ legacy.nodes[0].location = 'CN'
+ legacy.routes[0].draft.environment = 'mainland_china'
+ legacy.routes[0].published.environment = 'outside_mainland_china'
+ legacy.measurements[0].environment = 'mainland_china'
+ legacy.drafts.push({ id: 'legacy-route', feature: 'route-editor', name: 'Legacy saved path', nodeIds: ['hk'], routeIds: [], updatedAt: '', data: { route: { exitNodeId: 'hk', environment: 'outside_mainland_china', allowUdpTransport: false, requireUdpRelay: false, selectedPaths: [{ id: 'legacy-path', name: 'Legacy path', revision: structuredClone(legacy.routes[0].draft) }] } } })
+ const migrated = decodeWorkspace(safeJson(legacy))
+ assert.equal(migrated.settings.environment, 'strong_regulation')
+ assert.equal(migrated.nodes[0].environment, 'weak_regulation')
+ assert.equal(migrated.nodes[0].location, 'CN', 'regulation is not inferred from location')
+ assert.equal(migrated.routes[0].draft.environment, 'strong_regulation')
+ assert.equal(migrated.routes[0].published.environment, 'weak_regulation')
+ assert.equal(migrated.measurements[0].environment, 'strong_regulation')
+ assert.equal(migrated.drafts[0].data.route.environment, 'weak_regulation')
+ assert.equal(migrated.drafts[0].data.route.selectedPaths[0].revision.environment, 'strong_regulation')
+ delete legacy.settings.environment
+ assert.doesNotThrow(() => decodeWorkspace(safeJson(legacy)), 'preference-less older snapshots remain readable')
+ assert.throws(() => decodeWorkspace('{"schemaVersion":99}'))
+ const broken = createSeed(); broken.routes[0].draft.nodeIds = null; assert.throws(() => decodeWorkspace(safeJson(broken)))
+ const variants = createSeed()
+ variants.targets.push({ id: 'interface-target', name: 'WG', updatedAt: '', nodeId: 'sg', type: 'interface', interfaceName: 'wg0', tcp: 'not_checked', udp: 'not_checked' })
+ variants.releases.push({ id: 'revoke-sub', name: 'Revoke', updatedAt: '', kind: 'revoke', subscriptionId: 'sub-active', state: 'verifying', revision: 1, nodes: [], cleanup: 'pending' })
+ assert.doesNotThrow(() => decodeWorkspace(safeJson(variants)))
+ const missingRoute = createSeed(); delete missingRoute.entries[0].routeId; assert.throws(() => decodeWorkspace(safeJson(missingRoute)))
+ commands.saveDraft({ id: 'test', feature: 'test', name: 'Non-sensitive draft', nodeIds: ['hk'], routeIds: ['direct'], updatedAt: '', password: 'never store', nested: { token: 'never store' } })
+ await nextTick()
+ const restored = decodeWorkspace(memory.get(storageKey)); assert.equal(restored.drafts[0].name, 'Non-sensitive draft'); assert.ok(!memory.get(storageKey).includes('never store'))
+ commands.saveDraft({ id: 'full-form', feature: 'subscriptions', name: 'Draft with form data', nodeIds: [], routeIds: ['direct'], updatedAt: '', data: { subscription: { description: 'My laptop', expiresAt: '2027-01-01', grouping: { allRoutes: true, byExit: true }, client: { mode: 'tun', ipv6: false, allowBusinessUdp: false }, selections: [], unlisted: 'must not survive' }, profile: { description: '', text: 'MATCH,All-Proxies', fallback: 'All-Proxies', domainSetIds: [], secret: 'must not survive' }, arbitrary: { nested: 'must not survive' } } })
+ await nextTick()
+ const form = decodeWorkspace(memory.get(storageKey)).drafts.find(d => d.id === 'full-form')
+ assert.equal(form.data.subscription.description, 'My laptop')
+ assert.equal(form.data.profile.text, 'MATCH,All-Proxies')
+ assert.ok(!memory.get(storageKey).includes('must not survive'))
+ commands.saveDraft({ id: 'egress-form', feature: 'egress', name: 'External interface', nodeIds: ['sg'], routeIds: [], updatedAt: '', data: { egress: { custom: true, name: 'External interface', noResolve: false, ipv6: false, targets: [{ id: 'tun', name: 'External TUN', updatedAt: '', nodeId: 'sg', type: 'interface', interfaceName: 'tun0', tcp: 'not_checked', udp: 'not_checked', password: 'must not survive' }], rules: [], fallback: 'REJECT', selectedPolicy: null } } })
+ await nextTick()
+ assert.equal(decodeWorkspace(memory.get(storageKey)).drafts.find(d => d.id === 'egress-form').data.egress.targets[0].interfaceName, 'tun0')
+ assert.ok(!memory.get(storageKey).includes('must not survive'))
+ commands.updateSettings({ localClient: { paired: true, rawRtt: true, address: 'http://127.0.0.1:9090', allowedOrigin: '' } })
+ assert.equal(localClientPaired.value, false, 'persisted paired flag alone is not a session pairing')
+ sessionSecrets.set('settings:paired-secret', 'memory only')
+ assert.equal(localClientPaired.value, true)
+ sessionSecrets.delete('settings:paired-secret')
+ assert.equal(localClientPaired.value, false)
+ commands.upsert('nodes', { ...createSeed().nodes[1], name: 'Renamed' }); assert.equal(workspace.nodes.find(n => n.id === 'hk').name, 'Renamed')
+ commands.updateSettings({ locale: 'zh-CN' }); await nextTick()
+ const beforeLocaleSwitch = JSON.parse(JSON.stringify(workspace.nodes))
+ commands.updateSettings({ locale: 'en' }); await nextTick()
+ assert.deepEqual(JSON.parse(JSON.stringify(workspace.nodes)), beforeLocaleSwitch, 'language does not rename entities')
+ commands.updateSettings({ locale: 'zh-CN' }); await nextTick()
+ sessionSecrets.set('token', 'in memory'); commands.reset('offline'); assert.equal(workspace.settings.locale, 'zh-CN', 'reset retains explicit UI language'); assert.equal(sessionSecrets.size, 0); assert.ok(workspace.nodes.every(n => n.control === 'offline')); assert.equal(workspace.drafts.length, 0)
+ console.log(`Foundation checks passed: ${pageRoutes.length} routes, query/returnTo, memory history, six scenarios, references, persistence, draft projection, reset.`)
+} finally { await rm(temp, { recursive: true, force: true }) }

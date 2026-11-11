@@ -24,14 +24,14 @@ From the repository root:
 
 ```sh
 make build
-./bin/meshstrata-controller run -config configs/controller.dev.json
+./bin/meshstrata-controller run -config controller/configs/controller.dev.json
 ```
 
 Open <http://127.0.0.1:8443>. In a separate terminal:
 
 ```sh
-./bin/meshstrata-agent run -config configs/agent.dev.json
-./bin/meshstrata-agent healthcheck -config configs/agent.dev.json
+./bin/meshstrata-agent run -config agent/configs/agent.dev.json
+./bin/meshstrata-agent healthcheck -config agent/configs/agent.dev.json
 ```
 
 `make build` installs locked frontend dependencies with `npm ci`, type-checks and
@@ -77,17 +77,20 @@ Settings; opening or refreshing any page makes no business API/probe request.
 For frontend-only work (Controller optional):
 
 ```sh
-npm --prefix web ci
-npm --prefix web run dev
-bash web/scripts/check-pages.sh
+npm --prefix controller/web ci
+npm --prefix controller/web run dev
+bash controller/web/scripts/check-pages.sh
 ```
 
 Open `http://127.0.0.1:5173/#/overview`. Demo Controls in the footer provide six
 repeatable scenarios and Reset Demo. The route wizard leads through exit, paths,
 options and release review; subscriptions can visit the rule editor and return
 with their draft intact. Explicitly saved drafts survive refresh; secrets stay
-in memory. English feature resources live in each feature's `locales/en.ts`.
-See the [frontend contract](web/FRONTEND_CONTRACT.md) and
+in memory. English and Simplified Chinese resources live in each feature's
+`locales/en.ts` and `locales/zh-CN.ts`. Choose **English / 简体中文** under
+**Settings → General → Interface language**; it applies immediately and survives
+refresh and Reset Demo. Without a saved choice, the browser language is used.
+See the [frontend contract](controller/web/FRONTEND_CONTRACT.md) and
 [integration acceptance record](documents/frontend-delivery/集成验收.md) before wiring APIs.
 
 ## Configuration and local state

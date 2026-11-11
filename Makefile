@@ -20,20 +20,20 @@ LDFLAGS := -X $(BUILD_PACKAGE).Version=$(VERSION) -X $(BUILD_PACKAGE).Commit=$(C
 go-prepare:
 	mkdir -p "$(GOTMPDIR)"
 
-web-install: web/node_modules/.meshstrata-installed
+web-install: controller/web/node_modules/.meshstrata-installed
 
-web/node_modules/.meshstrata-installed: web/package.json web/package-lock.json
-	npm --prefix web ci --no-audit --no-fund
+controller/web/node_modules/.meshstrata-installed: controller/web/package.json controller/web/package-lock.json
+	npm --prefix controller/web ci --no-audit --no-fund
 	touch $@
 
 web-build: web-install
-	find internal/webui/dist -mindepth 1 ! -name .gitkeep -delete
-	npm --prefix web run build
+	find controller/internal/webui/dist -mindepth 1 ! -name .gitkeep -delete
+	npm --prefix controller/web run build
 
 build: web-build go-prepare
 	mkdir -p bin
-	CGO_ENABLED=0 go build -p $(GO_PARALLEL) -trimpath -ldflags '$(LDFLAGS)' -o bin/meshstrata-controller ./cmd/controller
-	CGO_ENABLED=0 go build -p $(GO_PARALLEL) -trimpath -ldflags '$(LDFLAGS)' -o bin/meshstrata-agent ./cmd/agent
+	CGO_ENABLED=0 go build -p $(GO_PARALLEL) -trimpath -ldflags '$(LDFLAGS)' -o bin/meshstrata-controller ./controller/cmd
+	CGO_ENABLED=0 go build -p $(GO_PARALLEL) -trimpath -ldflags '$(LDFLAGS)' -o bin/meshstrata-agent ./agent/cmd
 
 generate:
 	sqlc generate
@@ -52,10 +52,10 @@ smoke: build
 	python3 scripts/smoke.py
 
 dev-controller: web-build go-prepare
-	go run -p $(GO_PARALLEL) ./cmd/controller run -config configs/controller.dev.json
+	go run -p $(GO_PARALLEL) ./controller/cmd run -config controller/configs/controller.dev.json
 
 dev-agent: go-prepare
-	go run -p $(GO_PARALLEL) ./cmd/agent run -config configs/agent.dev.json
+	go run -p $(GO_PARALLEL) ./agent/cmd run -config agent/configs/agent.dev.json
 
 dev-web: web-install
-	npm --prefix web run dev
+	npm --prefix controller/web run dev

@@ -4,7 +4,7 @@
 
 交互依据为 [前端交互设计](Meshstrata_前端交互设计_v1.0.md)，能力边界依据为 [产品设计](Meshstrata_产品设计_v1.0.md)。本文件是可直接用于启动独立 Codex 会话的任务书，包含全部页面的归属、前置条件和验收目标。
 
-F00 已以提交 `2476a77` 交付。用户唤醒设计会话后，已复核契约与构建，并补齐页面开发所需的共享字段。当前进入 P01–P10 页面实施轮：在固定接口和独占目录下并行编辑，统一使用 `web/scripts/check-pages.sh` 的文件锁串行检查，Git 操作由设计/集成会话独占。具体会话及状态记录于 `documents/frontend-delivery/会话登记.md`；任务编号本身不代表已完成。
+F00 已以提交 `2476a77` 交付。用户唤醒设计会话后，已复核契约与构建，并补齐页面开发所需的共享字段。当前进入 P01–P10 页面实施轮：在固定接口和独占目录下并行编辑，统一使用 `controller/web/scripts/check-pages.sh` 的文件锁串行检查，Git 操作由设计/集成会话独占。具体会话及状态记录于 `documents/frontend-delivery/会话登记.md`；任务编号本身不代表已完成。
 
 ## 1. 共用执行要求
 
@@ -27,7 +27,7 @@ F00 已完成。目标是在后端未启动时运行前端，能通过真实 URL
 ### 2.1 具体工作
 
 1. 将现有 App.vue 中布局、导航、系统信息和占位内容拆开。按交互设计实现 Overview、Nodes、Routes、Client Config 二级导航、Activity，Settings 放侧栏底部。默认保留现有绿色浅色风格并改善键盘与窄屏布局。
-2. 引入与现有 Vue/TS 兼容的 Vue Router，固定安装版本并更新锁文件；使用 hash history。实现交互设计的全部路由、动态对象参数、面包屑、活跃导航、404、页面标题、query 白名单和内部 returnTo 校验。保留前端输出到 internal/webui/dist 的契约。
+2. 引入与现有 Vue/TS 兼容的 Vue Router，固定安装版本并更新锁文件；使用 hash history。实现交互设计的全部路由、动态对象参数、面包屑、活跃导航、404、页面标题、query 白名单和内部 returnTo 校验。保留前端输出到 controller/internal/webui/dist 的契约。
 3. 创建第 2.2 节列出的所有页面文件及占位组件，入口可点通；占位明确显示 Pending implementation、页面目标和合理返回/关联导航。不要把这些当最终业务页。创建统一路由辅助函数，避免各页面自行拼接 URL。
 4. 将全局 providers 放到应用层，包括 Naive UI message/dialog、主题、locale。建立基础排版/间距/颜色变量和公共组件。不要让 App.vue 继续承担业务实现。
 5. 创建最小但可扩展的 domain 类型和可复用模拟 workspace：覆盖交互设计 4.2 的实体、稳定 ID、引用、时间、草稿/已发布修订、独立连接和验证状态。只实现供页面操作使用的读写命令基础，不在 F00 内完成所有业务算法。
@@ -37,28 +37,28 @@ F00 已完成。目标是在后端未启动时运行前端，能通过真实 URL
 9. 公共 i18n 与各 feature/locales/en.ts 分开。建立清晰的命名空间装载方式，让每个业务会话只改本目录资源。默认英文，后续加语言不改配置数据。
 10. 为 EgressPolicyDrawer 和 CheckEgressDrawer 建立可编译的占位出口与 props/emits 类型；route-editor、routes、subscriptions 后续依赖它们。具体类型在契约文档中列出，不把 UI stub 当业务校验器。
 11. 原型默认不向任何 API 发请求。保留现有 getSystem 的真实只读能力，但只有明确的 Controller 信息查询入口才允许调用；Controller 不可用不阻断 Demo。不要把真实请求和模拟响应混在同一“已连接”状态。
-12. 输出 `web/FRONTEND_CONTRACT.md`：目录/入口、路由名称和 helper、组件 props/emits、domain 类型入口、workspace 读写用法、i18n 命名空间、草稿恢复、场景/重置、后续任务边界、运行与检查命令。这个契约是后续页面会话的前置资料。
+12. 输出 `controller/web/FRONTEND_CONTRACT.md`：目录/入口、路由名称和 helper、组件 props/emits、domain 类型入口、workspace 读写用法、i18n 命名空间、草稿恢复、场景/重置、后续任务边界、运行与检查命令。这个契约是后续页面会话的前置资料。
 
 ### 2.2 预留入口文件
 
 | 所属模块 | 必须创建的入口 |
 | --- | --- |
-| overview | `web/src/features/overview/OverviewPage.vue` |
-| nodes | `web/src/features/nodes/NodesPage.vue`、`NodeEnrollmentPage.vue` |
-| node-detail | `web/src/features/node-detail/NodeDetailPage.vue` |
-| routes | `web/src/features/routes/RoutesPage.vue`、`RouteDetailPage.vue` |
-| route-editor | `web/src/features/route-editor/RouteEditorPage.vue` |
-| egress | `web/src/features/egress/EgressPolicyDrawer.vue`、`CheckEgressDrawer.vue` |
-| subscriptions | `web/src/features/subscriptions/SubscriptionsPage.vue`、`SubscriptionEditorPage.vue`、`SubscriptionDetailPage.vue` |
-| rule-profiles | `web/src/features/rule-profiles/RuleProfilesPage.vue`、`RuleProfileEditorPage.vue` |
-| activity | `web/src/features/activity/ActivityPage.vue`、`ReleaseDetailPage.vue` |
-| settings/auth | `web/src/features/settings/SettingsPage.vue`、`web/src/features/auth/LoginPage.vue` |
+| overview | `controller/web/src/features/overview/OverviewPage.vue` |
+| nodes | `controller/web/src/features/nodes/NodesPage.vue`、`NodeEnrollmentPage.vue` |
+| node-detail | `controller/web/src/features/node-detail/NodeDetailPage.vue` |
+| routes | `controller/web/src/features/routes/RoutesPage.vue`、`RouteDetailPage.vue` |
+| route-editor | `controller/web/src/features/route-editor/RouteEditorPage.vue` |
+| egress | `controller/web/src/features/egress/EgressPolicyDrawer.vue`、`CheckEgressDrawer.vue` |
+| subscriptions | `controller/web/src/features/subscriptions/SubscriptionsPage.vue`、`SubscriptionEditorPage.vue`、`SubscriptionDetailPage.vue` |
+| rule-profiles | `controller/web/src/features/rule-profiles/RuleProfilesPage.vue`、`RuleProfileEditorPage.vue` |
+| activity | `controller/web/src/features/activity/ActivityPage.vue`、`ReleaseDetailPage.vue` |
+| settings/auth | `controller/web/src/features/settings/SettingsPage.vue`、`controller/web/src/features/auth/LoginPage.vue` |
 
 模块内可以后续增加组件和 composable，以上入口路径保持稳定。全部页面 default export；路由从 URL 参数读取对象上下文。除 egress 外，各占位页面不应成为其他 feature 的业务依赖。
 
 ### 2.3 允许修改范围与验收
 
-F00 独占 `web/` 的基础改造、上述占位入口、`web/FRONTEND_CONTRACT.md`，可以更新 README 的前端运行说明和追加开发日志。不得改产品设计或重写当前交互设计/任务书；发现冲突应记录在契约的“待决定事项”。不改 Go API、数据库、安装器。
+F00 独占 `controller/web/` 的基础改造、上述占位入口、`controller/web/FRONTEND_CONTRACT.md`，可以更新 README 的前端运行说明和追加开发日志。不得改产品设计或重写当前交互设计/任务书；发现冲突应记录在契约的“待决定事项”。不改 Go API、数据库、安装器。
 
 至少通过 `npm --prefix web run typecheck`、`npm --prefix web run build`、`git diff --check`。运行可用的浏览器检查：一级/二级导航、刷新/前进后退、所有路由、无效 ID/404、草稿返回、Demo 重置、窄屏、无自动请求。对 query 白名单、持久化恢复或路由辅助等有实际价值的纯逻辑可以补少量测试；不增加排版快照测试。
 
@@ -81,7 +81,7 @@ F00 交付时明确区分已完成基础能力和仍是占位的业务页，列�
 | P09 Meshstrata 活动与发布任务 | `features/activity/` | 3.10 | Events/Releases/按需日志、筛选、来源跳转；逐节点任务、Reverse 依赖、Applied/Verified 分开、失败/回滚/清理/离线待同步和重试。 |
 | P10 Meshstrata 系统设置与演示登录 | `features/settings/`、`features/auth/` | 3.11 | 八组设置、局部保存/撤销、表单校验、Relay 条件、证书/日志/本地配对演示；英文单管理员登录、内部 returnTo、secret 仅内存。 |
 
-所有文件目录均相对 `/root/meshstrata/web/src/`。例如 P01 的完整路径为 `/root/meshstrata/web/src/features/overview/`。每个任务将独立说明保存到 `documents/frontend-delivery/Pxx.md`，包括实现范围、实测结果、共享契约缺口、尚未接入的依赖；目录仅在产生交付时创建，不提前放空报告。
+所有文件目录均相对 `/root/meshstrata/controller/web/src/`。例如 P01 的完整路径为 `/root/meshstrata/controller/web/src/features/overview/`。每个任务将独立说明保存到 `documents/frontend-delivery/Pxx.md`，包括实现范围、实测结果、共享契约缺口、尚未接入的依赖；目录仅在产生交付时创建，不提前放空报告。
 
 ### 3.1 依赖与启动顺序
 
