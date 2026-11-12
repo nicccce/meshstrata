@@ -1,6 +1,6 @@
 # 公共契约（v1，I00复核，2026-11-12）
 
-本目录是 HTTP/控制协议的代码旁契约。`openapi.json` 中只有 `GET /api/v1/system` 已注册；其他 `x-implemented: false` 均是预留，当前返回 404。B00 不启动 9443，不注册登录或业务写接口。新增认证及业务行为必须经过对应阶段，不能以空数组/空任务的 200 代替未实现。健康检查沿用 README。
+本目录是 HTTP/控制协议的代码旁契约。I01 显式安全模式已注册真实认证/节点管理及9443入网/控制，详见文末；`x-implemented: false` 仍为预留404，产物 transport 缺B04时为约定501。新增认证及业务行为必须经过对应阶段，不能以空数组/空任务的 200 代替未实现。健康检查沿用 README。
 
 ## 版本、ID、列表、错误与任务
 
@@ -51,7 +51,7 @@
 
 ## I00订阅能力链接与再次复制
 
-专用随机download-only token至少256位熵、URL-safe，只授权单订阅下载。它可位于HTTPS资源路径，OpenAPI使用普通path参数和`x-authentication`，不能虚构`in:path`的apiKey。管理员密码、会话cookie、入网token、节点私钥、DNS凭据、代理认证和本地Mihomo secret仍不得进入普通URL/前端路由/日志/草稿。所有业务接口继续`x-implemented:false`并返回404，B08才注册真实下载。
+专用随机download-only token至少256位熵、URL-safe，只授权单订阅下载。它可位于HTTPS资源路径，OpenAPI使用普通path参数和`x-authentication`，不能虚构`in:path`的apiKey。管理员密码、会话cookie、入网token、节点私钥、DNS凭据、代理认证和本地Mihomo secret仍不得进入普通URL/前端路由/日志/草稿。订阅业务接口继续`x-implemented:false`并返回404，B08才注册真实下载。
 
 刷新后显式Copy URL通过管理员会话、Origin和CSRF保护的`POST /api/v1/subscriptions/{subscription_id}/download-link`取回当前链接，响应仅`{download_url}`；普通列表/详情DTO不含token/URL。B08必须同时使用hash验证及B01 Cipher保存可恢复的密文/引用；不是刷新即重置。迁移010增加`subscription_download` purpose和`subscriptions.download_token_credential_ref REFERENCES credentials(id)`（不得改001/002）；约束该引用唯一且purpose正确，绑定credential ID+purpose，订阅映射及token_version在短事务中校验。新token先加密，再原子更新hash/version/ref并撤销旧credential；删除同样撤销hash与引用；失败不留半次重置，不换仍有效的代理身份。B01基础允许purpose扩展，但010落地前不能持久该新增用途。
 
@@ -63,3 +63,15 @@
 - `internal/adminauth.Guard`：B01实现Read/Write；B02管理handler只通过此小接口组合，不导入B01具体包；9443 TLS入网/mTLS独立且不装cookie中间件。
 - `controller/internal/storage.Database`：B01/B02 repository复用`*storage.Store`的Read/Write生成查询作用域。只向repository注入，不向HTTP层提供SQL；禁止另开库、访问私有db、嵌套事务或在回调内签证/加密/网络。
 - 精确构造、独占路径、SQL/依赖提案、临时副本检查和I01接线见[阶段1交接](../../documents/backend-delivery/阶段1交接.md)。B03仅交付内核适配/证据边界，B05后续执行runtime。
+
+## I01 已集成的安全入口
+
+显式 `secure` 配置完整且依赖构造成功时，8443 HTTPS 注册 B01 auth 与 B02 nodes 管理路由；普通回环开发 HTTP 仍不注册这些接口。实现的方法、请求和响应以更新后的 OpenAPI 为准。auth initialize/login/password 不使用业务 Mutation：初始化依靠可信本地 proof + 持久 CAS 墓碑，登录发新 opaque 会话，改密码校验当前口令与服务端修订并原子撤销全部会话。所有其余业务写保持 expected_revision/idempotency_key。
+
+初始化 proof 仅由本地 `prepare-local` 产生的受限文件提供；`initialize-admin` 从 stdin 读用户名/密码并正常验证 HTTPS CA/SAN。无 proof 的公网请求不能初始化。Cookie 固定 Secure/HttpOnly/SameSite=Strict；写操作须精确 Origin 和 X-CSRF-Token。认证错误还包括 RATE_LIMITED/429（Retry-After）与 INTERNAL_ERROR/500。普通 JSON 配置只含文件路径、版本和公开地址，不含明文密码/master key/token。
+
+9443 为独立 TLS1.3 监听；只有精确首次 `/enroll/v1` 可以不带客户端证书。续期、控制与产物请求都需要有效、未移除节点的 mTLS 身份。CA PEM 必须通过可信渠道提供给 Agent，可附加指纹；指纹单独不能完成入网。产物 transport 已注册，但缺 B04 source/resolver，认证后返回501。Reverse 无可信 Relay 能力，创建返回501，即使 role=both 也不认定已经运行 Relay。
+
+Agent `control.mode=control_only` 是阶段1有限运行边界：组件锁内持久 `stage1-control.json`，绑定 node_id、applied_revision=0、空摘要、初始 revocation_epoch=1 和零 pending；只允许新节点明确无业务状态。未知文件/其他节点/非初始状态均拒绝，不删除或归零。HelloSource 与 B05 Runtime 二选一；命令和 receipt 在该模式以 WebSocket policy violation 拒绝，不生成 result/outbox/Applied/Verified。Controller 只接受相同初始 Hello，未装业务结果消费者。B05 仍须实现先持久 checkpoint/tombstone/outbox 再返回结果、精确持久确认回执的完整 Runtime。
+
+Controller/Agent 关闭分别取消 HTTP、续期与重连，并显式关闭 hijacked WebSocket；不操作 Mihomo/frp。移除只撤销管理身份并断控制，revoke task 保持 queued/cleanup pending。其目标摘要是管理清理意图，不是配置产物，后续 B04 不得据此投递或伪造清理成功。控制在线、Agent health 和业务 verification 始终分开。

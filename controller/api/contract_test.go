@@ -98,11 +98,18 @@ func TestContractReferencesAndGoFields(t *testing.T) {
 			}
 		}
 	}
+	implemented := map[string]bool{
+		"get /api/v1/system":           true,
+		"post /api/v1/auth/initialize": true, "post /api/v1/auth/login": true, "get /api/v1/auth/session": true, "post /api/v1/auth/logout": true, "post /api/v1/auth/password": true,
+		"get /api/v1/nodes": true, "post /api/v1/nodes": true, "get /api/v1/nodes/{node_id}": true, "patch /api/v1/nodes/{node_id}": true,
+		"get /api/v1/nodes/{node_id}/enrollment": true, "post /api/v1/nodes/{node_id}/enrollment": true, "post /api/v1/nodes/{node_id}/remove": true, "post /api/v1/nodes/{node_id}/certificates/revoke": true,
+		"post /enroll/v1": true, "post /enroll/v1/renew": true, "get /control/v1": true,
+	}
 	// Reserved business writes must explicitly require both administrator session and CSRF.
 	for path, item := range open["paths"].(map[string]any) {
 		for method, raw := range item.(map[string]any) {
 			op := raw.(map[string]any)
-			if op["x-implemented"] == true && path != "/api/v1/system" {
+			if (op["x-implemented"] == true) != implemented[method+" "+path] {
 				t.Fatalf("unexpected implemented endpoint %s", path)
 			}
 			if strings.HasPrefix(path, "/api/v1/") && !strings.HasPrefix(path, "/api/v1/auth/") && method != "get" {
@@ -159,5 +166,28 @@ func TestSubscriptionCapabilityLinkContract(t *testing.T) {
 				t.Fatal("sensitive response may cache or leak referrer")
 			}
 		}
+	}
+}
+
+func TestI01SecureAuthContract(t *testing.T) {
+	open := parse(t, OpenAPI)
+	init := schema(t, open, "paths", "/api/v1/auth/initialize", "post")
+	found := false
+	for _, raw := range init["parameters"].([]any) {
+		p := raw.(map[string]any)
+		if p["name"] == "X-Meshstrata-Bootstrap" && p["required"] == true {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("trusted bootstrap header missing")
+	}
+	session := schema(t, open, "components", "schemas", "AuthSession", "properties")
+	if len(session) != 3 || session["csrf_token"] == nil || session["username"] == nil || session["expires_at"] == nil {
+		t.Fatal("unsafe session DTO")
+	}
+	security := schema(t, open, "paths", "/api/v1/auth/password", "post")["security"].([]any)[0].(map[string]any)
+	if security["AdminSession"] == nil || security["CSRF"] == nil {
+		t.Fatal("password lacks auth/CSRF")
 	}
 }

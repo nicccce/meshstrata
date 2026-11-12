@@ -13,6 +13,77 @@ type AppMetadatum struct {
 	Value string
 }
 
+type B01Administrator struct {
+	ID           int64
+	Username     string
+	PasswordHash string
+	Revision     int64
+	CreatedAt    int64
+	UpdatedAt    int64
+}
+
+type B01AuthLimit struct {
+	Bucket      string
+	WindowStart int64
+	Attempts    int64
+}
+
+type B01AuthState struct {
+	ID          int64
+	Initialized int64
+}
+
+type B01Session struct {
+	TokenHash     []byte
+	AdminID       int64
+	AdminRevision int64
+	CreatedAt     int64
+	ExpiresAt     int64
+}
+
+type B02ManagementCa struct {
+	Singleton     int64
+	Certificate   []byte
+	CredentialRef string
+}
+
+type B02Mutation struct {
+	Scope          string
+	IdempotencyKey string
+	RequestDigest  string
+	NodeID         string
+	Revision       int64
+	TokenRef       sql.NullString
+	TaskID         sql.NullString
+}
+
+type B02NodeCertificate struct {
+	Fingerprint string
+	NodeID      string
+	Certificate []byte
+	CsrHash     string
+	NotAfter    string
+	RevokedAt   sql.NullString
+	RenewedTo   sql.NullString
+}
+
+type B02NodeEnrollment struct {
+	NodeID      string
+	RelayNodeID sql.NullString
+	Generation  int64
+}
+
+type B02Token struct {
+	ID          string
+	NodeID      string
+	Generation  int64
+	TokenHash   string
+	ExpiresAt   string
+	RevokedAt   sql.NullString
+	CsrHash     sql.NullString
+	Certificate []byte
+}
+
 type Credential struct {
 	ID         string
 	Purpose    string

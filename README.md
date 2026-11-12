@@ -5,9 +5,9 @@ provides a **local development foundation**: an independent Go Controller and
 Agent, SQLite migrations, shared v1 contracts, a transactional task ledger foundation,
 and an embedded Vue workspace.
 
-Node enrollment, mTLS/WebSocket control, authentication, proxy configuration,
-Mihomo management, subscriptions, and production installation are not implemented
-in this milestone. An Agent health response only confirms the local Agent process.
+I01 implements explicit HTTPS authentication, encrypted CA/node enrollment and
+mTLS control. Proxy publication, subscriptions and production installation remain
+unimplemented; the Mihomo adapter has isolated opt-in compatibility tests. An Agent health response only confirms the local Agent process.
 
 ## Requirements
 
@@ -112,9 +112,9 @@ numeric offset). Logs are English JSON on stderr. The development examples use
 `info` so startup and shutdown are visible. No file logging or production log
 rotation is configured in this milestone.
 
-Controller supports HTTP on literal loopback IP addresses only. This development
-mode differs from the planned production HTTPS endpoint on port 8443. It does not
-bind port 9443 or expose node control endpoints.
+Without `secure`, Controller supports HTTP on literal loopback IPs only and
+exposes no authentication/node write routes or 9443. Explicit secure mode below
+enables HTTPS management and an independent node TLS listener.
 
 State directories have mode `0700`. Controller stores `controller.db` using WAL,
 foreign keys, a 5-second busy timeout, and one SQL connection. Versioned embedded
@@ -122,9 +122,9 @@ migrations run transactionally before HTTP starts. Migration 001 retains instanc
 metadata; incremental migration 002 adds relational
 nodes, DNS/route/egress revisions, listeners/ports/references, rules/DomainSets,
 subscriptions/isolated entries, credential references, task/node evidence, measurements,
-events and settings. The instance ID survives upgrades and restarts. Credential
-encryption, authentication and business execution remain future work; no business
-write endpoint is exposed.
+events and settings. The instance ID survives upgrades and restarts. Migrations003–005 add authentication and node identity persistence. Credential
+encryption/authentication are available only in secure mode; business execution
+remains future work.
 
 Agent serves health only on `<state_dir>/health.sock` with mode `0600`.
 Advisory locks prevent duplicate processes using the same component state. Agent
@@ -204,3 +204,78 @@ not implemented by B00. Servers will run precompiled binaries without Go/Node.js
 Static/musl compatibility of Meshstrata and pinned external binaries must be verified.
 See the [complete stage plan](documents/Meshstrata_剩余开发流程_v1.0.md) and
 [B00 evidence](documents/backend-delivery/B00.md).
+
+## Stage 1 secure runtime (I01)
+
+Authentication, encrypted Controller credentials/CA, node enrollment, renewal and
+mTLS WebSocket control are now implemented in **explicit secure mode**. The offline
+frontend remains a prototype; use the API/CLI below. Publication, local expiry,
+subscriptions, Reverse and production installers remain later stages.
+
+Prepare a Controller JSON with an absolute `state_dir`, `listen_address`, and:
+
+```json
+{"secure":{
+  "tls_cert_file":"/absolute/private/web-cert.pem",
+  "tls_key_file":"/absolute/private/web-key.pem",
+  "web_ca_file":"/absolute/private/web-ca.pem",
+  "allowed_origins":["https://127.0.0.1:8443"],
+  "current_key_id":"v1",
+  "key_files":{"v1":"/absolute/private/master.key"},
+  "bootstrap_file":"/absolute/private/bootstrap.json",
+  "control_listen_address":"127.0.0.1:9443",
+  "controller_url":"https://127.0.0.1:9443",
+  "server_names":["127.0.0.1"]
+}}
+```
+
+All sensitive inputs use owned 0600 files with immediate 0700 parent; no symlink
+components. Ordinary JSON contains paths/versions/public metadata only. For local
+trust testing, `meshstrata-controller prepare-local -config FILE` creates the new
+private directory and the exact canonical files above, plus `bootstrap-proof`.
+Its web leaf lasts 24 hours, proof 30 minutes; it never replaces existing files.
+Configure imported HTTPS certificate/key paths for durable deployment. Include all
+web/control hostnames in `server_names` when using prepare-local. Keep historical
+master key versions available; never regenerate missing keys against an existing DB.
+
+Start `meshstrata-controller run -config FILE`, then run
+`meshstrata-controller initialize-admin -config FILE` with stdin JSON
+`{"username":"admin","password":"a private password of at least 12 bytes"}`.
+Supply real input through a private file/stdin, not argv or shell history. The CLI
+verifies HTTPS with `web_ca_file` and sends the local bootstrap proof. After success,
+remove the proof file and omit `bootstrap_file` for ordinary restarts. Expired proof
+files disable initialization, preserving existing authentication.
+
+Login using `POST /api/v1/auth/login` with Origin and JSON credentials. Read
+`GET /api/v1/auth/session` for CSRF; node writes require cookie, matching Origin and
+`X-CSRF-Token`. `POST /api/v1/nodes` returns sensitive one-time materials: node_id,
+controller_url, CA PEM, optional fingerprint and token. See OpenAPI for exact inputs.
+Store returned CA/token in private files, transfer via a trusted channel, then use:
+
+```json
+{"state_dir":"/absolute/agent","control":{
+  "mode":"control_only","controller_url":"https://controller.example:9443",
+  "ca_file":"/absolute/private/ca.pem","node_id":"node_REPLACE",
+  "token_file":"/absolute/private/token"
+}}
+```
+
+Run `meshstrata-agent enroll -config FILE`, then `meshstrata-agent run -config FILE`.
+Remove `token_file` and its contents after successful enrollment; retries with the
+same persisted identity/CSR recover safely. CA PEM is required; a fingerprint alone
+is insufficient. Agent renews valid certificates and reconnects independently.
+
+`control_only` accepts only persisted pristine stage-1 state (initial epoch 1,
+no applied config or pending result). Unknown/business state fails closed. Commands
+and receipts are rejected with no success result. Health confirms only local process;
+node `control=online` confirms control presence; proxy `verification=not_checked`
+remains separate. Removal disconnects/revokes management identity but leaves actual
+proxy cleanup pending for B04/B05. Neither program starts/stops Mihomo or frp.
+
+Reproduce local integration after building with `python3 scripts/integration/stage1.py`.
+It uses ordinary binaries, temporary trusted CAs, real auth/cipher/single database,
+TLS/mTLS, restart/reconnect, renewal, removal and failure cleanup; private evidence
+stays in `.local/i01-*/private`. Run the pinned kernel suite with
+`python3 scripts/compat/mihomo/run.py --workspace "$PWD" --integrated`.
+`scripts/integration/build-stage1.sh` prepares CGO=0 binaries and the opt-in test
+executable for servers without Go/Node. See the [T01 plan](documents/backend-delivery/T01计划.md).

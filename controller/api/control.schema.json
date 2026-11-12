@@ -448,5 +448,6 @@
       ],
       "additionalProperties": false
     }
-  }
+  },
+  "description": "Stage 1 control_only uses a durable pristine node state: applied_revision=0, applied_digest empty, revocation_epoch=1, pending_results=[]; commands and receipts close with policy violation, with no result. B05 Runtime retains durable checkpoint/outbox before results and receipts. No business execution capability is inferred from connection."
 }

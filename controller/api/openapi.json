@@ -41,12 +41,32 @@
       "post": {
         "operationId": "post__api_v1_auth_initialize",
         "x-owner": "B01",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [],
         "description": "B01: initialize is one-time and requires trusted local bootstrap proof; login rate limited. Origin checks required.",
         "responses": {
           "204": {
-            "description": "No content"
+            "description": "No content",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
           },
           "default": {
             "description": "Stable code and non-sensitive field errors",
@@ -54,6 +74,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
                 }
               }
             }
@@ -68,19 +118,59 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "X-Meshstrata-Bootstrap",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 43
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       }
     },
     "/api/v1/auth/login": {
       "post": {
         "operationId": "post__api_v1_auth_login",
         "x-owner": "B01",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [],
         "description": "B01: initialize is one-time and requires trusted local bootstrap proof; login rate limited. Origin checks required.",
         "responses": {
           "204": {
-            "description": "No content"
+            "description": "No content",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
           },
           "default": {
             "description": "Stable code and non-sensitive field errors",
@@ -88,6 +178,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
                 }
               }
             }
@@ -102,14 +222,24 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       }
     },
     "/api/v1/auth/session": {
       "get": {
         "operationId": "get__api_v1_auth_session",
         "x-owner": "B01",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "AdminSession": []
@@ -118,7 +248,34 @@
         "description": "B01 defines safe session metadata and CSRF delivery; never returns session token in URL.",
         "responses": {
           "200": {
-            "description": "No content"
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSession"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
           },
           "default": {
             "description": "Stable code and non-sensitive field errors",
@@ -128,26 +285,77 @@
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
             }
           }
-        }
+        },
+        "parameters": []
       }
     },
     "/api/v1/auth/logout": {
       "post": {
         "operationId": "post__api_v1_auth_logout",
         "x-owner": "B01",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "AdminSession": [],
             "CSRF": []
           }
         ],
-        "description": "Reserved v1 contract; unregistered in B00.",
+        "description": "Implemented in explicit HTTPS secure mode only; development HTTP remains 404.",
         "responses": {
           "204": {
-            "description": "No content"
+            "description": "No content",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
           },
           "default": {
             "description": "Stable code and non-sensitive field errors",
@@ -157,22 +365,62 @@
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       }
     },
     "/api/v1/nodes": {
       "get": {
         "operationId": "get__api_v1_nodes",
         "x-owner": "B02",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "AdminSession": []
           }
         ],
-        "description": "Reserved v1 contract; unregistered in B00.",
+        "description": "Implemented in explicit HTTPS secure mode only; development HTTP remains 404.",
         "responses": {
           "200": {
             "description": "Result",
@@ -182,6 +430,26 @@
                   "$ref": "#/components/schemas/NodePage"
                 }
               }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
             }
           },
           "default": {
@@ -190,6 +458,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
                 }
               }
             }
@@ -215,26 +503,45 @@
             }
           }
         ]
-      }
-    },
-    "/api/v1/nodes/{node_id}": {
-      "get": {
-        "operationId": "get__api_v1_nodes_node_id",
+      },
+      "post": {
+        "operationId": "post__api_v1_nodes",
         "x-owner": "B02",
-        "x-implemented": false,
+        "x-implemented": true,
+        "description": "Implemented in explicit secure mode only. Development HTTP keeps this unregistered.",
         "security": [
           {
-            "AdminSession": []
+            "AdminSession": [],
+            "CSRF": []
           }
         ],
-        "description": "Reserved v1 contract; unregistered in B00.",
         "responses": {
           "200": {
             "description": "Result",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Node"
+                  "$ref": "#/components/schemas/EnrollmentMaterials"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
                 }
               }
             }
@@ -245,6 +552,121 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueNode"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/nodes/{node_id}": {
+      "get": {
+        "operationId": "get__api_v1_nodes_node_id",
+        "x-owner": "B02",
+        "x-implemented": true,
+        "security": [
+          {
+            "AdminSession": []
+          }
+        ],
+        "description": "Implemented in explicit HTTPS secure mode only; development HTTP remains 404.",
+        "responses": {
+          "200": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Node"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
                 }
               }
             }
@@ -265,14 +687,14 @@
       "patch": {
         "operationId": "patch__api_v1_nodes_node_id",
         "x-owner": "B02",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "AdminSession": [],
             "CSRF": []
           }
         ],
-        "description": "Reserved v1 contract; unregistered in B00.",
+        "description": "Implemented in explicit HTTPS secure mode only; development HTTP remains 404.",
         "responses": {
           "200": {
             "description": "Result",
@@ -280,6 +702,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Node"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
                 }
               }
             }
@@ -290,6 +732,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
                 }
               }
             }
@@ -337,6 +799,14 @@
               "type": "string",
               "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
             }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ]
       }
@@ -345,7 +815,7 @@
       "post": {
         "operationId": "post__api_v1_nodes_node_id_enrollment",
         "x-owner": "B02",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "AdminSession": [],
@@ -355,7 +825,34 @@
         "description": "One-shot enrollment materials; B02 defines redacted response and no-store delivery.",
         "responses": {
           "200": {
-            "description": "No content"
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentMaterials"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
           },
           "default": {
             "description": "Stable code and non-sensitive field errors",
@@ -363,6 +860,128 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Mutation"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "get__api_v1_nodes_node_id_enrollment",
+        "x-owner": "B02",
+        "x-implemented": true,
+        "description": "Implemented in explicit secure mode only. Development HTTP keeps this unregistered.",
+        "security": [
+          {
+            "AdminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentStatus"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
                 }
               }
             }
@@ -385,14 +1004,14 @@
       "post": {
         "operationId": "post__api_v1_nodes_node_id_remove",
         "x-owner": "B02",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "AdminSession": [],
             "CSRF": []
           }
         ],
-        "description": "Reserved v1 contract; unregistered in B00.",
+        "description": "Implemented in explicit HTTPS secure mode only; development HTTP remains 404.",
         "responses": {
           "202": {
             "description": "Result",
@@ -400,6 +1019,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TaskAccepted"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
                 }
               }
             }
@@ -410,6 +1049,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
                 }
               }
             }
@@ -434,6 +1093,14 @@
               "type": "string",
               "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
             }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ]
       }
@@ -442,7 +1109,7 @@
       "post": {
         "operationId": "post__enroll_v1",
         "x-owner": "B02",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [],
         "description": "Separate 9443 listener: server-authenticated TLS, validate pinned CA/service identity BEFORE sending one-use token. Token in JSON body only; no client certificate yet.",
         "responses": {
@@ -454,6 +1121,26 @@
                   "$ref": "#/components/schemas/EnrollmentIdentity"
                 }
               }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
             }
           },
           "default": {
@@ -462,6 +1149,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
                 }
               }
             }
@@ -489,7 +1196,7 @@
       "get": {
         "operationId": "get__control_v1",
         "x-owner": "B02",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "NodeMTLS": []
@@ -498,7 +1205,27 @@
         "description": "Separate 9443 listener: mTLS certificate node identity and enabled state, WebSocket subprotocol meshstrata.control.v1; JSON control.schema.json. No enrollment token accepted.",
         "responses": {
           "101": {
-            "description": "No content"
+            "description": "No content",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
           },
           "default": {
             "description": "Stable code and non-sensitive field errors",
@@ -506,6 +1233,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
                 }
               }
             }
@@ -523,7 +1270,7 @@
             "NodeMTLS": []
           }
         ],
-        "description": "Private immutable bounded bundle, node-scoped by mTLS and ledger; SHA-256 matches command. B04/B05 freeze payload format before T02.",
+        "description": "Registered transport with mTLS; currently returns 501 NOT_IMPLEMENTED for authenticated nodes because B04 artifact resolver/source are absent.",
         "responses": {
           "200": {
             "description": "Result",
@@ -537,6 +1284,16 @@
             }
           },
           "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
             "description": "Stable code and non-sensitive field errors",
             "content": {
               "application/json": {
@@ -1173,6 +1930,295 @@
           ]
         }
       }
+    },
+    "/api/v1/auth/password": {
+      "post": {
+        "operationId": "post__api_v1_auth_password",
+        "x-owner": "B01",
+        "x-implemented": true,
+        "description": "Implemented in explicit secure mode only. Development HTTP keeps this unregistered.",
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRF": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChange"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/nodes/{node_id}/certificates/revoke": {
+      "post": {
+        "operationId": "post__api_v1_nodes_node_id_certificates_revoke",
+        "x-owner": "B02",
+        "x-implemented": true,
+        "description": "Implemented in explicit secure mode only. Development HTTP keeps this unregistered.",
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRF": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NodeRevision"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Mutation"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/enroll/v1/renew": {
+      "post": {
+        "operationId": "post__enroll_v1_renew",
+        "x-owner": "B02",
+        "x-implemented": true,
+        "description": "9443 valid node mTLS; same durable CSR; certificate renewal does not reset business state.",
+        "security": [
+          {
+            "NodeMTLS": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentIdentity"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenewCSR"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1681,6 +2727,196 @@
             "description": "Sensitive HTTPS capability URL /subscriptions/v1/config/{token}; ephemeral explicit-action response only. Never persist in ordinary DTOs, routes, drafts or telemetry."
           }
         }
+      },
+      "AuthSession": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "expires_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "csrf_token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "expires_at",
+          "csrf_token"
+        ],
+        "additionalProperties": false
+      },
+      "PasswordChange": {
+        "type": "object",
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "new_password": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "additionalProperties": false
+      },
+      "EnrollmentMaterials": {
+        "type": "object",
+        "properties": {
+          "node_id": {
+            "$ref": "#/components/schemas/ID"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "token": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43
+          },
+          "expires_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "controller_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "ca_pem": {
+            "type": "string"
+          },
+          "ca_fingerprint": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "node_id",
+          "revision",
+          "token",
+          "expires_at",
+          "controller_url",
+          "ca_pem",
+          "ca_fingerprint"
+        ],
+        "additionalProperties": false
+      },
+      "IssueNode": {
+        "type": "object",
+        "properties": {
+          "expected_revision": {
+            "const": 0
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "connection_mode": {
+            "enum": [
+              "direct",
+              "reverse_tunnel"
+            ]
+          },
+          "role": {
+            "enum": [
+              "node",
+              "both"
+            ]
+          },
+          "control_address": {
+            "type": "string"
+          },
+          "proxy_address": {
+            "type": "string"
+          },
+          "relay_node_id": {
+            "$ref": "#/components/schemas/ID"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "idempotency_key",
+          "name",
+          "connection_mode",
+          "role",
+          "control_address"
+        ],
+        "additionalProperties": false
+      },
+      "EnrollmentStatus": {
+        "type": "object",
+        "properties": {
+          "node_id": {
+            "$ref": "#/components/schemas/ID"
+          },
+          "state": {
+            "enum": [
+              "pending",
+              "enrolled",
+              "expired",
+              "revoked"
+            ]
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "relay_node_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "node_id",
+          "state",
+          "expires_at",
+          "relay_node_id"
+        ],
+        "additionalProperties": false
+      },
+      "RenewCSR": {
+        "type": "object",
+        "properties": {
+          "csr_pem": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "csr_pem"
+        ],
+        "additionalProperties": false
+      },
+      "NodeRevision": {
+        "type": "object",
+        "properties": {
+          "node_id": {
+            "$ref": "#/components/schemas/ID"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/Revision"
+          }
+        },
+        "required": [
+          "node_id",
+          "revision"
+        ],
+        "additionalProperties": false
       }
     }
   }

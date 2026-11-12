@@ -1,0 +1,12 @@
+{
+  "version": "v1.19.33",
+  "os": "linux",
+  "architecture": "amd64",
+  "asset": "mihomo-linux-amd64-v1-v1.19.33.gz",
+  "release_url": "https://github.com/MetaCubeX/mihomo/releases/tag/v1.19.33",
+  "asset_url": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.33/mihomo-linux-amd64-v1-v1.19.33.gz",
+  "archive_sha256": "8ec92e7b2fdc6b853ba00156bab7e4e965c8b0d843b8c4ac8ab98795f02ad524",
+  "binary_sha256": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa",
+  "server_and_client": "same asset; separate temporary processes",
+  "other_platforms": "not yet tested; Alpine/OpenRC remains a required deployment platform"
+}

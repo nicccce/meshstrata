@@ -329,3 +329,10 @@ Agent 退出期间，到期调度会暂停；systemd/OpenRC 自动恢复和启�
 - **并行验证：**scripts/backend_check.py从明确I00提交建立忽略的单模块白名单副本，仅在副本应用本模块SQL/精确依赖并生成/测试，flock串行、共享缓存及-p1；新增4项隔离/拒绝测试。I01在业务会话结束后统一正式迁移003–005/锁依赖/sqlc/接线及全量检查。
 - **验证：**原工作区针对性Go测试、能力URL/刷新恢复/鉴权与404契约、仓储事务提交/回滚/取消测试及helper隔离测试通过。沙箱内既有Unix socket测试遇setsockopt限制，获准沙箱外执行原make check退出0；完整check-pages含i18n/适配器/类型检查/构建退出0；未重复无关浏览器套件。报告及日志路径见backend-delivery/I00.md。
 - **交付范围：**实际会话ID由环境一致确认并登记，未创建其他会话/子代理或跨会话发消息，无远程部署/凭据读取/live切换/新业务接口。I00独占Git按约提交推送；B01/B02/B03技术基线已备齐，但须用户在主协调会话说“继续”才派发，本会话完成I00后停止。
+
+### 2026-11-12 I01 阶段1统一集成
+
+- 合入B01管理认证/加密、B02 CA/入网/mTLS与B03固定Mihomo适配器；003–005正式迁移、精确依赖和sqlc生成。001/002及模块历史报告不改。
+- Controller显式HTTPS安全模式接真实Cipher/Guard/单一Store，独立9443；本地prepare-local/initialize-admin与Agent enroll可执行，不经argv/普通JSON保存敏感值。开发回环HTTP继续只健康/演示。
+- Agent以持久初始状态control_only接真实身份、续期、Hello/保活/重连，命令和receipt拒绝，不冒充B05持久业务执行。移除管理身份不等同代理清理，revoke任务保持待清理。
+- 补普通二进制本地组合脚本、当前集成源码真实四协议runner、无Go/Node真机产物构建入口及T01计划。完整检查/证据及限制见backend-delivery/I01.md；T01不自动启动，完整发布/到期T02、Reverse T05、两平台三角色安装/frp T07。

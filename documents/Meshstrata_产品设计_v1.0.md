@@ -458,7 +458,7 @@ TCP 443 和 UDP 443 分别检查。Hysteria 2 可与仅占用 TCP 443 的网站�
 
 **正式平台范围（2026-11-12确认）：**Ubuntu/systemd 与 Alpine/OpenRC 并列支持 `controller`、`node`、`both` 三角色及可选 frps/frpc，覆盖安装、启动、独立生命周期、日志限额、重复安装、升级失败恢复。Alpine不是仅测试平台，也不缩减为仅node。两平台运行预编译产物，自研Go程序使用CGO=0，前端内嵌，无Node/Go运行依赖；musl/静态构建及外部Mihomo/frp二进制兼容性纳入正式真机验收。OpenRC监督器输出与文件日志同样受限额，服务只操作平台独立实例，不按通用进程名结束程序。
 
-**当前实现边界：**已有Linux开发二进制、健康检查与公共数据基础；生产TLS/入网、真实业务、systemd/OpenRC服务和三角色安装器尚待后续阶段。上段为正式交付要求，不能当作已经通过Alpine部署验收，具体阶段见[剩余开发流程](Meshstrata_剩余开发流程_v1.0.md)。
+**当前实现边界：**已有Linux独立二进制、健康检查、显式HTTPS认证/CA入网/mTLS控制及隔离Mihomo适配检查；真实业务执行、systemd/OpenRC服务和三角色安装器尚待后续阶段。上段为正式交付要求，不能当作已经通过Alpine部署验收，具体阶段见[剩余开发流程](Meshstrata_剩余开发流程_v1.0.md)。
 
 交付两个自研可执行程序 `meshstrata-controller`、`meshstrata-agent`，以及节点使用的固定版本 Mihomo。启用反向出口时额外安装固定版本的 frp，仅在需要的两端运行 frps/frpc；不把 frp 作为普通直连节点的必装依赖。安装脚本根据角色选择对应架构的发布包，完成校验、安装和初始化；前端资源内嵌于 Controller，安装脚本执行完成后退出。
 

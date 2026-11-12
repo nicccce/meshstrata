@@ -28,6 +28,7 @@ type Component[C Configuration] struct {
 	Load        func(string) (C, error)
 	Run         func(context.Context, C, *slog.Logger) error
 	Healthcheck func(context.Context, C) (any, error)
+	Actions     map[string]func(context.Context, C, io.Reader) error
 }
 
 func Execute[C Configuration](app Component[C], args []string, stdout, stderr io.Writer) int {
@@ -42,6 +43,9 @@ func Execute[C Configuration](app Component[C], args []string, stdout, stderr io
 	path := flags.String("config", "", "JSON configuration file (relative paths use the working directory)")
 	flags.Usage = func() {
 		fmt.Fprintf(stderr, "Usage: meshstrata-%s [run|check-config|version", component)
+		for name := range app.Actions {
+			fmt.Fprintf(stderr, "|%s", name)
+		}
 		if app.Healthcheck != nil {
 			fmt.Fprint(stderr, "|healthcheck")
 		}
@@ -61,7 +65,7 @@ func Execute[C Configuration](app Component[C], args []string, stdout, stderr io
 	if cmd == "version" {
 		return encode(stdout, stderr, buildinfo.Current(component))
 	}
-	if cmd != "run" && cmd != "check-config" && !(app.Healthcheck != nil && cmd == "healthcheck") {
+	if cmd != "run" && cmd != "check-config" && !(app.Healthcheck != nil && cmd == "healthcheck") && app.Actions[cmd] == nil {
 		logger.Error("Unknown command", "command", cmd)
 		return 2
 	}
@@ -71,6 +75,13 @@ func Execute[C Configuration](app Component[C], args []string, stdout, stderr io
 	if err != nil {
 		logger.Error("Invalid configuration", "error", err)
 		return 2
+	}
+	if action := app.Actions[cmd]; action != nil {
+		if err := action(ctx, cfg, os.Stdin); err != nil {
+			logger.Error("Local action failed", "error", err)
+			return 1
+		}
+		return encode(stdout, stderr, map[string]string{"status": "complete", "action": cmd})
 	}
 	if cmd == "check-config" {
 		return encode(stdout, stderr, map[string]string{"status": "valid", "component": component})
