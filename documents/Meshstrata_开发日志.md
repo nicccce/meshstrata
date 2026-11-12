@@ -23,9 +23,9 @@
 | 数据访问 | 显式 SQL + sqlc | 管理配置、依赖、订阅身份、测量缓存和发布任务；使用事务维护引用与状态一致性。 |
 | 节点控制通道 | WebSocket + JSON over mTLS | Agent 主动连接 Controller，传递任务与结果；空闲时只保留必要心跳和重连。 |
 | 内部身份 | Go TLS/X.509 + 内部管理 CA | 一次性入网 token、节点独立证书、续期与撤销。 |
-| 公网证书 | 成熟 ACME 实现，优先评估 lego | 默认 DNS-01；Controller 管理 DNS API 凭据，节点私钥留在节点。具体 CSR 集成在实现阶段验证。 |
+| 公网证书 | 成熟 ACME 实现，优先评估 lego | 首接Cloudflare DNS-01并保留证书导入；Controller 管理 DNS API 凭据，节点私钥留在节点。具体 CSR 集成在实现阶段验证。 |
 | 代理内核 | 独立 Mihomo，固定版本 | 初始以产品文档核对的 v1.19.33 为兼容性基线；完成验证后才能确定首个交付版本。 |
-| 部署 | Linux 二进制 + systemd | 安装器完成文件、服务与端口配置；首版节点使用主机网络。 |
+| 部署 | Linux预编译二进制 + systemd/OpenRC | Ubuntu与Alpine均为正式平台，三个角色及可选frp并列验收；安装器留B17，当前未实现生产部署。 |
 
 首版不引入 Redis、消息队列、时序数据库或 Kubernetes。缓存优先使用进程内缓存和 SQLite；可恢复发布任务保存在数据库，由进程内受限并发的 worker 执行。单管理员登录采用服务端会话，不引入外部身份服务。
 
@@ -47,10 +47,12 @@ Browser
 - Controller 与 Agent 独立编译、独立运行；Controller 首版不内置常驻 Agent 功能。需要同机承担代理节点职责时，由安装器额外安装独立 Agent 与 Mihomo。
 - 本机节点与远端节点沿用相同的入网、mTLS 控制通道、发布校验、到期撤销和回滚机制，不建立特殊的本机管理分支；Controller 与 Agent 可共享 Go 数据模型、校验与证书工具包。
 - 每台代理节点运行一个 Agent 和一个 Mihomo 实例；多条线路使用同一实例中的 Listener、Proxy 和规则，不按线路启动内核进程。
-- Controller、Agent 与 Mihomo 分别使用 `meshstrata-controller.service`、`meshstrata-agent.service`、`meshstrata-mihomo.service`。systemd 负责保活；Agent 负责配置、健康确认及显式的内核升级、回滚操作，避免多个组件竞争管理进程。
+- Controller、Agent 与 Mihomo 分别使用 `meshstrata-controller.service`、`meshstrata-agent.service`、`meshstrata-mihomo.service`。systemd或OpenRC监督器负责保活；Agent 负责配置、健康确认及显式的内核升级、回滚操作，避免多个组件竞争管理进程。
 - 普通 Controller 更新、停止或重启不联动停止 Agent 或 Mihomo，本机节点仍由 Agent 执行到期处理；权限和状态目录按职责分离。
 - 普通 Agent 更新或重启不联动停止 Mihomo；内核升级、内核崩溃或 Listener 重建仍可能影响代理连接。
 - 首版节点安装由安装器同时安装 Agent 与 Mihomo，不把 Mihomo 源码链接进 Agent，也不要求用户手动安装和配置内核。
+
+OpenRC服务使用对应无`.service`后缀名称，frps/frpc同样独立。`internal/platform.Manager`隔离服务操作，运行时不能硬依赖systemctl。Alpine正式支持controller/node/both及可选frp，运行预编译产物、无Node/Go依赖；musl/静态及外部二进制兼容性、安装/启动/日志/重复安装/升级恢复须在T07逐项真机验证。当前只有开发二进制与公共接口，正式服务与安装器未实现。
 
 独立运行的收益主要是故障隔离和维护便利。当前没有资源实测，不承诺固定内存占用，也不以进程数量直接推断总资源消耗。
 
@@ -88,11 +90,11 @@ Browser
 
 #### 与节点已有 Mihomo 共存
 
-平台只管理自己安装的内核实例。使用独立可执行文件路径（建议 `/usr/local/libexec/meshstrata/mihomo`）、工作目录、systemd 服务名和 Unix socket，不复用或修改节点已有的 Mihomo 程序、服务、配置及缓存。停止或升级时按平台服务定位实例，不使用 `pkill mihomo` 等按通用进程名操作的方式。
+平台只管理自己安装的内核实例。使用独立可执行文件路径（建议 `/usr/local/libexec/meshstrata/mihomo`）、工作目录、systemd/OpenRC 服务名和 Unix socket，不复用或修改节点已有的 Mihomo 程序、服务、配置及缓存。停止或升级时按平台服务定位实例，不使用 `pkill mihomo` 等按通用进程名操作的方式。
 
 生成的服务端配置显式设置 `port`、`socks-port`、`mixed-port`、`redir-port` 和 `tproxy-port` 为 `0`，关闭通用 HTTP/SOCKS/mixed/透明代理入站，不默认监听 `7890` 等常见本地代理端口。首版服务端同时禁用 TUN 和自动 iptables 接管；这不改变客户端订阅中按需生成 TUN 的设计。代理业务仅通过平台显式分配的协议 Listener 接入。
 
-内部目标解析仍按节点 `Target DNS` 策略配置，但 `dns.listen` 默认留空，不占用宿主机 DNS 监听端口；禁用 DNS 监听不等于禁用内部域名解析。管理 API 的 TCP/TLS 地址默认留空，仅启用专属 Unix socket。v1.19.33 的 Unix socket API 不验证 secret，且内核会将 socket 文件权限设为 `0666`；必须由安装器/systemd 预先建立受限的 `/run/meshstrata/` 父目录（例如 `0700` 并采用匹配的服务身份，或使用受限组的 `0750`），以目录访问权限限制本机连接，不能只依赖 secret 或 umask。
+内部目标解析仍按节点 `Target DNS` 策略配置，但 `dns.listen` 默认留空，不占用宿主机 DNS 监听端口；禁用 DNS 监听不等于禁用内部域名解析。管理 API 的 TCP/TLS 地址默认留空，仅启用专属 Unix socket。v1.19.33 的 Unix socket API 不验证 secret，且内核会将 socket 文件权限设为 `0666`；必须由安装器及所选init服务 预先建立受限的 `/run/meshstrata/` 父目录（例如 `0700` 并采用匹配的服务身份，或使用受限组的 `0750`），以目录访问权限限制本机连接，不能只依赖 secret 或 umask。
 
 以下是共存约束片段，不是可直接启动的完整配置；DNS 上游、启动解析路径、Listener 和业务规则由生成器补齐：
 
@@ -155,7 +157,7 @@ Mihomo 不承担平台订阅有效期调度。Agent 在本地持久保存授权�
 - SS 2022 和 Hysteria 2 的独立订阅入口按产品设计隔离 Listener、端口与凭据；其他入口只有验证能够独立撤销且不影响其他条目后才允许共享。
 - 撤销后验证旧凭据无法建立新连接，并处理能够准确归属的已有连接；共享资源回收需要独立确认。
 
-Agent 退出期间，到期调度会暂停；systemd 自动恢复和启动校正用于缩短并处理该窗口。不能宣称 Controller 离线容错等同于 Agent 永久故障时仍保证准时撤销，此边界需纳入故障测试。
+Agent 退出期间，到期调度会暂停；systemd/OpenRC 自动恢复和启动校正用于缩短并处理该窗口。不能宣称 Controller 离线容错等同于 Agent 永久故障时仍保证准时撤销，此边界需纳入故障测试。
 
 ### 6. 数据与资源控制
 
@@ -164,7 +166,7 @@ Agent 退出期间，到期调度会暂停；systemd 自动恢复和启动校正
 - Agent 本地只保存必要状态、配置版本和轻量计数检查点；启动、到期与重载操作应共用一致的状态更新机制。
 - 资源、网络、RTT 和用量按需查询，不持续扫描全网或同步资源指标；只保留必要心跳、到期执行、证书维护和日志清理。
 - 探测与发布限制并发并设置超时；页面关闭后停止本次页面触发的刷新任务。缓存过期本身不触发全网自动探测。
-- 日志沿用产品默认值：warning/error，单文件 5 MiB，最多 4 份（含当前），总量不超过 20 MiB，最长 7 天；systemd 日志需另设相应限额。
+- 日志沿用产品默认值：warning/error，单文件 5 MiB，最多 4 份（含当前），总量不超过 20 MiB，最长 7 天；systemd journald与OpenRC监督器日志均需另设相应限额。
 - 内存、空闲 CPU、磁盘增长、连接规模和发布期间峰值在原型完成后实测，再形成部署规格。
 
 ### 7. 首轮开发顺序
@@ -175,7 +177,7 @@ Agent 退出期间，到期调度会暂停；systemd 自动恢复和启动校正
 4. 验证四种协议的 Listener 行为、配置重载影响、身份撤销、到期与进程恢复，再确定首个交付内核版本。
 5. 实现线路、订阅、引用回收、规则与 DNS 生成，然后接入按需推荐和出口检查。
 
-基础工程已完成，具体实现和验证范围见下方日志；其余步骤仍为后续计划。原型优先证明单节点发布与撤销闭环，再扩展多跳。
+位置服务首接IPinfo，自动结果不覆盖手工位置。完整分批顺序、独占目录、迁移槽位与测试关口以[剩余开发流程](Meshstrata_剩余开发流程_v1.0.md)为准。基础工程已完成，具体实现和验证范围见下方日志；其余步骤仍为后续计划。原型优先证明单节点发布与撤销闭环，再扩展多跳。
 
 ### 8. 实现参考
 
@@ -307,3 +309,15 @@ Agent 退出期间，到期调度会暂停；systemd 自动恢复和启动校正
 - **收尾修复：**损坏的语言偏好即使是非字符串也不阻止工作区启动，不丢弃其他对象；域名集编辑期间被移除时，中文/英文错误正确传递 detail 标识；验收脚本兼容 Not Found 的 h2 标题，并在成功后清理历史失败截图/记录。
 - **验证：**完整 check-pages 通过，包含基础检查、12 模块 1,990 个文案键/插值/双语编译、1,770 静态调用、166 动态校验发出点、状态矩阵、跨页/活动逻辑、类型检查及生产构建。真实浏览器通过 118 次双语/页签/场景/窄屏访问和 7 组行为检查，运行错误/翻译警告/业务请求/横向溢出均为 0；额外通过损坏偏好、记录保留与域名集错误插值回归。git diff --check 通过。详见 frontend-delivery/P11-i18n.md。
 - **运行与工作区：**恢复并保留 127.0.0.1:5173 开发服务；测试依赖、中文字体、日志和截图放在忽略的 .local/browser-check。已有未提交的 Controller/Agent 目录迁移及前轮前端改动均保留，没有混合提交或推送，也未运行无关后端部署检查。
+
+
+### 2026-11-12｜B00公共契约与数据基础
+
+- **公共代码：**新增`internal/domain`稳定随机ID/JSON安全修订、错误/字段定位/冲突、列表和任务/逐节点结果，`internal/control`版本化command/result/receipt/hello及严格解码、ArtifactSource和Agent本地检查点/授权/outbox边界；`internal/platform.Manager`显式systemd/OpenRC。未引入持续遥测。
+- **API与前端：**`controller/api`提供OpenAPI/控制JSON Schema及安全域/任务/资源不变量契约；只有原system元数据API已实现，预留命名空间统一404，不开放未鉴权业务写接口。新增独立wire类型和显式live/demo数据接口、字段投影/中止/CSRF/错误处理，未被页面导入，没有切换live或新增自动请求，保留完整演示行为与双语。
+- **数据实现：**保持001迁移不变，新增002含37张关系表，覆盖节点、节点DNS、Listener/端口/引用、固定路径与出口修订、规则/DomainSet、订阅条目/身份代次/凭据引用、任务/DAG/逐节点证据、测量/事件/设置。任务意图/DAG落库及结果sequence去重、修订CAS为实际事务代码；引用释放幂等、确认清理才释放端口有SQL约束。稳定entry与可更换identity代次分开，旧撤销墓碑不复活。sqlc查询分文件并冻结共享生成权。
+- **完整开发计划：**新增剩余开发流程与backend-delivery登记/B00证据，按固定B00–B18/T01–T08安排独占目录、接口依赖、前端操作/API/持久模型/测试映射、003–020迁移槽位、独立集成与多机验收、返修后测新提交。后续未自动派发，本轮不建worktree/子代理/其他会话，不跨会话发消息。
+- **正式平台范围：**同步当前产品设计、README和本日志，Ubuntu/systemd与Alpine/OpenRC并列支持controller/node/both及可选frps/frpc，必须验安装/启动/独立生命周期/日志/重复安装/升级恢复；Alpine运行预编译产物，无Node/Go运行依赖，musl/静态与外部二进制兼容进T07正式验收。首接Cloudflare DNS-01+证书导入、IPinfo+手工覆盖。当前仅契约，B17服务/安装器尚未实现。
+- **验证：**完整`make check GO_PARALLEL=1 GOMAXPROCS=1`、`check-pages.sh`（含1990双语键/插值、跨页/活动/适配器检查、类型检查与构建）、生成一致性及差异格式检查通过。新增测试涵盖新库/001升级/instance_id、外键/隔离/凭据代次/墓碑/确认清理、任务幂等/DAG/事务回滚/修订冲突、消息序列化/拒绝及Schema字段一致性。最初沙箱内Agent Unix socket测试被系统权限拦截，随后获准在沙箱外执行原完整检查通过，未跳过或削弱检查。两二进制CGO=0且file确认静态链接。
+- **浏览器：**独立临时回环端口使用.local内现有Playwright/Chromium，通过69项页面/场景/390px检查、线路/订阅点击流程，以及118次双语访问和7组行为检查；无运行错误/翻译警告/自动API请求/横向溢出，临时预览已停止，不改原5173服务。日志和截图在忽略的`.local/b00-*`与`.local/browser-check/b00/`。
+- **实际边界：**没有远程部署或读取测试服务器凭据，没有操作宿主既有Mihomo；真实管理认证/加密、入网/mTLS、Mihomo控制/发布/到期、业务API、frp/公网证书/位置/测量/安装升级均留后续。存储和接口不能当作真实多机成功。B00独占Git，检查后提交推送当前分支，实际结果见本会话最终回复；阶段1需用户在主协调会话说“继续”才派发。

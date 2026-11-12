@@ -4,7 +4,406 @@
 
 package dbgen
 
+import (
+	"database/sql"
+)
+
 type AppMetadatum struct {
 	Key   string
 	Value string
+}
+
+type Credential struct {
+	ID         string
+	Purpose    string
+	KeyID      string
+	Ciphertext []byte
+	CreatedAt  string
+	RevokedAt  sql.NullString
+}
+
+type DomainSet struct {
+	ID         string
+	Identifier string
+	Name       string
+	Revision   int64
+	UpdatedAt  string
+}
+
+type DomainSetMember struct {
+	DomainSetID string
+	Revision    int64
+	Domain      string
+}
+
+type DomainSetRevision struct {
+	DomainSetID string
+	Revision    int64
+	TargetGroup string
+}
+
+type EgressPolicy struct {
+	ID             string
+	TerminalNodeID string
+	Name           string
+	Revision       int64
+	UpdatedAt      string
+}
+
+type EgressPolicyRevision struct {
+	PolicyID string
+	Revision int64
+	NodeID   string
+	Digest   string
+}
+
+type EgressRule struct {
+	PolicyID       string
+	Revision       int64
+	NodeID         string
+	Position       int64
+	Destination    string
+	TargetID       sql.NullString
+	TargetRevision sql.NullInt64
+	RejectTraffic  int64
+	NoResolve      int64
+}
+
+type EgressTarget struct {
+	ID        string
+	NodeID    string
+	Name      string
+	Revision  int64
+	UpdatedAt string
+}
+
+type EgressTargetRevision struct {
+	TargetID      string
+	Revision      int64
+	NodeID        string
+	Type          string
+	InterfaceName sql.NullString
+	Host          sql.NullString
+	Port          sql.NullInt64
+	CredentialRef sql.NullString
+	BusinessUdp   string
+}
+
+type EntryIdentity struct {
+	ID            string
+	EntryID       string
+	Generation    int64
+	CredentialRef string
+	ExpiresAt     string
+	RevokedAt     sql.NullString
+}
+
+type Event struct {
+	ID         string
+	Kind       string
+	EntityType string
+	EntityID   string
+	TaskID     sql.NullString
+	ErrorCode  sql.NullString
+	OccurredAt string
+}
+
+type Listener struct {
+	ID             string
+	NodeID         string
+	Name           string
+	Revision       int64
+	Protocol       string
+	ListenAddress  string
+	ListenPort     int64
+	OuterTransport string
+	BusinessUdp    string
+	CredentialRef  string
+	ConfigDigest   string
+	DnsRevision    int64
+	CleanupState   string
+	UpdatedAt      string
+}
+
+type ListenerReference struct {
+	ID            string
+	ListenerID    string
+	RouteID       sql.NullString
+	RouteRevision sql.NullInt64
+	EntryID       sql.NullString
+	ReleasedAt    sql.NullString
+}
+
+type ListenerReferenceCount struct {
+	ListenerID     string
+	ReferenceCount int64
+}
+
+type Measurement struct {
+	ID               string
+	CacheKey         string
+	TaskID           sql.NullString
+	NodeID           sql.NullString
+	RouteID          sql.NullString
+	Revision         int64
+	EndpointRevision int64
+	Scope            string
+	Kind             string
+	Mode             string
+	Method           string
+	Transport        string
+	HttpProtocol     sql.NullString
+	Environment      string
+	PathVerified     int64
+	ValueMs          sql.NullFloat64
+	Samples          int64
+	Status           string
+	StartedAt        string
+	ObservedAt       string
+	ExpiresAt        string
+}
+
+type Node struct {
+	ID                string
+	Name              string
+	Revision          int64
+	ConnectionMode    string
+	Role              string
+	ControlAddress    string
+	ProxyAddress      sql.NullString
+	ObservedSourceIp  sql.NullString
+	ControlState      string
+	TunnelState       string
+	Verification      string
+	Country           sql.NullString
+	City              sql.NullString
+	ManualLocation    int64
+	TargetDnsRevision int64
+	RevocationEpoch   int64
+	LastConfirmedAt   sql.NullString
+	RemovedAt         sql.NullString
+	UpdatedAt         string
+}
+
+type NodeDnsRevision struct {
+	NodeID   string
+	Revision int64
+	Outbound string
+	Digest   string
+}
+
+type NodeDnsUpstream struct {
+	NodeID   string
+	Revision int64
+	Kind     string
+	Position int64
+	Address  string
+}
+
+type NodePortPool struct {
+	NodeID    string
+	Protocol  string
+	StartPort int64
+	EndPort   int64
+}
+
+type NodeProtocolDefault struct {
+	NodeID         string
+	Protocol       string
+	Enabled        int64
+	ListenAddress  string
+	PreferredPort  sql.NullInt64
+	OuterTransport string
+}
+
+type PortReservation struct {
+	ID                 string
+	NodeID             string
+	ListenerID         sql.NullString
+	Purpose            string
+	Address            string
+	Transport          string
+	Port               int64
+	State              string
+	CleanupConfirmedAt sql.NullString
+}
+
+type ReverseTunnel struct {
+	ID                   string
+	Revision             int64
+	RelayNodeID          string
+	RemoteNodeID         string
+	TargetListenerID     string
+	MappingReservationID string
+	RelayEndpoint        string
+	CredentialRef        string
+	Transport            string
+	RelayConfirmedAt     sql.NullString
+	RemoteConfirmedAt    sql.NullString
+}
+
+type Route struct {
+	ID                string
+	Name              string
+	Revision          int64
+	PublishedRevision sql.NullInt64
+	State             string
+	UpdatedAt         string
+}
+
+type RouteHop struct {
+	RouteID        string
+	Revision       int64
+	Position       int64
+	NodeID         string
+	ListenerID     string
+	TunnelID       sql.NullString
+	TunnelRevision sql.NullInt64
+}
+
+type RouteRevision struct {
+	RouteID         string
+	Revision        int64
+	EntryListenerID string
+	TerminalNodeID  string
+	PolicyID        sql.NullString
+	PolicyRevision  sql.NullInt64
+	BusinessUdp     int64
+	Digest          string
+}
+
+type RuleDomainSet struct {
+	ProfileID         string
+	ProfileRevision   int64
+	DomainSetID       string
+	DomainSetRevision int64
+}
+
+type RuleLine struct {
+	ProfileID string
+	Revision  int64
+	Position  int64
+	Type      string
+	Value     string
+	Target    string
+	Options   string
+}
+
+type RuleProfile struct {
+	ID          string
+	Name        string
+	Description string
+	Revision    int64
+	UpdatedAt   string
+}
+
+type RuleProfileRevision struct {
+	ProfileID      string
+	Revision       int64
+	FallbackTarget string
+	SourceText     string
+}
+
+type Setting struct {
+	ID                    int64
+	Revision              int64
+	SuccessCacheSeconds   int64
+	FailureCacheSeconds   int64
+	DefaultPortStart      int64
+	DefaultPortEnd        int64
+	LocationProvider      string
+	LocationCredentialRef sql.NullString
+	CertificateProvider   string
+	DnsCredentialRef      sql.NullString
+	LogLevel              string
+	LogFileBytes          int64
+	LogFiles              int64
+	LogTotalBytes         int64
+	LogRetentionSeconds   int64
+}
+
+type Subscription struct {
+	ID                string
+	Name              string
+	Revision          int64
+	ProfileID         string
+	ProfileRevision   int64
+	ExpiresAt         string
+	RevokedAt         sql.NullString
+	DownloadTokenHash []byte
+	TokenVersion      int64
+	AllRoutesGroup    int64
+	GroupByExit       int64
+	ClientMode        string
+	UpdatedAt         string
+}
+
+type SubscriptionEntry struct {
+	ID              string
+	SubscriptionID  string
+	RouteID         string
+	Position        int64
+	ListenerID      string
+	ExpiresAt       string
+	RevokedAt       sql.NullString
+	RevocationEpoch int64
+	CleanupState    string
+}
+
+type SubscriptionGroup struct {
+	ID              string
+	SubscriptionID  string
+	Name            string
+	SelectedEntryID string
+}
+
+type SubscriptionGroupMember struct {
+	GroupID        string
+	SubscriptionID string
+	EntryID        string
+	Position       int64
+}
+
+type Task struct {
+	ID               string
+	Revision         int64
+	Kind             string
+	SubjectID        string
+	TargetRevision   int64
+	RequestDigest    string
+	IdempotencyScope string
+	IdempotencyKey   string
+	State            string
+	Deadline         string
+	CreatedAt        string
+}
+
+type TaskDependency struct {
+	TaskID         string
+	NodeID         string
+	RequiresNodeID string
+}
+
+type TaskNode struct {
+	TaskID          string
+	NodeID          string
+	TargetRevision  int64
+	TargetDigest    string
+	RevocationEpoch int64
+	Applied         int64
+	Verification    string
+	RollbackState   string
+	CleanupState    string
+	ResultSequence  int64
+	ResultDigest    sql.NullString
+	ErrorCode       sql.NullString
+	ConfirmedAt     sql.NullString
+}
+
+type TunnelReference struct {
+	TunnelID       string
+	TunnelRevision int64
+	RouteID        string
+	RouteRevision  int64
+	ReleasedAt     sql.NullString
 }

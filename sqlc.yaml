@@ -2,7 +2,9 @@ version: "2"
 sql:
   - engine: "sqlite"
     schema: "controller/internal/storage/migrations"
-    queries: "controller/internal/storage/queries.sql"
+    queries:
+      - "controller/internal/storage/queries.sql"
+      - "controller/internal/storage/queries/*.sql"
     gen:
       go:
         package: "dbgen"

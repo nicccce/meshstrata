@@ -389,3 +389,41 @@ separate metadata and never inferred from country/IP.
 and filter links, preserving data and nested editor drafts. Internal field names
 remain `environment` for compatibility. `check-foundation.mjs`, `check-flows.mjs`
 and the optional `check-regulation-browser.cjs` cover this behavior.
+
+
+## B00 server data boundary (2026-11-12)
+
+`src/data/contracts.ts` declares separate wire and safe page projections;
+`src/data/live.ts` exports an inert, explicitly constructed adapter with injected
+fetch, AbortSignal, same-origin session credentials, no-store and redirect rejection.
+`src/data/demo.ts` accepts an explicit read source, never imports live transport and
+rejects unsupported operations. No page imports these adapters, no global mode
+switch is enabled and no automatic business request is added. Existing demo
+commands, saved drafts, bilingual resources and explicit `src/api.ts` system query
+remain in place.
+
+Wire names are snake_case; projection is explicit: `updated_at` → `updatedAt`,
+`control_address` → `controlAddress`, nullable `proxy_address` → optional `address`,
+`connection_mode: reverse_tunnel` → `mode: reverse`, and `target_dns_revision` →
+`targetDnsRevision`. This summary is not a full demo Node; do not cast server JSON
+to Workspace or fill missing live fields from seeds. Task node results retain
+independent applied/verification/rollback/cleanup. Measurement null remains null.
+`Problem.fields[].path` is a JSON pointer; feature form adapters map it to local
+field names without logging arbitrary server parameters. Revisions are positive
+safe integers, mutation preconditions and idempotency keys are explicit, and 409
+must preserve the unsaved draft.
+
+Only `/api/v1/system` currently exists. Reserved business paths return 404; live
+transport preserves stable error codes and current_revision, rejects malformed
+responses, and never converts missing APIs into empty success or demo fallback.
+B09–B11 implement feature adapters against completed endpoints; the independent
+integration session owns global mode selection, authentication gating, common
+models and router/i18n changes. Demo remains separately selectable without using
+production storage. See [the server contract](../api/CONTRACT.md) and
+[stage ownership](../../documents/Meshstrata_剩余开发流程_v1.0.md).
+
+Administrator cookies, download-only bearer token, TLS enrollment body token and
+mTLS node control are separate trust domains. Never put any secret into a URL,
+localStorage or saved draft. B08 must prove download Authorization-header support
+with the pinned Linux Mihomo client; no secret-bearing URL fallback. Local Mihomo
+pairing secret remains browser memory only and never reaches Controller.

@@ -1,0 +1,1366 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Meshstrata v1 foundation",
+    "version": "1.0.0-b00",
+    "description": "Implemented metadata plus reserved security/core operations. Reserved operations are NOT installed handlers. Feature payloads are added by their owner before integration."
+  },
+  "paths": {
+    "/api/v1/system": {
+      "get": {
+        "operationId": "get__api_v1_system",
+        "x-owner": "B00",
+        "x-implemented": true,
+        "security": [],
+        "description": "Existing explicit metadata read; development loopback only.",
+        "responses": {
+          "200": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/System"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/initialize": {
+      "post": {
+        "operationId": "post__api_v1_auth_initialize",
+        "x-owner": "B01",
+        "x-implemented": false,
+        "security": [],
+        "description": "B01: initialize is one-time and requires trusted local bootstrap proof; login rate limited. Origin checks required.",
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Login"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "post__api_v1_auth_login",
+        "x-owner": "B01",
+        "x-implemented": false,
+        "security": [],
+        "description": "B01: initialize is one-time and requires trusted local bootstrap proof; login rate limited. Origin checks required.",
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Login"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/session": {
+      "get": {
+        "operationId": "get__api_v1_auth_session",
+        "x-owner": "B01",
+        "x-implemented": false,
+        "security": [
+          {
+            "AdminSession": []
+          }
+        ],
+        "description": "B01 defines safe session metadata and CSRF delivery; never returns session token in URL.",
+        "responses": {
+          "200": {
+            "description": "No content"
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "post__api_v1_auth_logout",
+        "x-owner": "B01",
+        "x-implemented": false,
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRF": []
+          }
+        ],
+        "description": "Reserved v1 contract; unregistered in B00.",
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nodes": {
+      "get": {
+        "operationId": "get__api_v1_nodes",
+        "x-owner": "B02",
+        "x-implemented": false,
+        "security": [
+          {
+            "AdminSession": []
+          }
+        ],
+        "description": "Reserved v1 contract; unregistered in B00.",
+        "responses": {
+          "200": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NodePage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/nodes/{node_id}": {
+      "get": {
+        "operationId": "get__api_v1_nodes_node_id",
+        "x-owner": "B02",
+        "x-implemented": false,
+        "security": [
+          {
+            "AdminSession": []
+          }
+        ],
+        "description": "Reserved v1 contract; unregistered in B00.",
+        "responses": {
+          "200": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Node"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "patch__api_v1_nodes_node_id",
+        "x-owner": "B02",
+        "x-implemented": false,
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRF": []
+          }
+        ],
+        "description": "Reserved v1 contract; unregistered in B00.",
+        "responses": {
+          "200": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Node"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expected_revision": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "idempotency_key": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "expected_revision",
+                  "idempotency_key",
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/nodes/{node_id}/enrollment": {
+      "post": {
+        "operationId": "post__api_v1_nodes_node_id_enrollment",
+        "x-owner": "B02",
+        "x-implemented": false,
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRF": []
+          }
+        ],
+        "description": "One-shot enrollment materials; B02 defines redacted response and no-store delivery.",
+        "responses": {
+          "200": {
+            "description": "No content"
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/nodes/{node_id}/remove": {
+      "post": {
+        "operationId": "post__api_v1_nodes_node_id_remove",
+        "x-owner": "B02",
+        "x-implemented": false,
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRF": []
+          }
+        ],
+        "description": "Reserved v1 contract; unregistered in B00.",
+        "responses": {
+          "202": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskAccepted"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Mutation"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+            }
+          }
+        ]
+      }
+    },
+    "/enroll/v1": {
+      "post": {
+        "operationId": "post__enroll_v1",
+        "x-owner": "B02",
+        "x-implemented": false,
+        "security": [],
+        "description": "Separate 9443 listener: server-authenticated TLS, validate pinned CA/service identity BEFORE sending one-use token. Token in JSON body only; no client certificate yet.",
+        "responses": {
+          "200": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentIdentity"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Enrollment"
+              }
+            }
+          }
+        },
+        "x-authentication": {
+          "scheme": "one_time_token",
+          "location": "body",
+          "field": "token",
+          "requires": "verified_server_tls"
+        }
+      }
+    },
+    "/control/v1": {
+      "get": {
+        "operationId": "get__control_v1",
+        "x-owner": "B02",
+        "x-implemented": false,
+        "security": [
+          {
+            "NodeMTLS": []
+          }
+        ],
+        "description": "Separate 9443 listener: mTLS certificate node identity and enabled state, WebSocket subprotocol meshstrata.control.v1; JSON control.schema.json. No enrollment token accepted.",
+        "responses": {
+          "101": {
+            "description": "No content"
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/control/v1/tasks/{task_id}/bundle": {
+      "get": {
+        "operationId": "get__control_v1_tasks_task_id_bundle",
+        "x-owner": "B04",
+        "x-implemented": false,
+        "security": [
+          {
+            "NodeMTLS": []
+          }
+        ],
+        "description": "Private immutable bounded bundle, node-scoped by mTLS and ledger; SHA-256 matches command. B04/B05 freeze payload format before T02.",
+        "responses": {
+          "200": {
+            "description": "Result",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/tasks": {
+      "get": {
+        "operationId": "get__api_v1_tasks",
+        "x-owner": "B04",
+        "x-implemented": false,
+        "security": [
+          {
+            "AdminSession": []
+          }
+        ],
+        "description": "Reserved v1 contract; unregistered in B00.",
+        "responses": {
+          "200": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/tasks/{task_id}": {
+      "get": {
+        "operationId": "get__api_v1_tasks_task_id",
+        "x-owner": "B04",
+        "x-implemented": false,
+        "security": [
+          {
+            "AdminSession": []
+          }
+        ],
+        "description": "Reserved v1 contract; unregistered in B00.",
+        "responses": {
+          "200": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/tasks/{task_id}/cancel": {
+      "post": {
+        "operationId": "post__api_v1_tasks_task_id_cancel",
+        "x-owner": "B04",
+        "x-implemented": false,
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRF": []
+          }
+        ],
+        "description": "B04 validates phase eligibility. Cancel only before apply; rollback is a separate task. Retry never repeats reference decrement.",
+        "responses": {
+          "202": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskAccepted"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Mutation"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/tasks/{task_id}/retry": {
+      "post": {
+        "operationId": "post__api_v1_tasks_task_id_retry",
+        "x-owner": "B04",
+        "x-implemented": false,
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRF": []
+          }
+        ],
+        "description": "B04 validates phase eligibility. Cancel only before apply; rollback is a separate task. Retry never repeats reference decrement.",
+        "responses": {
+          "202": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskAccepted"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Mutation"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/tasks/{task_id}/rollback": {
+      "post": {
+        "operationId": "post__api_v1_tasks_task_id_rollback",
+        "x-owner": "B04",
+        "x-implemented": false,
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRF": []
+          }
+        ],
+        "description": "B04 validates phase eligibility. Cancel only before apply; rollback is a separate task. Retry never repeats reference decrement.",
+        "responses": {
+          "202": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskAccepted"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Mutation"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+            }
+          }
+        ]
+      }
+    },
+    "/subscriptions/v1/config": {
+      "get": {
+        "operationId": "get__subscriptions_v1_config",
+        "x-owner": "B08",
+        "x-implemented": false,
+        "security": [
+          {
+            "SubscriptionToken": []
+          }
+        ],
+        "description": "HTTPS download: Authorization bearer download token, expiration/revocation checked every time; no admin or mTLS authority. Secret URL/query tokens prohibited; B08 must define Linux client header configuration before enabling download.",
+        "responses": {
+          "200": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "AdminSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "meshstrata_session",
+        "description": "B01 opaque server-side session; Secure HttpOnly SameSite; browser Origin and CSRF on writes."
+      },
+      "CSRF": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-CSRF-Token"
+      },
+      "SubscriptionToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Download-only token in Authorization; no secrets in URL."
+      },
+      "NodeMTLS": {
+        "type": "mutualTLS"
+      }
+    },
+    "schemas": {
+      "ID": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+      },
+      "Revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991
+      },
+      "Timestamp": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "Problem": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldError"
+            }
+          },
+          "current_revision": {
+            "$ref": "#/components/schemas/Revision"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "FieldError": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "JSON pointer"
+          },
+          "code": {
+            "type": "string"
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "path",
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/Problem"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "RevisionRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ID"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/Revision"
+          }
+        },
+        "required": [
+          "id",
+          "revision"
+        ],
+        "additionalProperties": false
+      },
+      "Mutation": {
+        "type": "object",
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "expected_revision",
+          "idempotency_key"
+        ],
+        "additionalProperties": false
+      },
+      "TaskAccepted": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "$ref": "#/components/schemas/ID"
+          }
+        },
+        "required": [
+          "task_id"
+        ],
+        "additionalProperties": false
+      },
+      "Node": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ID"
+          },
+          "name": {
+            "type": "string"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "connection_mode": {
+            "enum": [
+              "direct",
+              "reverse_tunnel"
+            ]
+          },
+          "role": {
+            "enum": [
+              "node",
+              "both"
+            ]
+          },
+          "control_address": {
+            "type": "string"
+          },
+          "proxy_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "control": {
+            "enum": [
+              "unknown",
+              "online",
+              "offline"
+            ]
+          },
+          "tunnel": {
+            "enum": [
+              "unknown",
+              "online",
+              "offline"
+            ]
+          },
+          "verification": {
+            "enum": [
+              "not_checked",
+              "verified",
+              "failed",
+              "incomplete"
+            ]
+          },
+          "target_dns_revision": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "last_confirmed_at": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "revision",
+          "updated_at",
+          "connection_mode",
+          "role",
+          "control_address",
+          "proxy_address",
+          "control",
+          "tunnel",
+          "verification",
+          "target_dns_revision",
+          "last_confirmed_at"
+        ],
+        "additionalProperties": false
+      },
+      "NodeResult": {
+        "type": "object",
+        "properties": {
+          "node_id": {
+            "$ref": "#/components/schemas/ID"
+          },
+          "target_revision": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "target_digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "applied": {
+            "type": "boolean"
+          },
+          "verification": {
+            "enum": [
+              "not_checked",
+              "verified",
+              "failed",
+              "incomplete"
+            ]
+          },
+          "rollback": {
+            "enum": [
+              "none",
+              "pending",
+              "confirmed",
+              "failed"
+            ]
+          },
+          "cleanup": {
+            "enum": [
+              "none",
+              "pending",
+              "confirmed"
+            ]
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "issue": {
+            "$ref": "#/components/schemas/Problem"
+          }
+        },
+        "required": [
+          "node_id",
+          "target_revision",
+          "target_digest",
+          "applied",
+          "verification",
+          "rollback",
+          "cleanup",
+          "confirmed_at"
+        ],
+        "additionalProperties": false
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ID"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "kind": {
+            "enum": [
+              "publish",
+              "rollback",
+              "revoke",
+              "cleanup",
+              "query_status",
+              "test_protocol",
+              "measure",
+              "check_egress",
+              "query_usage",
+              "read_logs"
+            ]
+          },
+          "subject": {
+            "$ref": "#/components/schemas/RevisionRef"
+          },
+          "state": {
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled",
+              "timed_out"
+            ]
+          },
+          "deadline": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NodeResult"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "revision",
+          "kind",
+          "subject",
+          "state",
+          "deadline",
+          "created_at",
+          "nodes"
+        ],
+        "additionalProperties": false
+      },
+      "System": {
+        "type": "object",
+        "properties": {
+          "component": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "commit": {
+            "type": "string"
+          },
+          "build_time": {
+            "type": "string"
+          },
+          "instance_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "component",
+          "version",
+          "commit",
+          "build_time",
+          "instance_id"
+        ],
+        "additionalProperties": false
+      },
+      "Login": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ],
+        "additionalProperties": false
+      },
+      "Enrollment": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "writeOnly": true
+          },
+          "csr_pem": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "csr_pem"
+        ],
+        "additionalProperties": false
+      },
+      "EnrollmentIdentity": {
+        "type": "object",
+        "properties": {
+          "node_id": {
+            "$ref": "#/components/schemas/ID"
+          },
+          "certificate_pem": {
+            "type": "string"
+          },
+          "ca_pem": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "node_id",
+          "certificate_pem",
+          "ca_pem"
+        ],
+        "additionalProperties": false
+      },
+      "NodePage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Node"
+            }
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "additionalProperties": false
+      },
+      "TaskPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            }
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

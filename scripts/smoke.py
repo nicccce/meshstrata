@@ -133,7 +133,8 @@ with tempfile.TemporaryDirectory(prefix="meshstrata-smoke-") as scratch:
             assert (directory / name).stat().st_mode & 0o777 == 0o700
         with sqlite3.connect(directory / "controller/controller.db") as db:
             assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
-            assert db.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 1
+            assert db.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == len(list((root / "controller/internal/storage/migrations").glob("*.sql")))
+            assert db.execute("PRAGMA foreign_key_check").fetchall() == []
         stop(node)
         stop(manager)
         assert not (directory / "agent/health.sock").exists()

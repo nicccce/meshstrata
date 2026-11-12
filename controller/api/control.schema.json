@@ -1,0 +1,452 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meshstrata.invalid/contracts/control/v1",
+  "title": "meshstrata.control.v1",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "type": {
+          "const": "command"
+        },
+        "message_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sent_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "command": {
+          "$ref": "#/$defs/Command"
+        }
+      },
+      "required": [
+        "version",
+        "type",
+        "message_id",
+        "node_id",
+        "sent_at",
+        "command"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "type": {
+          "const": "result"
+        },
+        "message_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sent_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "result": {
+          "$ref": "#/$defs/Result"
+        }
+      },
+      "required": [
+        "version",
+        "type",
+        "message_id",
+        "node_id",
+        "sent_at",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "type": {
+          "const": "receipt"
+        },
+        "message_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sent_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "receipt": {
+          "$ref": "#/$defs/Receipt"
+        }
+      },
+      "required": [
+        "version",
+        "type",
+        "message_id",
+        "node_id",
+        "sent_at",
+        "receipt"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "type": {
+          "const": "hello"
+        },
+        "message_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sent_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "hello": {
+          "$ref": "#/$defs/Hello"
+        }
+      },
+      "required": [
+        "version",
+        "type",
+        "message_id",
+        "node_id",
+        "sent_at",
+        "hello"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "$defs": {
+    "ID": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+    },
+    "Revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "Digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "Problem": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string"
+              },
+              "params": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "path",
+              "code"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "current_revision": {
+          "$ref": "#/$defs/Revision"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "additionalProperties": false
+    },
+    "NodeResult": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "target_revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "target_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "applied": {
+          "type": "boolean"
+        },
+        "verification": {
+          "enum": [
+            "not_checked",
+            "verified",
+            "failed",
+            "incomplete"
+          ]
+        },
+        "rollback": {
+          "enum": [
+            "none",
+            "pending",
+            "confirmed",
+            "failed"
+          ]
+        },
+        "cleanup": {
+          "enum": [
+            "none",
+            "pending",
+            "confirmed"
+          ]
+        },
+        "confirmed_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "issue": {
+          "$ref": "#/$defs/Problem"
+        }
+      },
+      "required": [
+        "node_id",
+        "target_revision",
+        "target_digest",
+        "applied",
+        "verification",
+        "rollback",
+        "cleanup",
+        "confirmed_at"
+      ],
+      "additionalProperties": false
+    },
+    "Result": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "target_revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "target_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "applied": {
+          "type": "boolean"
+        },
+        "verification": {
+          "enum": [
+            "not_checked",
+            "verified",
+            "failed",
+            "incomplete"
+          ]
+        },
+        "rollback": {
+          "enum": [
+            "none",
+            "pending",
+            "confirmed",
+            "failed"
+          ]
+        },
+        "cleanup": {
+          "enum": [
+            "none",
+            "pending",
+            "confirmed"
+          ]
+        },
+        "confirmed_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "issue": {
+          "$ref": "#/$defs/Problem"
+        },
+        "task_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "node_id",
+        "target_revision",
+        "target_digest",
+        "applied",
+        "verification",
+        "rollback",
+        "cleanup",
+        "confirmed_at",
+        "task_id",
+        "sequence"
+      ],
+      "additionalProperties": false
+    },
+    "Command": {
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "kind": {
+          "enum": [
+            "publish",
+            "rollback",
+            "revoke",
+            "cleanup",
+            "query_status",
+            "test_protocol",
+            "measure",
+            "check_egress",
+            "query_usage",
+            "read_logs"
+          ]
+        },
+        "target_revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "target_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "deadline": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ID"
+          },
+          "uniqueItems": true
+        },
+        "revocation_epoch": {
+          "$ref": "#/$defs/Revision"
+        }
+      },
+      "required": [
+        "task_id",
+        "node_id",
+        "kind",
+        "target_revision",
+        "target_digest",
+        "idempotency_key",
+        "deadline",
+        "depends_on",
+        "revocation_epoch"
+      ],
+      "additionalProperties": false
+    },
+    "Receipt": {
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "task_id",
+        "node_id",
+        "sequence"
+      ],
+      "additionalProperties": false
+    },
+    "Hello": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "applied_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "applied_digest": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{64})?$"
+        },
+        "revocation_epoch": {
+          "$ref": "#/$defs/Revision"
+        },
+        "pending_results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Result"
+          },
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "node_id",
+        "applied_revision",
+        "applied_digest",
+        "revocation_epoch",
+        "pending_results"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -2,7 +2,8 @@
 
 Meshstrata is a distributed proxy management project. This repository currently
 provides a **local development foundation**: an independent Go Controller and
-Agent, SQLite migrations, and an embedded Vue workspace.
+Agent, SQLite migrations, shared v1 contracts, a transactional task ledger foundation,
+and an embedded Vue workspace.
 
 Node enrollment, mTLS/WebSocket control, authentication, proxy configuration,
 Mihomo management, subscriptions, and production installation are not implemented
@@ -117,8 +118,13 @@ bind port 9443 or expose node control endpoints.
 
 State directories have mode `0700`. Controller stores `controller.db` using WAL,
 foreign keys, a 5-second busy timeout, and one SQL connection. Versioned embedded
-migrations run transactionally before HTTP starts. The initial schema contains
-only migration history and instance metadata; the instance ID survives restarts.
+migrations run transactionally before HTTP starts. Migration 001 retains instance
+metadata; incremental migration 002 adds relational
+nodes, DNS/route/egress revisions, listeners/ports/references, rules/DomainSets,
+subscriptions/isolated entries, credential references, task/node evidence, measurements,
+events and settings. The instance ID survives upgrades and restarts. Credential
+encryption, authentication and business execution remain future work; no business
+write endpoint is exposed.
 
 Agent serves health only on `<state_dir>/health.sock` with mode `0600`.
 Advisory locks prevent duplicate processes using the same component state. Agent
@@ -181,3 +187,20 @@ fails with `WEB_ASSETS_MISSING`; use `make build` or `make dev-controller` first
 - [Frontend pages and interaction design](documents/Meshstrata_前端交互设计_v1.0.md).
 - [Frontend implementation tasks](documents/Meshstrata_前端实施任务_v1.0.md).
 - [Development log and technical decisions](documents/Meshstrata_开发日志.md).
+
+## B00 contracts and delivery boundary
+
+The [v1 contract](controller/api/CONTRACT.md), [OpenAPI](controller/api/openapi.json),
+[control message schema](controller/api/control.schema.json) and shared Go types in
+`internal/domain`, `internal/control` and `internal/platform` define the next stages.
+Reserved operations remain unregistered. The new frontend adapters in
+`controller/web/src/data` are inert and are not imported by pages; the existing
+prototype and explicit system query remain unchanged.
+
+The formal deployment target includes Ubuntu/systemd and Alpine/OpenRC for all
+three roles and optional independent frps/frpc. Production service adapters and
+installers are planned for B17, with real two-platform acceptance in T07; they are
+not implemented by B00. Servers will run precompiled binaries without Go/Node.js.
+Static/musl compatibility of Meshstrata and pinned external binaries must be verified.
+See the [complete stage plan](documents/Meshstrata_剩余开发流程_v1.0.md) and
+[B00 evidence](documents/backend-delivery/B00.md).

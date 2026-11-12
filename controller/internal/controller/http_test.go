@@ -9,7 +9,9 @@ import (
 	"testing"
 	"testing/fstest"
 
+	"github.com/nicccce/meshstrata/controller/api"
 	"github.com/nicccce/meshstrata/internal/buildinfo"
+	"strings"
 )
 
 type readiness struct{ err error }
@@ -71,5 +73,40 @@ func TestHTTPContract(t *testing.T) {
 func TestMissingFrontendRefusesStartup(t *testing.T) {
 	if _, err := Handler(&readiness{}, buildinfo.Current("controller"), "", fstest.MapFS{".gitkeep": {}}); err == nil {
 		t.Fatal("missing frontend accepted")
+	}
+}
+
+// Contract-only operations must not accidentally become unauthenticated handlers.
+func TestReservedAPIsRemainUnregistered(t *testing.T) {
+	handler, err := Handler(&readiness{}, buildinfo.Current("controller"), "test-instance", fstest.MapFS{"index.html": {Data: []byte("<html>Demo</html>")}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var spec struct {
+		Paths map[string]map[string]struct {
+			Implemented bool `json:"x-implemented"`
+		} `json:"paths"`
+	}
+	if err := json.Unmarshal(api.OpenAPI, &spec); err != nil {
+		t.Fatal(err)
+	}
+	for path, methods := range spec.Paths {
+		for method, operation := range methods {
+			if operation.Implemented {
+				continue
+			}
+			parts := strings.Split(path, "/")
+			for i, p := range parts {
+				if strings.HasPrefix(p, "{") {
+					parts[i] = "test-id"
+				}
+			}
+			url := strings.Join(parts, "/")
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, httptest.NewRequest(strings.ToUpper(method), url, nil))
+			if response.Code != 404 {
+				t.Fatalf("%s %s exposed: %d", method, path, response.Code)
+			}
+		}
 	}
 }

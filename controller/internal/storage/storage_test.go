@@ -50,7 +50,11 @@ func TestPersistentInstanceAndPragmas(t *testing.T) {
 	if err := store.db.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatal(err)
 	}
-	if count != 1 {
+	list, err := listMigrations(migrations)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != len(list) {
 		t.Fatalf("duplicate migrations: %d", count)
 	}
 	if _, err := store.db.Exec(`DELETE FROM schema_migrations`); err != nil {
@@ -91,7 +95,7 @@ func TestRejectNewerSchemaAndCorruptDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.db.Exec(`INSERT INTO schema_migrations(version) VALUES (2)`); err != nil {
+	if _, err := store.db.Exec(`INSERT INTO schema_migrations(version) SELECT max(version)+1 FROM schema_migrations`); err != nil {
 		t.Fatal(err)
 	}
 	store.Close()

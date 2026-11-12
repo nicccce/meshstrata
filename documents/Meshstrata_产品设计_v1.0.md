@@ -49,7 +49,7 @@
 
 **节点列表：**名称、国家/地区、城市、网络监管级别标签、接入方式、IP/域名、Agent/Mihomo 版本、最近连接状态、关联线路数量。CPU、内存、磁盘和网络速率仅在打开详情或点击 `Query Status` 后拉取。反向节点分别展示 `Control Connection`、`Tunnel Connection` 和最近 `Route Verification` 结果及时间，不因 Agent 在线就显示代理可用。
 
-**位置识别：**在 `Settings` 配置 IP 地理位置 API。节点加入、地址变化或管理员点击 `Update Location` 时查询并缓存；允许批量补全。API 只收到待查询公网 IP，服务商密钥保留在 Controller。管理员可以手动覆盖国家、城市及标签，自动更新不覆盖手填内容，节点名称始终可以修改。
+**位置识别：**首个服务商固定为 IPinfo，在 `Settings` 配置 IP 地理位置 API。节点加入、地址变化或管理员点击 `Update Location` 时查询并缓存；允许批量补全。API 只收到待查询公网 IP，服务商密钥保留在 Controller。管理员可以手动覆盖国家、城市及标签，自动更新不覆盖手填内容，节点名称始终可以修改。
 
 **添加节点：**输入名称并选择 `Connection Mode`（`Direct` / `Reverse Tunnel`）→ 生成安装信息 → 在 Linux 节点上执行安装 → Agent 验证 Controller 身份并注册 → 自动查询位置、版本。`Direct` 需填写代理接入地址；`Reverse Tunnel` 无须填写公网入站地址，显示固定的本地 `Relay Node`，未部署 `both` 或本地节点未具备隧道承接条件时提示先完成配置。安装信息包含 Controller 地址、预置信任资料和一次性短期入网 token，首次连接见 3.2。控制连接观察到的来源 IP 只作为位置查询参考，不作为代理接入地址，也不直接认定为实际业务出口 IP。
 
@@ -293,7 +293,7 @@ rules:
 
 每个 **`subscription × route`** 组合生成独立配置条目和入口认证凭据，同一线路属于不同订阅时凭据也不同。条目使用稳定 `entry_id`，服务端可用 `sub_<id>_entry_<id>` 作为入站身份标识并绑定独立 UUID/密码，用于撤销及用量归属；不是建立多用户账户系统。客户端仅输出协议实际支持的认证字段，改显示名称不等于建立身份。[B4]
 
-操作包括 `Copy URL`、`Download Config`、`Preview Config`、`Change Rule Profile`、`Edit Grouping`、`Extend Expiry`、`Delete Subscription`、`Reset Token`、`Query Usage`。下载链接使用独立随机 token，不携带管理员密码。修改规则/分组不更换凭据，不改变服务器固定路径。
+操作包括 `Copy URL`、`Download Config`、`Preview Config`、`Change Rule Profile`、`Edit Grouping`、`Extend Expiry`、`Delete Subscription`、`Reset Token`、`Query Usage`。下载地址不携带secret；下载认证使用独立随机token，通过Authorization请求头提供，不携带管理员密码，也不写入日志或草稿。固定Linux Mihomo客户端的请求头导入方式须在B08/T03实测，不能以含token的URL作为未经批准的回退。修改规则/分组不更换凭据，不改变服务器固定路径。
 
 **到期与删除：**各配置条目入口权限继承订阅有效期。到期或删除时下载链接失效，入口凭据也被撤销。Agent 在本地保存到期时间并执行，不要求控制台持续在线；进程重启先过滤过期身份。删除后释放资源引用，按 2.9 回收。
 
@@ -421,7 +421,7 @@ Tailscale 可以作为已有部署的可选私有网络，不是依赖项，也�
 | 反向隧道凭据 | 按节点签发用途独立的 TLS 证书及必要认证资料，验证 Relay 服务身份并自动续期；Relay 按节点和映射授权，移除时撤销并断开相关活动转发，不进入订阅。 |
 | 订阅 token | 独立随机值，支持有效期、重置、删除，不能当作代理密码。 |
 
-**DNS-01 接入：**在 `Settings` 选择域名、DNS 服务商和权限受限的 API 凭据。Controller 调度 ACME 操作，节点为本地私钥生成请求、接收证书；DNS API 凭据不下发普通节点。未接入 DNS API 时允许导入证书或由管理员显式选其他验证方式。[B12]
+**DNS-01 接入：**首个自动证书服务商固定为 Cloudflare；在 `Settings` 选择域名、DNS 服务商和权限受限的 API 凭据。Controller 调度 ACME 操作，节点为本地私钥生成请求、接收证书；DNS API 凭据不下发普通节点。未接入 DNS API 时允许导入证书或由管理员显式选其他验证方式。[B12]
 
 Controller 必须存储的代理凭据和 DNS API token 加密保存，节点文件限制权限，不在日志写入私钥、密码及 token。到期和续期不依赖控制台是否打开；认证参数变更后由客户端更新订阅取得。
 
@@ -448,11 +448,15 @@ Controller 必须存储的代理凭据和 DNS API token 加密保存，节点文
 
 TCP 443 和 UDP 443 分别检查。Hysteria 2 可与仅占用 TCP 443 的网站共存；如果网站已启用 HTTP/3，UDP 443 可能已被占用。[B13][B14] 冲突检查覆盖地址、协议、端口及 IPv4/IPv6 通配监听。发布前显示防火墙和云安全组需要开放的端口，检测失败明确提示；不能认为配置端口即自动开放外部防火墙。
 
-**与已有 Mihomo 共存：**平台内核使用独立程序路径、工作目录、systemd 服务及 Unix socket，不覆盖、停止或升级节点原有实例。服务端显式将 `port`、`socks-port`、`mixed-port`、`redir-port`、`tproxy-port` 设为 `0`，不默认监听 `7890` 等通用代理端口；禁用服务端 TUN 与自动 iptables 接管，只启用平台分配的协议 Listener。内部 `Target DNS` 解析仍然启用并按节点策略配置，但 `dns.listen` 留空，不占用宿主机 DNS 端口。客户端 TUN 配置不受此服务端约束影响。
+**与已有 Mihomo 共存：**平台内核使用独立程序路径、工作目录、systemd/OpenRC 独立服务及 Unix socket，不覆盖、停止或升级节点原有实例。服务端显式将 `port`、`socks-port`、`mixed-port`、`redir-port`、`tproxy-port` 设为 `0`，不默认监听 `7890` 等通用代理端口；禁用服务端 TUN 与自动 iptables 接管，只启用平台分配的协议 Listener。内部 `Target DNS` 解析仍然启用并按节点策略配置，但 `dns.listen` 留空，不占用宿主机 DNS 端口。客户端 TUN 配置不受此服务端约束影响。
 
 安装和每次启动前先准备完整配置，并显式指定平台工作目录与配置文件；配置缺失时拒绝启动，避免 Mihomo v1.19.33 自行生成 `mixed-port: 7890`。Unix socket API 不验证 secret，且该版本会将 socket 文件设为 `0666`，必须预先创建仅服务身份或受限组可访问的父目录，以目录权限隔离本机访问。显式启用的管理 TCP 端口和所有业务、探测端口仍需检查冲突。已有 TUN/透明代理捕获平台出站的行为需另行验证，不自动修改管理员已有网络设置。[B21]
 
 ### 3.5 安装角色与同机部署
+
+**正式平台范围（2026-11-12确认）：**Ubuntu/systemd 与 Alpine/OpenRC 并列支持 `controller`、`node`、`both` 三角色及可选 frps/frpc，覆盖安装、启动、独立生命周期、日志限额、重复安装、升级失败恢复。Alpine不是仅测试平台，也不缩减为仅node。两平台运行预编译产物，自研Go程序使用CGO=0，前端内嵌，无Node/Go运行依赖；musl/静态构建及外部Mihomo/frp二进制兼容性纳入正式真机验收。OpenRC监督器输出与文件日志同样受限额，服务只操作平台独立实例，不按通用进程名结束程序。
+
+**当前实现边界：**已有Linux开发二进制、健康检查与公共数据基础；生产TLS/入网、真实业务、systemd/OpenRC服务和三角色安装器尚待后续阶段。上段为正式交付要求，不能当作已经通过Alpine部署验收，具体阶段见[剩余开发流程](Meshstrata_剩余开发流程_v1.0.md)。
 
 交付两个自研可执行程序 `meshstrata-controller`、`meshstrata-agent`，以及节点使用的固定版本 Mihomo。启用反向出口时额外安装固定版本的 frp，仅在需要的两端运行 frps/frpc；不把 frp 作为普通直连节点的必装依赖。安装脚本根据角色选择对应架构的发布包，完成校验、安装和初始化；前端资源内嵌于 Controller，安装脚本执行完成后退出。
 
@@ -466,9 +470,9 @@ TCP 443 和 UDP 443 分别检查。Hysteria 2 可与仅占用 TCP 443 的网站�
 
 首版启用反向出口要求 Controller 主机已按 `both` 部署，并显式启用本地 Agent 的 Relay 能力；纯 `controller` 安装不承接业务隧道，也不隐式补装 Agent。远端仍按 `node` 安装，选择 `Reverse Tunnel` 后由其 Agent 管理 frpc；其他公网 Agent 首版不开放隧道服务端。
 
-三个程序分别由 `meshstrata-controller.service`、`meshstrata-agent.service`、`meshstrata-mihomo.service` 管理，权限和状态目录按职责分离。普通 Controller 更新、停止或重启不联动停止 Agent 或 Mihomo，本机 Agent 继续处理已有授权的到期撤销；普通 Agent 重启不联动重启 Mihomo。Agent 退出期间本地到期调度暂停，自动恢复后先处理过期和已知撤销身份。
+三个程序分别由独立 systemd 服务 `meshstrata-controller.service`、`meshstrata-agent.service`、`meshstrata-mihomo.service`，或同名无 `.service` 后缀的 OpenRC 服务管理，权限和状态目录按职责分离。运行时通过平台服务接口操作，不硬依赖 `systemctl`。普通 Controller 更新、停止或重启不联动停止 Agent 或 Mihomo，本机 Agent 继续处理已有授权的到期撤销；普通 Agent 重启不联动重启 Mihomo。Agent 退出期间本地到期调度暂停，自动恢复后先处理过期和已知撤销身份。
 
-可选隧道分别使用独立 `meshstrata-frps.service`、`meshstrata-frpc.service`，由对应 Agent 准备配置并管理；普通 Controller 或 Agent 重启不联动停止已运行的 frp 服务。frp 发布包同样校验来源与摘要，使用平台独立程序、配置和状态目录，不覆盖宿主机已有 frp。
+可选隧道分别使用独立 systemd `meshstrata-frps.service`、`meshstrata-frpc.service` 或 OpenRC `meshstrata-frps`、`meshstrata-frpc` 服务，由对应 Agent 准备配置并管理；普通 Controller 或 Agent 重启不联动停止已运行的 frp 服务。frp 发布包同样校验来源与摘要，使用平台独立程序、配置和状态目录，不覆盖宿主机已有 frp。
 
 重复安装或重新运行安装脚本时复用已有 Controller 状态和节点身份，不重新初始化 CA、不重复注册同一节点，也不覆盖节点已有的其他 Mihomo 实例。安装失败时报告已完成的步骤及可重试状态，不把部分安装或注册失败显示为全部成功。
 
@@ -548,6 +552,8 @@ frp 提供反向端口映射与传输，代理协议仍由两端 Mihomo 终止�
 - [ ] 订阅仅包含公网入口和条目身份；反向线路拒绝业务 UDP，管理机必经路径可见，回环端口建连耗时不作为隧道 RTT，完整出口回显及入口一次计数正确。
 - [ ] 普通 Controller/Agent 重启不联动停止 frp；隧道按已发布配置重连同一 Relay，断开时业务失败，不切换出口；移除节点可在本地撤销隧道并关闭活动转发，离线清理及引用回收分别确认。
 
+- [ ] Ubuntu/systemd与Alpine/OpenRC均通过controller/node/both及适用可选frps/frpc的安装、启动、独立生命周期、限额日志、重复安装、升级回滚与恢复；预编译产物无Node/Go运行依赖，musl/静态及外部二进制兼容性有真机证据。
+
 ## 5. 剩余 TODO
 
 | 项目 | 需要落实的内容 |
@@ -556,7 +562,7 @@ frp 提供反向端口映射与传输，代理协议仍由两端 Mihomo 终止�
 | 浏览器首段 HTTP 测量 | 实现入口 HTTPS 小响应端点、任务令牌、CORS/Timing-Allow-Origin、缓存排除及三次采样；验证支持浏览器的时序精度、当前代理路径和回退口径。 |
 | 本地首段原始 RTT | 作为可选增强选择按需运行的轻量探测方式，区分浏览器 HTTP、URL 测试与真正 TCP/UDP RTT。 |
 | 订阅历史用量 | 确认是否有可归属的累计字节数或连接事件，据此提供历史流量、连接次数或仅当前快照。 |
-| 位置 API 与 ACME | 选一个地理位置服务和成熟 DNS-01 组件，先集成一个 DNS 服务商，保留手工位置及证书导入。 |
+| 位置 API 与 ACME | 首接IPinfo与Cloudflare DNS-01，保留手工位置及证书导入，缺域名/凭据明确记录阻塞。 |
 | 客户端系统覆盖 | 针对实际支持的 OS 核对 TUN、DNS 接管、IPv6、应用 DoH、WebRTC 和核心退出后网络保护。 |
 | 服务域名集合 | 维护 Google、OpenAI、Claude 的实际域名和重叠认证/CDN 域名；只有域名类规则可以可靠推导 DNS 出口。 |
 | 业务 UDP 开放 | 对允许的协议组合检查少量 UDP 转发及提前解析路径；升级 Mihomo 后重新核对相关行为。 |

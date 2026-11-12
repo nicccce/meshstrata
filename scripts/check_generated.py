@@ -14,6 +14,7 @@ with tempfile.TemporaryDirectory(prefix="meshstrata-sqlc-") as scratch:
     storage.mkdir(parents=True)
     shutil.copytree(root / "controller/internal/storage/migrations", storage / "migrations")
     shutil.copy2(root / "controller/internal/storage/queries.sql", storage / "queries.sql")
+    shutil.copytree(root / "controller/internal/storage/queries", storage / "queries")
     subprocess.run(["sqlc", "generate"], cwd=target, check=True)
     actual = root / "controller/internal/storage/dbgen"
     expected = storage / "dbgen"

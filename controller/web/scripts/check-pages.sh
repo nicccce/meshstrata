@@ -8,6 +8,7 @@ exec flock "$web_root/../../.local/frontend-check.lock" bash -c '
   npm --prefix "$1" run check:foundation
   node "$1/scripts/check-i18n.mjs"
   node "$1/scripts/check-flows.mjs"
+  node "$1/scripts/check-data-contracts.mjs"
   node "$1/src/features/activity/activity-model.test.mjs"
   npm --prefix "$1" run build
 ' _ "$web_root"

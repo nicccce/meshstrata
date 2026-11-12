@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nicccce/meshstrata/controller/internal/webui"
 	"github.com/nicccce/meshstrata/internal/buildinfo"
 	"github.com/nicccce/meshstrata/internal/httpx"
-	"github.com/nicccce/meshstrata/controller/internal/webui"
 )
 
 type Readiness interface {
@@ -41,11 +41,22 @@ func Handler(store Readiness, info buildinfo.Info, instanceID string, files fs.F
 		}{info, instanceID})
 	}))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api" || strings.HasPrefix(r.URL.Path, "/api/") {
+		if reservedAPIPath(r.URL.Path) {
 			httpx.Error(w, http.StatusNotFound, "NOT_FOUND")
 			return
 		}
 		ui.ServeHTTP(w, r)
 	})
 	return mux, nil
+}
+
+// Keep reserved API namespaces out of the static asset handler (including writes).
+// No business endpoint is registered until its authentication owner supplies it.
+func reservedAPIPath(path string) bool {
+	for _, prefix := range []string{"/api", "/enroll", "/control", "/subscriptions"} {
+		if path == prefix || strings.HasPrefix(path, prefix+"/") {
+			return true
+		}
+	}
+	return false
 }
