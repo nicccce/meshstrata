@@ -52,7 +52,7 @@
 | `/login` | 单管理员演示登录 | 内部 `returnTo`；原型可直接进入。 |
 | 其他路径或不存在的对象 ID | 未找到/对象不存在 | 返回所属列表；不静默显示另一对象。 |
 
-侧栏同时高亮所属一级入口和二级入口。详情标签、向导步骤、搜索、筛选、排序、分页写入 URL；抽屉用受控 query，如 `panel=egress`、`panel=check-egress`、`panel=preview`。参数必须经过白名单解析。含凭据、secret、token 的值不得进入 URL。
+侧栏同时高亮所属一级入口和二级入口。详情标签、向导步骤、搜索、筛选、排序、分页写入 URL；抽屉用受控 query，如 `panel=egress`、`panel=check-egress`、`panel=preview`。参数必须经过白名单解析。管理员密码、会话 cookie、入网 token、节点私钥、DNS 凭据、代理认证和本地 Mihomo secret 不得进入普通 URL 或前端路由。专用 download-only 订阅 token 只允许在显式复制的 HTTPS 资源能力链接中，不能放入路由/query/hash/returnTo。
 
 ### 1.2 主要操作流
 
@@ -220,7 +220,7 @@ Review 展示 `subscription × route` 独立条目 ID、实际入口协议/地�
 
 默认完整配置 TUN + fake-IP、IPv4 目标、业务 UDP 显式拒绝；System Proxy 标 Limited Coverage；IPv6 与业务 UDP 必须显式能力检查。页面不承诺 YAML 自动实现防火墙或 kill switch。
 
-订阅详情四个标签：Overview（有效期、分组、规则、URL 操作）、Entries（逐条目身份/入口/状态/清理）、Config（proxies/groups/rules/DNS 分区预览及完整文本）、Usage（按需查询）。Copy URL、Download Config、Preview Config 主次有别，演示 URL 使用 example.invalid；复制失败提供选中文本替代。
+订阅详情四个标签：Overview（有效期、分组、规则、URL 操作）、Entries（逐条目身份/入口/状态/清理）、Config（proxies/groups/rules/DNS 分区预览及完整文本）、Usage（按需查询）。Copy URL、Download Config、Preview Config 主次有别，演示 URL 使用 example.invalid；复制失败提供仅内存的选中文本替代。标准 Copy URL 为 `/subscriptions/v1/config/{token}` HTTPS 能力链接，粘贴即可导入，无需请求头配置。详情刷新后点击 Copy URL 显式调用管理员鉴权、Origin+CSRF 保护的 `POST /api/v1/subscriptions/{subscription_id}/download-link` 获取同一有效链接；普通列表/详情 DTO 不包含 token 或 URL，不以重置 token 代替再次复制。链接复制结束/离开页面后清内存，不持久化到草稿、导出、日志、错误、任务证据或分析；响应 no-store/no-referrer 且不重定向。到期/撤销每次下载校验，重置不改变仍有效的代理身份。
 
 | 操作 | 操作逻辑 |
 | --- | --- |

@@ -6,6 +6,10 @@ export interface Problem { code: string; fields?: { path: string; code: string; 
 export interface Page<T> { items: T[]; next_cursor: string | null }
 export interface ListQuery { cursor?: string; limit?: number }
 export interface Mutation { expected_revision: Revision; idempotency_key: string }
+// B08 explicit POST /api/v1/subscriptions/{subscription_id}/download-link only.
+// Sensitive HTTPS capability; keep in memory for Copy URL, never list/detail,
+// drafts, frontend routes, errors, exports or analytics. Header setup is optional.
+export interface SubscriptionDownloadLink { download_url: string }
 export interface NodeWire {
   id: ID; name: string; revision: Revision; updated_at: string
   connection_mode: 'direct' | 'reverse_tunnel'; role: 'node' | 'both'

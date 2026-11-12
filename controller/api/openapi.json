@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Meshstrata v1 foundation",
-    "version": "1.0.0-b00",
+    "version": "1.0.0-i00",
     "description": "Implemented metadata plus reserved security/core operations. Reserved operations are NOT installed handlers. Feature payloads are added by their owner before integration."
   },
   "paths": {
@@ -832,22 +832,79 @@
         ]
       }
     },
-    "/subscriptions/v1/config": {
+    "/subscriptions/v1/config/{token}": {
       "get": {
-        "operationId": "get__subscriptions_v1_config",
+        "operationId": "downloadSubscriptionConfig",
         "x-owner": "B08",
         "x-implemented": false,
-        "security": [
+        "security": [],
+        "x-authentication": {
+          "scheme": "download_capability",
+          "in": "path",
+          "parameter": "token",
+          "scope": "single_subscription_download",
+          "administrator_authority": false
+        },
+        "x-sensitive-link": {
+          "cache_control": "no-store",
+          "referrer_policy": "no-referrer",
+          "redirects": false,
+          "redact": [
+            "path_token",
+            "authorization",
+            "download_url"
+          ],
+          "minimum_entropy_bits": 256,
+          "check_each_request": [
+            "expires_at",
+            "revoked_at",
+            "token_version"
+          ],
+          "scope": "single_subscription_download",
+          "ordinary_dto_contains_token": false
+        },
+        "description": "Standard Copy URL import over HTTPS, with a random download-only capability token in the resource path. No Authorization header or administrator cookie is required. Validate expiry/revocation on every request; reset/delete invalidates old links without rotating still-valid proxy identities. Never log/export/analyze the capability URL, echo it in errors or redirect it. B08 implements this reserved operation.",
+        "parameters": [
           {
-            "SubscriptionToken": []
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "description": "Opaque URL-safe random token, at least 256 bits of entropy; never an administrator or proxy credential.",
+            "schema": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
           }
         ],
-        "description": "HTTPS download: Authorization bearer download token, expiration/revocation checked every time; no admin or mTLS authority. Secret URL/query tokens prohibited; B08 must define Linux client header configuration before enabling download.",
         "responses": {
           "200": {
-            "description": "Result",
+            "description": "Complete Mihomo YAML configuration (not a proxy provider)",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always no-store, including errors",
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Never send a capability URL as referrer",
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
             "content": {
-              "application/json": {
+              "application/yaml": {
                 "schema": {
                   "type": "string"
                 }
@@ -862,8 +919,258 @@
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Always no-store, including errors",
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Never send a capability URL as referrer",
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
             }
           }
+        }
+      }
+    },
+    "/subscriptions/v1/config": {
+      "get": {
+        "operationId": "downloadSubscriptionConfigWithHeader",
+        "x-owner": "B08",
+        "x-implemented": false,
+        "security": [
+          {
+            "SubscriptionToken": []
+          }
+        ],
+        "x-authentication": {
+          "scheme": "download_capability",
+          "in": "header",
+          "name": "Authorization",
+          "scope": "single_subscription_download",
+          "administrator_authority": false
+        },
+        "x-sensitive-link": {
+          "cache_control": "no-store",
+          "referrer_policy": "no-referrer",
+          "redirects": false,
+          "redact": [
+            "path_token",
+            "authorization",
+            "download_url"
+          ],
+          "minimum_entropy_bits": 256,
+          "check_each_request": [
+            "expires_at",
+            "revoked_at",
+            "token_version"
+          ],
+          "scope": "single_subscription_download",
+          "ordinary_dto_contains_token": false
+        },
+        "description": "Optional HTTPS Authorization bearer channel with exactly the same scope, expiry/revocation, reset and sensitive-response policy as the capability URL. It is not a prerequisite for Copy URL import.",
+        "responses": {
+          "200": {
+            "description": "Complete Mihomo YAML configuration (not a proxy provider)",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always no-store, including errors",
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Never send a capability URL as referrer",
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Always no-store, including errors",
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Never send a capability URL as referrer",
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subscriptions/{subscription_id}/download-link": {
+      "post": {
+        "operationId": "getSubscriptionDownloadLink",
+        "x-owner": "B08",
+        "x-implemented": false,
+        "security": [
+          {
+            "AdminSession": [],
+            "CSRF": []
+          }
+        ],
+        "description": "Explicit Copy URL action, also after detail refresh. Require administrator session, allowed Origin and CSRF. Recover the CURRENT token through B01 Cipher and the B08/010 credential reference; never force token reset on refresh. Ordinary list/detail DTOs exclude token and URL. Expired/revoked subscriptions return a redacted stable error.",
+        "parameters": [
+          {
+            "name": "subscription_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ID"
+            }
+          }
+        ],
+        "x-sensitive-link": {
+          "cache_control": "no-store",
+          "referrer_policy": "no-referrer",
+          "redirects": false,
+          "redact": [
+            "path_token",
+            "authorization",
+            "download_url"
+          ],
+          "minimum_entropy_bits": 256,
+          "check_each_request": [
+            "expires_at",
+            "revoked_at",
+            "token_version"
+          ],
+          "scope": "single_subscription_download",
+          "ordinary_dto_contains_token": false
+        },
+        "responses": {
+          "200": {
+            "description": "Sensitive link for explicit copy only",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always no-store, including errors",
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Never send a capability URL as referrer",
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionDownloadLink"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable code and non-sensitive field errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Always no-store, including errors",
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Never send a capability URL as referrer",
+                "schema": {
+                  "type": "string",
+                  "const": "no-referrer"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            }
+          }
+        },
+        "x-token-recovery": {
+          "verification": "hash",
+          "recovery": "B01 authenticated ciphertext reference",
+          "reset_required_after_refresh": false,
+          "migration": "010",
+          "credential_purpose": "subscription_download",
+          "subscription_field": "download_token_credential_ref",
+          "atomic_with": [
+            "download_token_hash",
+            "token_version"
+          ],
+          "immutable_migrations": [
+            "001",
+            "002"
+          ]
         }
       }
     }
@@ -884,7 +1191,7 @@
       "SubscriptionToken": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Download-only token in Authorization; no secrets in URL."
+        "description": "Optional download-only bearer header channel. Standard Copy URL uses /subscriptions/v1/config/{token} without custom headers."
       },
       "NodeMTLS": {
         "type": "mutualTLS"
@@ -1360,6 +1667,20 @@
           "next_cursor"
         ],
         "additionalProperties": false
+      },
+      "SubscriptionDownloadLink": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "download_url"
+        ],
+        "properties": {
+          "download_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Sensitive HTTPS capability URL /subscriptions/v1/config/{token}; ephemeral explicit-action response only. Never persist in ordinary DTOs, routes, drafts or telemetry."
+          }
+        }
       }
     }
   }

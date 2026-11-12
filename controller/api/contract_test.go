@@ -114,3 +114,50 @@ func TestContractReferencesAndGoFields(t *testing.T) {
 		}
 	}
 }
+
+// Protect the existing Copy URL product flow against a header-only regression.
+func TestSubscriptionCapabilityLinkContract(t *testing.T) {
+	open := parse(t, OpenAPI)
+	op := schema(t, open, "paths", "/subscriptions/v1/config/{token}", "get")
+	if op["x-implemented"] != false || len(op["security"].([]any)) != 0 {
+		t.Fatal("Copy URL must remain reserved and require no cookie/header security")
+	}
+	auth := op["x-authentication"].(map[string]any)
+	if auth["in"] != "path" || auth["parameter"] != "token" || auth["scope"] != "single_subscription_download" || auth["administrator_authority"] != false {
+		t.Fatal("missing download-only path capability")
+	}
+	params := op["parameters"].([]any)
+	if len(params) != 1 {
+		t.Fatal("link import must not require extra parameters/headers")
+	}
+	param := params[0].(map[string]any)
+	if param["name"] != "token" || param["in"] != "path" || param["required"] != true {
+		t.Fatal("missing normal OpenAPI token path parameter")
+	}
+	for _, raw := range schema(t, open, "components", "securitySchemes") {
+		if raw.(map[string]any)["in"] == "path" {
+			t.Fatal("OpenAPI apiKey cannot use in:path")
+		}
+	}
+	link := schema(t, open, "paths", "/api/v1/subscriptions/{subscription_id}/download-link", "post")
+	security := link["security"].([]any)[0].(map[string]any)
+	if security["AdminSession"] == nil || security["CSRF"] == nil || link["x-implemented"] != false {
+		t.Fatal("explicit link retrieval must require admin+CSRF and remain reserved")
+	}
+	recovery := link["x-token-recovery"].(map[string]any)
+	if recovery["reset_required_after_refresh"] != false || recovery["verification"] != "hash" || recovery["migration"] != "010" || recovery["credential_purpose"] != "subscription_download" || recovery["subscription_field"] != "download_token_credential_ref" {
+		t.Fatal("Copy URL after refresh requires recoverable current token, not forced reset")
+	}
+	for _, operation := range []map[string]any{op, link, schema(t, open, "paths", "/subscriptions/v1/config", "get")} {
+		policy := operation["x-sensitive-link"].(map[string]any)
+		if policy["minimum_entropy_bits"] != float64(256) || policy["redirects"] != false || policy["ordinary_dto_contains_token"] != false {
+			t.Fatal("sensitive-link policy weakened")
+		}
+		for _, raw := range operation["responses"].(map[string]any) {
+			h := raw.(map[string]any)["headers"].(map[string]any)
+			if h["Cache-Control"].(map[string]any)["schema"].(map[string]any)["const"] != "no-store" || h["Referrer-Policy"].(map[string]any)["schema"].(map[string]any)["const"] != "no-referrer" {
+				t.Fatal("sensitive response may cache or leak referrer")
+			}
+		}
+	}
+}

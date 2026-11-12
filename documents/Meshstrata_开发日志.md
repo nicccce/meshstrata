@@ -321,3 +321,11 @@ Agent 退出期间，到期调度会暂停；systemd/OpenRC 自动恢复和启�
 - **验证：**完整`make check GO_PARALLEL=1 GOMAXPROCS=1`、`check-pages.sh`（含1990双语键/插值、跨页/活动/适配器检查、类型检查与构建）、生成一致性及差异格式检查通过。新增测试涵盖新库/001升级/instance_id、外键/隔离/凭据代次/墓碑/确认清理、任务幂等/DAG/事务回滚/修订冲突、消息序列化/拒绝及Schema字段一致性。最初沙箱内Agent Unix socket测试被系统权限拦截，随后获准在沙箱外执行原完整检查通过，未跳过或削弱检查。两二进制CGO=0且file确认静态链接。
 - **浏览器：**独立临时回环端口使用.local内现有Playwright/Chromium，通过69项页面/场景/390px检查、线路/订阅点击流程，以及118次双语访问和7组行为检查；无运行错误/翻译警告/自动API请求/横向溢出，临时预览已停止，不改原5173服务。日志和截图在忽略的`.local/b00-*`与`.local/browser-check/b00/`。
 - **实际边界：**没有远程部署或读取测试服务器凭据，没有操作宿主既有Mihomo；真实管理认证/加密、入网/mTLS、Mihomo控制/发布/到期、业务API、frp/公网证书/位置/测量/安装升级均留后续。存储和接口不能当作真实多机成功。B00独占Git，检查后提交推送当前分支，实际结果见本会话最终回复；阶段1需用户在主协调会话说“继续”才派发。
+
+### 2026-11-12｜I00独立契约复核与阶段1稳定基线
+
+- **产品纠正：**恢复HTTPS `/subscriptions/v1/config/{token}` 专用download-only能力链接，Copy URL可直接导入，header仅可选；刷新后通过管理员+Origin/CSRF保护的专用动作再次获取当前链接。普通DTO不含token/URL。B08/010明确增加subscription_download用途及可恢复密文引用，hash验证、原子重置/撤销，001/002不改。统一no-store/no-referrer/无重定向与能力链接脱敏要求，B00历史报告保留并在I00说明纠正。
+- **阶段1接口：**新增internal/secretstore.Cipher/Binding/Sealed、internal/adminauth.Guard、storage.Database作用域内sqlc查询/单库短事务；B01实现、B02注入，9443入网/mTLS独立于cookie。阶段1交接写清构造/错误/独占路径/最低测试及B03→B05边界，没有实现业务。
+- **并行验证：**scripts/backend_check.py从明确I00提交建立忽略的单模块白名单副本，仅在副本应用本模块SQL/精确依赖并生成/测试，flock串行、共享缓存及-p1；新增4项隔离/拒绝测试。I01在业务会话结束后统一正式迁移003–005/锁依赖/sqlc/接线及全量检查。
+- **验证：**原工作区针对性Go测试、能力URL/刷新恢复/鉴权与404契约、仓储事务提交/回滚/取消测试及helper隔离测试通过。沙箱内既有Unix socket测试遇setsockopt限制，获准沙箱外执行原make check退出0；完整check-pages含i18n/适配器/类型检查/构建退出0；未重复无关浏览器套件。报告及日志路径见backend-delivery/I00.md。
+- **交付范围：**实际会话ID由环境一致确认并登记，未创建其他会话/子代理或跨会话发消息，无远程部署/凭据读取/live切换/新业务接口。I00独占Git按约提交推送；B01/B02/B03技术基线已备齐，但须用户在主协调会话说“继续”才派发，本会话完成I00后停止。

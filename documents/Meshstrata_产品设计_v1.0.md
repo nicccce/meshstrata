@@ -293,7 +293,9 @@ rules:
 
 每个 **`subscription × route`** 组合生成独立配置条目和入口认证凭据，同一线路属于不同订阅时凭据也不同。条目使用稳定 `entry_id`，服务端可用 `sub_<id>_entry_<id>` 作为入站身份标识并绑定独立 UUID/密码，用于撤销及用量归属；不是建立多用户账户系统。客户端仅输出协议实际支持的认证字段，改显示名称不等于建立身份。[B4]
 
-操作包括 `Copy URL`、`Download Config`、`Preview Config`、`Change Rule Profile`、`Edit Grouping`、`Extend Expiry`、`Delete Subscription`、`Reset Token`、`Query Usage`。下载地址不携带secret；下载认证使用独立随机token，通过Authorization请求头提供，不携带管理员密码，也不写入日志或草稿。固定Linux Mihomo客户端的请求头导入方式须在B08/T03实测，不能以含token的URL作为未经批准的回退。修改规则/分组不更换凭据，不改变服务器固定路径。
+操作包括 `Copy URL`、`Download Config`、`Preview Config`、`Change Rule Profile`、`Edit Grouping`、`Extend Expiry`、`Delete Subscription`、`Reset Token`、`Query Usage`。标准 `Copy URL` 返回 HTTPS 能力链接 `/subscriptions/v1/config/{token}`，复制该 URL 即可导入完整配置，无需配置请求头。专用随机 token 至少256位熵，仅授权单订阅下载，不是管理员身份或代理密码；Authorization 请求头仅为可选兼容入口。每次下载检查到期/撤销，重置或删除及时使旧链接失效，重置不改变仍有效的代理身份。能力链接不得进入普通列表/详情 DTO、前端路由、草稿、导出、日志、错误、重定向、Referrer、任务证据或分析；下载响应（包括错误）及链接获取响应均 `Cache-Control: no-store`、`Referrer-Policy: no-referrer`，禁止重定向。管理员密码、会话 cookie、入网 token、节点私钥、DNS 凭据、代理认证和本地 Mihomo secret 仍禁止进入普通 URL。修改规则/分组不更换凭据，不改变服务器固定路径。
+
+刷新后仍可显式 `Copy URL`：调用管理员鉴权、Origin 与 CSRF 保护的 `POST /api/v1/subscriptions/{subscription_id}/download-link` 获取当前链接，仅在内存保留到复制结束；不强迫刷新后重置 token。B08 以 hash 验证下载，通过 B01 安全存储保存可恢复的 token 密文与引用。B08 增量迁移010须增加 `subscription_download` purpose、`subscriptions.download_token_credential_ref`（引用 `credentials.id`），并以订阅 ID/记录 ID/用途及 `token_version` 协调 hash、密文引用的原子更新；不得改写001/002。重置/删除撤销旧密文引用，不轮换仍有效的代理身份。B08/T03 须实测固定 Linux Mihomo 的普通 URL 导入、刷新后复制、旧链接失效和无泄漏；本轮仅冻结契约，不开放下载。
 
 **到期与删除：**各配置条目入口权限继承订阅有效期。到期或删除时下载链接失效，入口凭据也被撤销。Agent 在本地保存到期时间并执行，不要求控制台持续在线；进程重启先过滤过期身份。删除后释放资源引用，按 2.9 回收。
 

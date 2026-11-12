@@ -1,4 +1,4 @@
-# B00 公共契约（v1，2026-11-12）
+# 公共契约（v1，I00复核，2026-11-12）
 
 本目录是 HTTP/控制协议的代码旁契约。`openapi.json` 中只有 `GET /api/v1/system` 已注册；其他 `x-implemented: false` 均是预留，当前返回 404。B00 不启动 9443，不注册登录或业务写接口。新增认证及业务行为必须经过对应阶段，不能以空数组/空任务的 200 代替未实现。健康检查沿用 README。
 
@@ -15,7 +15,7 @@
 | 平面 | 传输与身份 | 所有者 / 禁止混用 |
 | --- | --- | --- |
 | 管理网页/API | 8443 HTTPS，B01 服务端 opaque 会话，Secure/HttpOnly/SameSite cookie；写操作 Origin + CSRF | 会话不能下载为代理凭据；初始化需可信本地 bootstrap，绝不可成为公网抢占入口 |
-| 订阅下载 | 普通 HTTPS，独立 download-only bearer token；仅保存 hash | B08；每次验证到期/撤销，重置不换入口身份。token 用 Authorization 请求头，不进 URL、日志、草稿；Linux Mihomo 的请求头配置须在 B08/T03 实测后启用下载。若客户端不支持则明确阻塞，不回退到带 secret 的 URL |
+| 订阅下载 | 普通 HTTPS，独立 download-only 能力 token；hash验证，B01密文/引用支持再次复制 | B08；标准 Copy URL 使用 `/subscriptions/v1/config/{token}`，无需请求头。可选 `/subscriptions/v1/config` Authorization bearer 入口语义一致。每次验证到期/撤销，重置不换仍有效的入口身份；专用能力链接的处理见下文 |
 | 首次入网 | 独立 9443 服务端 TLS，先验证预置信任 CA/指纹及域名/IP，再在 JSON body 发送一次性短期 token + CSR | B02；OpenAPI 用 `x-authentication` 描述 body token，不虚构 OpenAPI 的 body apiKey。私钥留节点；一次性消耗与签证关联须原子、支持安全重试 |
 | 后续控制/产物 | 9443 mTLS，证书绑定 node_id 且节点未移除；WebSocket 子协议 `meshstrata.control.v1` | B02；不能接受管理员/订阅/入网 token 代替节点证书，不能只比较消息 node_id |
 
@@ -48,3 +48,18 @@
 `internal/platform.Manager` 接口无 systemctl硬依赖，systemd/OpenRC实现留B17。Ubuntu/systemd与Alpine/OpenRC都是正式部署平台，controller/node/both三角色与可选frps/frpc均须验收。Alpine运行预编译CGO=0自研程序与嵌入前端，无Node/Go依赖；外部Mihomo/frp需固定版本、musl/静态兼容性和摘要校验。独立程序/状态/配置/服务/socket；不覆盖已有实例，不按通用进程名杀进程，服务重启互不联动。服务日志及OpenRC监督器stdout/stderr也受限额，重复安装/升级失败恢复不能仅靠systemd机制。B00只有类型和要求，没有安装器、服务文件或Alpine运行实测。
 
 迁移编号、查询、生成及公共文件冻结规则见[阶段任务书](../../documents/Meshstrata_剩余开发流程_v1.0.md)。
+
+## I00订阅能力链接与再次复制
+
+专用随机download-only token至少256位熵、URL-safe，只授权单订阅下载。它可位于HTTPS资源路径，OpenAPI使用普通path参数和`x-authentication`，不能虚构`in:path`的apiKey。管理员密码、会话cookie、入网token、节点私钥、DNS凭据、代理认证和本地Mihomo secret仍不得进入普通URL/前端路由/日志/草稿。所有业务接口继续`x-implemented:false`并返回404，B08才注册真实下载。
+
+刷新后显式Copy URL通过管理员会话、Origin和CSRF保护的`POST /api/v1/subscriptions/{subscription_id}/download-link`取回当前链接，响应仅`{download_url}`；普通列表/详情DTO不含token/URL。B08必须同时使用hash验证及B01 Cipher保存可恢复的密文/引用；不是刷新即重置。迁移010增加`subscription_download` purpose和`subscriptions.download_token_credential_ref REFERENCES credentials(id)`（不得改001/002）；约束该引用唯一且purpose正确，绑定credential ID+purpose，订阅映射及token_version在短事务中校验。新token先加密，再原子更新hash/version/ref并撤销旧credential；删除同样撤销hash与引用；失败不留半次重置，不换仍有效的代理身份。B01基础允许purpose扩展，但010落地前不能持久该新增用途。
+
+每次下载验证订阅expires_at/revoked_at及当前token hash/version，旧链接重置/删除及时失效；错误不得反射URL/token。链接获取和下载的所有响应（含错误）`Cache-Control: no-store`、`Referrer-Policy: no-referrer`、`X-Content-Type-Options: nosniff`；禁止重定向、第三方资源及分析。能力链接只可在显式复制/导入或下载操作中短时使用，不进入普通导出、访问日志（反向代理也须按路径模板脱敏）、错误、Referer、任务证据和分析，前端路由/草稿/持久存储同禁。B08/T03用脱敏证据测试标准URL导入、刷新再次复制、单订阅范围、到期/撤销/重置/删除和无泄漏。Header入口仅兼容选择，不是放行前提。
+
+## I00阶段1冻结入口
+
+- `internal/secretstore.Cipher/Binding/Sealed`：B01实现，B02注入消费；现有002 purpose、credential ID、key_id版本、密文边界及失败语义见代码。密钥只在Controller本地；密文只给仓储/加密备份，不能作为DTO/节点载荷。
+- `internal/adminauth.Guard`：B01实现Read/Write；B02管理handler只通过此小接口组合，不导入B01具体包；9443 TLS入网/mTLS独立且不装cookie中间件。
+- `controller/internal/storage.Database`：B01/B02 repository复用`*storage.Store`的Read/Write生成查询作用域。只向repository注入，不向HTTP层提供SQL；禁止另开库、访问私有db、嵌套事务或在回调内签证/加密/网络。
+- 精确构造、独占路径、SQL/依赖提案、临时副本检查和I01接线见[阶段1交接](../../documents/backend-delivery/阶段1交接.md)。B03仅交付内核适配/证据边界，B05后续执行runtime。

@@ -193,7 +193,9 @@ updatedAt and optional typed `data: DraftData`. `saveDraft` explicitly projects
 these fields and the nested form whitelist in `demo/draft-data.ts`; arbitrary form
 payloads are not accepted. `safeJson` also strips sensitive property names recursively as defense in
 depth. Never place passwords, proxy auth, install tokens, secrets, private keys,
-or YAML containing them into a persistent object, URL, message, error or download.
+or YAML containing them into persistent demo objects, frontend routes, messages
+or diagnostics. Production config/link downloads follow the explicit B07/B08
+contracts; their sensitive payloads never enter this demo persistence layer.
 `sessionSecrets: Map<string,string>` is memory-only; features must clear their keys
 when the relevant workflow ends. It is intentionally separate from workspace and
 cleared on demo reset. It is not real authentication.
@@ -423,7 +425,29 @@ production storage. See [the server contract](../api/CONTRACT.md) and
 [stage ownership](../../documents/Meshstrata_剩余开发流程_v1.0.md).
 
 Administrator cookies, download-only bearer token, TLS enrollment body token and
-mTLS node control are separate trust domains. Never put any secret into a URL,
-localStorage or saved draft. B08 must prove download Authorization-header support
-with the pinned Linux Mihomo client; no secret-bearing URL fallback. Local Mihomo
-pairing secret remains browser memory only and never reaches Controller.
+mTLS node control are separate trust domains. Administrator/enrollment/proxy/DNS
+credentials and local Mihomo secrets must never enter ordinary URLs, localStorage
+or drafts. Dedicated subscription capability links follow the I00 contract below;
+B08 must prove ordinary Copy URL import with the pinned Linux Mihomo client. Local
+Mihomo pairing secret remains browser memory only and never reaches Controller.
+
+## Subscription Copy URL contract (I00; B08/B11 implement later)
+
+The standard import is the HTTPS resource capability
+`/subscriptions/v1/config/{token}`. Its dedicated random download-only token is
+allowed in that resource URL; custom Authorization headers are optional. It grants
+only one subscription's download and never administrator or proxy authority.
+Ordinary list/detail DTOs exclude both token and URL. After refresh, explicit Copy
+URL calls administrator + Origin/CSRF protected
+`POST /api/v1/subscriptions/{subscription_id}/download-link`, returning
+`SubscriptionDownloadLink`. B08/010 stores a recoverable encrypted token reference
+through B01 in addition to its verification hash; copying again must not reset it.
+
+Hold the response in memory only through copy/manual fallback, then clear it on
+completion/leave. Never include it in frontend routes, drafts, exported diagnostics,
+errors, analytics or task evidence. All link/download responses including errors
+are no-store/no-referrer, and must never redirect. Downloads check expiry/revocation
+every time; reset/delete invalidates old links without changing still-valid proxy
+identities. Passwords, cookies, enrollment tokens, DNS/proxy credentials, node keys
+and local Mihomo secrets remain forbidden in ordinary URLs. No page layout or live
+mode change is part of I00; all these business routes remain unregistered.
