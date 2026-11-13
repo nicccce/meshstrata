@@ -336,3 +336,13 @@ Agent 退出期间，到期调度会暂停；systemd/OpenRC 自动恢复和启�
 - Controller显式HTTPS安全模式接真实Cipher/Guard/单一Store，独立9443；本地prepare-local/initialize-admin与Agent enroll可执行，不经argv/普通JSON保存敏感值。开发回环HTTP继续只健康/演示。
 - Agent以持久初始状态control_only接真实身份、续期、Hello/保活/重连，命令和receipt拒绝，不冒充B05持久业务执行。移除管理身份不等同代理清理，revoke任务保持待清理。
 - 补普通二进制本地组合脚本、当前集成源码真实四协议runner、无Go/Node真机产物构建入口及T01计划。完整检查/证据及限制见backend-delivery/I01.md；T01不自动启动，完整发布/到期T02、Reverse T05、两平台三角色安装/frp T07。
+
+
+### 2026-11-13｜T01 阶段1独立Ubuntu/Alpine真机验收
+
+- 固定待验产品f5702078aa48f946fb3c9ee35af65e991a4fc493；只新增T01驱动/脱敏报告，无产品实现、迁移或前端修改，无子代理/新会话/跨会话消息。低并发共享锁构建CGO0产物，目标无Go/Node安装，两端传输及最终SHA校验通过。
+- Ubuntu24.04/systemd与Alpine3.23.7/OpenRC均实际运行Controller+Agent：受信HTTPS管理员认证/CSRF、入网丢响应同CSR恢复/双CSR竞争、mTLS续期/重连/身份保持、真实移除/旧控制连接消失/旧证书拒绝、独立生命周期、五类故障拒绝及跨UID Unix socket保护通过；control_only没有业务发布执行。
+- 固定Mihomo v1.19.33两平台四协议本机TCP/业务UDP/撤销/精确旧会话清理/另一身份隔离/API假成功检查通过。真实双向公网四协议均无回显且TCP超时，不能把坏凭据超时计为认证拒绝。互换Controller角色的远端Agent入网均退出1。
+- 正式Controller前后回环ready的窗口内，构建机及另一测试机到两端公网8443/9443均超时；未修改防火墙/云规则/SSH配置，尚未定位上游原因。T01整体阻塞，阶段2不可开始；没有以本机结果替代多机成功。首次驱动错误及超时遗留测试PID均有记录/精确回收。
+- Alpine435MiB上真实认证KDF/节点控制有界观测无OOM；最后Controller VmHWM148228KiB、Agent9116KiB，不承诺固定资源。最终两机本轮程序/活动Unix socket均0、原宿主监听一致、0700根保留私有失败证据，关闭本轮SSH复用。
+- 交付documents/backend-delivery/T01.md、T01-evidence.json与scripts/integration/t01；检查后独占Git提交推送，实际提交号见最终回复。阶段分工维持T02/T05/T07，前端仍demo。本会话停止，后续由主协调在用户“继续”后安排。

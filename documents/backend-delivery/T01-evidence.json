@@ -1,0 +1,898 @@
+{
+  "product_commit": "f5702078aa48f946fb3c9ee35af65e991a4fc493",
+  "test_thread": "01a1d35d-fa7e-7c81-be80-21c2ab09aeee",
+  "scope": "T01 stage1; formal remote binaries, local HTTPS+control, isolated kernel and public attempts",
+  "result": "BLOCKED_PUBLIC_TRANSPORT",
+  "stage2_gate": false,
+  "artifact_sha256": {
+    "meshstrata-controller": "37999ee840c3589194fd85df8f5dbde7639dde80dd477e8937cd1d6f192a3327",
+    "meshstrata-agent": "35a94504e95073cf657357a5092608f5a24fa5d74a4e746cba9e0b4a5576e3df",
+    "agent-enrollment.test": "2afc63f6ad6223bf262db6413e5dfde3cc2471ee346d7f16c286c6107bde22c0",
+    "auth.test": "a149954a478cd5ccfc7bdbbee09658353924a4162f9cbcc24afcafc5c4a194f8",
+    "b03.test": "5ce62b1c6e3b4f0a10398d747e3ae001d0e6fb1ac62ec66a316f376fe2d2adcb",
+    "control.test": "6a93a93e750fe3f80175c2ff78a971a307601d7a7364ef1e5889c3644f4dd248",
+    "enrollment.test": "a221f49c6fa0a5893386c2f207e74e229e7fbd40dd780d41c7d89ccb2fad2776",
+    "t01-kernel.test": "e0089c5d02ee99ee276e0dfe0adf9e7b5c51438134157b217ca344f63dc80658",
+    "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa",
+    "version-lock.json": "3e4441857413d457067861bcee9b76f4209464e1153c830077edc967cfae4cd7",
+    "COMMIT": "db0ca4542927d2ae0b865b304820766edca5a3f99118eccab51d977119d93880"
+  },
+  "platforms": {
+    "ubuntu": {
+      "formal_binary_tests": {
+        "started_at": "2026-11-13T06:16:28Z",
+        "finished_at": "2026-11-13T06:17:32Z",
+        "status": "passed",
+        "transport": "remote loopback HTTPS/mTLS via SSH command",
+        "identity_stable": true,
+        "csr_race_exit_codes": [
+          1,
+          0
+        ],
+        "initialize_cli_seconds": 0.984,
+        "resource": {
+          "ubuntu": "VmHWM:\t    8960 kB\nVmRSS:\t    8960 kB\nThreads:\t7\n",
+          "controller": "VmHWM:\t   81024 kB\nVmRSS:\t   81024 kB\nThreads:\t8\n",
+          "controller_after_password": "VmHWM:\t  148608 kB\nVmRSS:\t  148608 kB\nThreads:\t8\n"
+        },
+        "api_latency_samples": [
+          {
+            "path": "/api/v1/auth/login",
+            "seconds": 0.7242,
+            "status": 204,
+            "transport": "remote loopback HTTPS"
+          },
+          {
+            "path": "/api/v1/auth/password",
+            "seconds": 1.186,
+            "status": 204,
+            "transport": "remote loopback HTTPS"
+          },
+          {
+            "path": "/api/v1/auth/login",
+            "seconds": 0.7077,
+            "status": 204,
+            "transport": "remote loopback HTTPS"
+          }
+        ]
+      },
+      "kernel_started_at": "2026-11-13T05:53:01.63904955Z",
+      "kernel_finished_at": "2026-11-13T05:53:16.810102006Z",
+      "kernel": {
+        "hysteria2": {
+          "status": "success",
+          "tcp_forward": "success",
+          "business_udp": "success",
+          "bad_credentials_no_forward": "success",
+          "old_credentials_no_forward": "success",
+          "revoked_existing_survived_reload": false,
+          "captured_revoked_server_sessions": 3,
+          "explicit_connection_close_requests": 3,
+          "other_existing_after_cleanup_survived": true,
+          "forward_verification": {
+            "verified": true,
+            "checked_at": "2026-11-13T05:53:07.01570076Z"
+          },
+          "revocation_verification": {
+            "digest": "d7665ba080b6204555407e131d4338eb81fac5cade1840ca8f4e2c013b695af1",
+            "checked_at": "2026-11-13T05:53:13.526240299Z",
+            "old_authentication_denied": {
+              "status": "success"
+            },
+            "existing_sessions_closed": {
+              "status": "success"
+            },
+            "other_identity_unaffected": {
+              "status": "success"
+            },
+            "verified": true
+          },
+          "conflict_api": {
+            "digest": "2598c160384349f3a717f34e2e6cb98c789bacadd9ca73194270f6f625253718",
+            "attempted_at": "2026-11-13T05:53:16.712425291Z",
+            "api_accepted": true
+          },
+          "conflict_inspection": {
+            "verified": false,
+            "checked_at": "2026-11-13T05:53:16.722144042Z",
+            "conflicting_listener_listening": {
+              "status": "failure"
+            },
+            "owned_socket_count": 3
+          },
+          "unix_socket_mode": "0666"
+        },
+        "ss2022": {
+          "status": "success",
+          "tcp_forward": "success",
+          "business_udp": "success",
+          "bad_credentials_no_forward": "success",
+          "old_credentials_no_forward": "success",
+          "revoked_existing_survived_reload": true,
+          "captured_revoked_server_sessions": 3,
+          "explicit_connection_close_requests": 3,
+          "other_existing_after_cleanup_survived": true,
+          "forward_verification": {
+            "verified": true,
+            "checked_at": "2026-11-13T05:53:02.498069846Z"
+          },
+          "revocation_verification": {
+            "digest": "680fcacb694b546ba03a08e25c1394453f4500092b89d05af278142640260367",
+            "checked_at": "2026-11-13T05:53:02.926894684Z",
+            "old_authentication_denied": {
+              "status": "success"
+            },
+            "existing_sessions_closed": {
+              "status": "success"
+            },
+            "other_identity_unaffected": {
+              "status": "success"
+            },
+            "verified": true
+          },
+          "conflict_api": {
+            "digest": "cf2d322a4af3e752465b7fe3a13cf885c0120a18e8da8a4e7414cd237e02ef58",
+            "attempted_at": "2026-11-13T05:53:03.127044557Z",
+            "api_accepted": true
+          },
+          "conflict_inspection": {
+            "verified": false,
+            "checked_at": "2026-11-13T05:53:03.194040755Z",
+            "conflicting_listener_listening": {
+              "status": "failure"
+            },
+            "owned_socket_count": 6
+          },
+          "unix_socket_mode": "0666"
+        },
+        "trojan": {
+          "status": "success",
+          "tcp_forward": "success",
+          "business_udp": "success",
+          "bad_credentials_no_forward": "success",
+          "old_credentials_no_forward": "success",
+          "revoked_existing_survived_reload": true,
+          "captured_revoked_server_sessions": 3,
+          "explicit_connection_close_requests": 3,
+          "other_existing_after_cleanup_survived": true,
+          "forward_verification": {
+            "verified": true,
+            "checked_at": "2026-11-13T05:53:04.006003663Z"
+          },
+          "revocation_verification": {
+            "digest": "530fea138853c3357b6692e30212435aa0452aa655a10b9b3949448c9ec353de",
+            "checked_at": "2026-11-13T05:53:04.430961177Z",
+            "old_authentication_denied": {
+              "status": "success"
+            },
+            "existing_sessions_closed": {
+              "status": "success"
+            },
+            "other_identity_unaffected": {
+              "status": "success"
+            },
+            "verified": true
+          },
+          "conflict_api": {
+            "digest": "c9d2cd996c56081cb929c2215d23b51c7e7e234454a4846a163a14995eeadf9a",
+            "attempted_at": "2026-11-13T05:53:04.630644562Z",
+            "api_accepted": true
+          },
+          "conflict_inspection": {
+            "verified": false,
+            "checked_at": "2026-11-13T05:53:04.637760554Z",
+            "conflicting_listener_listening": {
+              "status": "failure"
+            },
+            "owned_socket_count": 3
+          },
+          "unix_socket_mode": "0666"
+        },
+        "vless": {
+          "status": "success",
+          "tcp_forward": "success",
+          "business_udp": "success",
+          "bad_credentials_no_forward": "success",
+          "old_credentials_no_forward": "success",
+          "revoked_existing_survived_reload": true,
+          "captured_revoked_server_sessions": 3,
+          "explicit_connection_close_requests": 3,
+          "other_existing_after_cleanup_survived": true,
+          "forward_verification": {
+            "verified": true,
+            "checked_at": "2026-11-13T05:53:05.510062588Z"
+          },
+          "revocation_verification": {
+            "digest": "1093530f809adeb80e20f979d9dad866b835afdc670c3200120ef06579f5ecbb",
+            "checked_at": "2026-11-13T05:53:05.931428641Z",
+            "old_authentication_denied": {
+              "status": "success"
+            },
+            "existing_sessions_closed": {
+              "status": "success"
+            },
+            "other_identity_unaffected": {
+              "status": "success"
+            },
+            "verified": true
+          },
+          "conflict_api": {
+            "digest": "444c5562de0988b7068966046ba9631e2d30c6fc6d7de4236e259cec9a883710",
+            "attempted_at": "2026-11-13T05:53:06.1275648Z",
+            "api_accepted": true
+          },
+          "conflict_inspection": {
+            "verified": false,
+            "checked_at": "2026-11-13T05:53:06.136621822Z",
+            "conflicting_listener_listening": {
+              "status": "failure"
+            },
+            "owned_socket_count": 3
+          },
+          "unix_socket_mode": "0666"
+        }
+      },
+      "faults": {
+        "missing_key": {
+          "expected": "nonzero/no replacement",
+          "actual": "passed",
+          "exit_code": 1
+        },
+        "corrupt_ca": {
+          "expected": "nonzero/preserve corrupt CA",
+          "actual": "passed",
+          "exit_code": 1,
+          "snapshot_sha256": "16cbb06bdc7a340904b6156da757917d5b2a84f3577c4a8d083f3d2c83ee7010"
+        },
+        "listener_conflict": {
+          "expected": "later listener fails/earlier released/lock reusable",
+          "actual": "passed",
+          "port_probe_exit": 0
+        },
+        "expired_token": {
+          "expected": "expired unconsumed token returns409 TASK_EXPIRED",
+          "actual": "passed",
+          "scope": "verified remote loopback TLS on dedicated copied state; expiry timestamp injected without host clock change"
+        },
+        "unknown_business_state": {
+          "expected": "refuse without clearing marker",
+          "actual": "passed",
+          "exit_code": 1
+        }
+      },
+      "removed_control_socket": {
+        "captured_control_sockets": 1,
+        "original_established_sockets_absent": true,
+        "agent_still_healthy": true
+      },
+      "private_evidence": ".local/meshstrata-t01-20261113-1338/ubuntu",
+      "binary_versions": [
+        {
+          "component": "controller",
+          "version": "dev",
+          "commit": "f570207",
+          "build_time": "2026-11-13T05:26:02Z"
+        },
+        {
+          "component": "agent",
+          "version": "dev",
+          "commit": "f570207",
+          "build_time": "2026-11-13T05:26:02Z"
+        }
+      ],
+      "mihomo_version": "Mihomo Meta v1.19.33 linux amd64 with go1.26.10 Wed Oct 21 16:39:55 UTC 2026",
+      "os_init": "Ubuntu 24.04.1 LTS x86_64 / systemd"
+    },
+    "alpine": {
+      "formal_binary_tests": {
+        "started_at": "2026-11-13T06:16:23Z",
+        "finished_at": "2026-11-13T06:16:31Z",
+        "status": "passed",
+        "transport": "remote loopback HTTPS/mTLS via SSH command",
+        "identity_stable": true,
+        "csr_race_exit_codes": [
+          0,
+          1
+        ],
+        "initialize_cli_seconds": 0.214,
+        "resource": {
+          "alpine": "VmHWM:\t    9116 kB\nVmRSS:\t    9116 kB\nThreads:\t7\n",
+          "controller": "VmHWM:\t   80564 kB\nVmRSS:\t   80564 kB\nThreads:\t7\n",
+          "controller_after_password": "VmHWM:\t  148228 kB\nVmRSS:\t  148228 kB\nThreads:\t7\n"
+        },
+        "api_latency_samples": [
+          {
+            "path": "/api/v1/auth/login",
+            "seconds": 0.1756,
+            "status": 204,
+            "transport": "remote loopback HTTPS"
+          },
+          {
+            "path": "/api/v1/auth/password",
+            "seconds": 0.3347,
+            "status": 204,
+            "transport": "remote loopback HTTPS"
+          },
+          {
+            "path": "/api/v1/auth/login",
+            "seconds": 0.1723,
+            "status": 204,
+            "transport": "remote loopback HTTPS"
+          }
+        ]
+      },
+      "kernel_started_at": "2026-11-13T05:45:26.743743381Z",
+      "kernel_finished_at": "2026-11-13T05:45:39.744962007Z",
+      "kernel": {
+        "hysteria2": {
+          "status": "success",
+          "tcp_forward": "success",
+          "business_udp": "success",
+          "bad_credentials_no_forward": "success",
+          "old_credentials_no_forward": "success",
+          "revoked_existing_survived_reload": false,
+          "captured_revoked_server_sessions": 3,
+          "explicit_connection_close_requests": 3,
+          "other_existing_after_cleanup_survived": true,
+          "forward_verification": {
+            "verified": true,
+            "checked_at": "2026-11-13T05:45:30.087882994Z"
+          },
+          "revocation_verification": {
+            "digest": "166a38ee22235e5a1524245107ab968f5b2b457d1e0be39aab68bc932c384f58",
+            "checked_at": "2026-11-13T05:45:36.473519487Z",
+            "old_authentication_denied": {
+              "status": "success"
+            },
+            "existing_sessions_closed": {
+              "status": "success"
+            },
+            "other_identity_unaffected": {
+              "status": "success"
+            },
+            "verified": true
+          },
+          "conflict_api": {
+            "digest": "3ed5254402ec446498838c0b155d4dc261d92e46f0ff37e83e7a320946594c1f",
+            "attempted_at": "2026-11-13T05:45:39.716496429Z",
+            "api_accepted": true
+          },
+          "conflict_inspection": {
+            "verified": false,
+            "checked_at": "2026-11-13T05:45:39.724939679Z",
+            "conflicting_listener_listening": {
+              "status": "failure"
+            },
+            "owned_socket_count": 3
+          },
+          "unix_socket_mode": "0666"
+        },
+        "ss2022": {
+          "status": "success",
+          "tcp_forward": "success",
+          "business_udp": "success",
+          "bad_credentials_no_forward": "success",
+          "old_credentials_no_forward": "success",
+          "revoked_existing_survived_reload": true,
+          "captured_revoked_server_sessions": 3,
+          "explicit_connection_close_requests": 3,
+          "other_existing_after_cleanup_survived": true,
+          "forward_verification": {
+            "verified": true,
+            "checked_at": "2026-11-13T05:45:27.161791257Z"
+          },
+          "revocation_verification": {
+            "digest": "a081d62fc02fafd0db04e10f2168788a9a08dc9afa97eba7714723c4cbbc0184",
+            "checked_at": "2026-11-13T05:45:27.431809804Z",
+            "old_authentication_denied": {
+              "status": "success"
+            },
+            "existing_sessions_closed": {
+              "status": "success"
+            },
+            "other_identity_unaffected": {
+              "status": "success"
+            },
+            "verified": true
+          },
+          "conflict_api": {
+            "digest": "8437c40817f19f574e6265cb335d43be2abae86ad478756819efe36fb07c7334",
+            "attempted_at": "2026-11-13T05:45:27.634476719Z",
+            "api_accepted": true
+          },
+          "conflict_inspection": {
+            "verified": false,
+            "checked_at": "2026-11-13T05:45:27.640924953Z",
+            "conflicting_listener_listening": {
+              "status": "failure"
+            },
+            "owned_socket_count": 6
+          },
+          "unix_socket_mode": "0666"
+        },
+        "trojan": {
+          "status": "success",
+          "tcp_forward": "success",
+          "business_udp": "success",
+          "bad_credentials_no_forward": "success",
+          "old_credentials_no_forward": "success",
+          "revoked_existing_survived_reload": true,
+          "captured_revoked_server_sessions": 3,
+          "explicit_connection_close_requests": 3,
+          "other_existing_after_cleanup_survived": true,
+          "forward_verification": {
+            "verified": true,
+            "checked_at": "2026-11-13T05:45:28.068674896Z"
+          },
+          "revocation_verification": {
+            "digest": "01d8f41b113e43e97f67026be067d8b908bd025482d6c86abe3a61609c61baeb",
+            "checked_at": "2026-11-13T05:45:28.389973745Z",
+            "old_authentication_denied": {
+              "status": "success"
+            },
+            "existing_sessions_closed": {
+              "status": "success"
+            },
+            "other_identity_unaffected": {
+              "status": "success"
+            },
+            "verified": true
+          },
+          "conflict_api": {
+            "digest": "e15eb2be3823af4386c09c8ec67dbb2b5ee3fd7501e61551ff3085fac4f5aff8",
+            "attempted_at": "2026-11-13T05:45:28.640937263Z",
+            "api_accepted": true
+          },
+          "conflict_inspection": {
+            "verified": false,
+            "checked_at": "2026-11-13T05:45:28.649069073Z",
+            "conflicting_listener_listening": {
+              "status": "failure"
+            },
+            "owned_socket_count": 3
+          },
+          "unix_socket_mode": "0666"
+        },
+        "vless": {
+          "status": "success",
+          "tcp_forward": "success",
+          "business_udp": "success",
+          "bad_credentials_no_forward": "success",
+          "old_credentials_no_forward": "success",
+          "revoked_existing_survived_reload": true,
+          "captured_revoked_server_sessions": 3,
+          "explicit_connection_close_requests": 3,
+          "other_existing_after_cleanup_survived": true,
+          "forward_verification": {
+            "verified": true,
+            "checked_at": "2026-11-13T05:45:29.104253469Z"
+          },
+          "revocation_verification": {
+            "digest": "ab387c2703173d13d2383097f6a059c6fcfffbd2599a975272c400e08ca1d25b",
+            "checked_at": "2026-11-13T05:45:29.404236526Z",
+            "old_authentication_denied": {
+              "status": "success"
+            },
+            "existing_sessions_closed": {
+              "status": "success"
+            },
+            "other_identity_unaffected": {
+              "status": "success"
+            },
+            "verified": true
+          },
+          "conflict_api": {
+            "digest": "aa8deb8435befa0ac0159e5e3a28f35c6f3e081a4be0660e44cb4c8303fff1f3",
+            "attempted_at": "2026-11-13T05:45:29.626031458Z",
+            "api_accepted": true
+          },
+          "conflict_inspection": {
+            "verified": false,
+            "checked_at": "2026-11-13T05:45:29.635343411Z",
+            "conflicting_listener_listening": {
+              "status": "failure"
+            },
+            "owned_socket_count": 3
+          },
+          "unix_socket_mode": "0666"
+        }
+      },
+      "faults": {
+        "missing_key": {
+          "expected": "nonzero/no replacement",
+          "actual": "passed",
+          "exit_code": 1
+        },
+        "corrupt_ca": {
+          "expected": "nonzero/preserve corrupt CA",
+          "actual": "passed",
+          "exit_code": 1,
+          "snapshot_sha256": "ce8e9c73cc6ec69220f62796750ff85044edb0384fb46d4a3b794fa5ec3b5f88"
+        },
+        "listener_conflict": {
+          "expected": "later listener fails/earlier released/lock reusable",
+          "actual": "passed",
+          "port_probe_exit": 0
+        },
+        "expired_token": {
+          "expected": "expired unconsumed token returns409 TASK_EXPIRED",
+          "actual": "passed",
+          "scope": "verified remote loopback TLS on dedicated copied state; expiry timestamp injected without host clock change"
+        },
+        "unknown_business_state": {
+          "expected": "refuse without clearing marker",
+          "actual": "passed",
+          "exit_code": 1
+        }
+      },
+      "removed_control_socket": {
+        "captured_control_sockets": 1,
+        "original_established_sockets_absent": true,
+        "agent_still_healthy": true
+      },
+      "private_evidence": ".local/meshstrata-t01-20261113-1338/alpine",
+      "binary_versions": [
+        {
+          "component": "controller",
+          "version": "dev",
+          "commit": "f570207",
+          "build_time": "2026-11-13T05:26:02Z"
+        },
+        {
+          "component": "agent",
+          "version": "dev",
+          "commit": "f570207",
+          "build_time": "2026-11-13T05:26:02Z"
+        }
+      ],
+      "mihomo_version": "Mihomo Meta v1.19.33 linux amd64 with go1.26.10 Wed Oct 21 16:39:55 UTC 2026",
+      "os_init": "Alpine 3.23.7 x86_64 / OpenRC default"
+    }
+  },
+  "network": {
+    "ubuntu": {
+      "product_commit": "f5702078aa48f946fb3c9ee35af65e991a4fc493",
+      "started_at": "2026-11-13T06:09:40Z",
+      "server": "ubuntu",
+      "source_state": "ubuntu-smoke-local-3",
+      "probes": [
+        {
+          "source": "build-host",
+          "destination": "ubuntu",
+          "port": 8443,
+          "transport": "TCP direct",
+          "observation": "TimeoutError",
+          "seconds": 3.006,
+          "at": "2026-11-13T06:09:44Z"
+        },
+        {
+          "source": "alpine",
+          "destination": "ubuntu",
+          "port": 8443,
+          "transport": "HTTPS direct; trusted CA+SAN, no client credentials",
+          "exit_code": 28,
+          "curl": "http=000 connect=0.000000 verify=0",
+          "at": "2026-11-13T06:09:47Z"
+        },
+        {
+          "source": "build-host",
+          "destination": "ubuntu",
+          "port": 9443,
+          "transport": "TCP direct",
+          "observation": "TimeoutError",
+          "seconds": 3.002,
+          "at": "2026-11-13T06:09:50Z"
+        },
+        {
+          "source": "alpine",
+          "destination": "ubuntu",
+          "port": 9443,
+          "transport": "HTTPS direct; trusted CA+SAN, no client credentials",
+          "exit_code": 28,
+          "curl": "http=000 connect=0.000000 verify=0",
+          "at": "2026-11-13T06:09:53Z"
+        }
+      ],
+      "server_ready_before": true,
+      "server_ready_after": true,
+      "controller_exit": 0,
+      "finished_at": "2026-11-13T06:09:55Z"
+    },
+    "alpine": {
+      "product_commit": "f5702078aa48f946fb3c9ee35af65e991a4fc493",
+      "started_at": "2026-11-13T06:11:50Z",
+      "server": "alpine",
+      "source_state": "alpine-smoke-local-2",
+      "probes": [
+        {
+          "source": "build-host",
+          "destination": "alpine",
+          "port": 8443,
+          "transport": "TCP direct",
+          "observation": "TimeoutError",
+          "seconds": 3.005,
+          "at": "2026-11-13T06:11:53Z"
+        },
+        {
+          "source": "ubuntu",
+          "destination": "alpine",
+          "port": 8443,
+          "transport": "HTTPS direct; trusted CA+SAN, no client credentials",
+          "exit_code": 28,
+          "curl": "http=000 connect=0.000000 verify=0",
+          "at": "2026-11-13T06:11:57Z"
+        },
+        {
+          "source": "build-host",
+          "destination": "alpine",
+          "port": 9443,
+          "transport": "TCP direct",
+          "observation": "TimeoutError",
+          "seconds": 3.003,
+          "at": "2026-11-13T06:12:00Z"
+        },
+        {
+          "source": "ubuntu",
+          "destination": "alpine",
+          "port": 9443,
+          "transport": "HTTPS direct; trusted CA+SAN, no client credentials",
+          "exit_code": 28,
+          "curl": "http=000 connect=0.000000 verify=0",
+          "at": "2026-11-13T06:12:04Z"
+        }
+      ],
+      "server_ready_before": true,
+      "server_ready_after": true,
+      "controller_exit": 0,
+      "finished_at": "2026-11-13T06:12:04Z"
+    }
+  },
+  "cross_protocols": {
+    "phase": "cross",
+    "product_commit": "f5702078aa48f946fb3c9ee35af65e991a4fc493",
+    "started_at": "2026-11-13T06:07:54Z",
+    "results": {
+      "ubuntu": {
+        "exit_code": 1,
+        "public_ports": {
+          "ss2022": "28443 TCP+UDP",
+          "trojan": "28444 TCP",
+          "vless": "28445 TCP",
+          "hysteria2": "28446 UDP"
+        },
+        "protocols": {
+          "hysteria2": {
+            "bad_credential_denial_confirmed": false,
+            "bad_credentials": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "business_udp": false,
+            "checked_at": "2026-11-13T06:08:15.251481341Z",
+            "explicit_authentication_rejected": false,
+            "status": "failed",
+            "tcp": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "transport": "public direct; no SSH forwarding"
+          },
+          "ss2022": {
+            "bad_credential_denial_confirmed": false,
+            "bad_credentials": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "business_udp": false,
+            "checked_at": "2026-11-13T06:07:56.72897254Z",
+            "status": "failed",
+            "tcp": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "transport": "public direct; no SSH forwarding"
+          },
+          "trojan": {
+            "bad_credential_denial_confirmed": false,
+            "bad_credentials": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "business_udp": false,
+            "checked_at": "2026-11-13T06:08:02.850053107Z",
+            "status": "failed",
+            "tcp": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "transport": "public direct; no SSH forwarding"
+          },
+          "vless": {
+            "bad_credential_denial_confirmed": false,
+            "bad_credentials": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "business_udp": false,
+            "checked_at": "2026-11-13T06:08:08.958699657Z",
+            "status": "failed",
+            "tcp": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "transport": "public direct; no SSH forwarding"
+          }
+        },
+        "source": "alpine",
+        "destination": "ubuntu",
+        "target": "server-local controlled TCP/UDP echo; VLESS controlled TLS1.3 target",
+        "tunnel": false
+      },
+      "alpine": {
+        "exit_code": 1,
+        "public_ports": {
+          "ss2022": "28443 TCP+UDP",
+          "trojan": "28444 TCP",
+          "vless": "28445 TCP",
+          "hysteria2": "28446 UDP"
+        },
+        "protocols": {
+          "hysteria2": {
+            "bad_credential_denial_confirmed": false,
+            "bad_credentials": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "business_udp": false,
+            "checked_at": "2026-11-13T06:08:44.383498349Z",
+            "explicit_authentication_rejected": false,
+            "status": "failed",
+            "tcp": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "transport": "public direct; no SSH forwarding"
+          },
+          "ss2022": {
+            "bad_credential_denial_confirmed": false,
+            "bad_credentials": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "business_udp": false,
+            "checked_at": "2026-11-13T06:08:25.276798067Z",
+            "status": "failed",
+            "tcp": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "transport": "public direct; no SSH forwarding"
+          },
+          "trojan": {
+            "bad_credential_denial_confirmed": false,
+            "bad_credentials": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "business_udp": false,
+            "checked_at": "2026-11-13T06:08:31.70233862Z",
+            "status": "failed",
+            "tcp": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "transport": "public direct; no SSH forwarding"
+          },
+          "vless": {
+            "bad_credential_denial_confirmed": false,
+            "bad_credentials": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "business_udp": false,
+            "checked_at": "2026-11-13T06:08:38.082997553Z",
+            "status": "failed",
+            "tcp": {
+              "forwarded": false,
+              "reason": "timeout"
+            },
+            "transport": "public direct; no SSH forwarding"
+          }
+        },
+        "source": "ubuntu",
+        "destination": "alpine",
+        "target": "server-local controlled TCP/UDP echo; VLESS controlled TLS1.3 target",
+        "tunnel": false
+      }
+    },
+    "finished_at": "2026-11-13T06:08:51Z"
+  },
+  "managed_topologies": {
+    "product_commit": "f5702078aa48f946fb3c9ee35af65e991a4fc493",
+    "started_at": "2026-11-13T06:06:42Z",
+    "phase": "topologies",
+    "run": "meshstrata-t01-20261113-1338",
+    "results": {
+      "ubuntu": {
+        "status": "failed",
+        "error_type": "AssertionError",
+        "error": "alpine enroll: exit 1"
+      },
+      "alpine": {
+        "status": "failed",
+        "error_type": "AssertionError",
+        "error": "ubuntu enroll: exit 1"
+      }
+    },
+    "finished_at": "2026-11-13T06:09:25Z"
+  },
+  "cleanup": {
+    "product_commit": "f5702078aa48f946fb3c9ee35af65e991a4fc493",
+    "started_at": "2026-11-13T06:19:50Z",
+    "hosts": {
+      "ubuntu": {
+        "root": "/root/meshstrata-t01-20261113-1338",
+        "root_and_private_modes": [
+          "700 0 0",
+          "700 0 0"
+        ],
+        "terminated_in_final_audit": [],
+        "remaining_test_processes": [],
+        "active_test_unix_sockets": 0,
+        "host_listener_endpoints_unchanged": true,
+        "sha256_exit": 0,
+        "local_ssh_master_closed": true,
+        "baseline_listener_count": 14,
+        "listener_additions": [],
+        "listener_removals": []
+      },
+      "alpine": {
+        "root": "/root/meshstrata-t01-20261113-1338-alpine",
+        "root_and_private_modes": [
+          "700 0 0",
+          "700 0 0"
+        ],
+        "terminated_in_final_audit": [],
+        "remaining_test_processes": [],
+        "active_test_unix_sockets": 0,
+        "host_listener_endpoints_unchanged": true,
+        "sha256_exit": 0,
+        "local_ssh_master_closed": true,
+        "baseline_listener_count": 2,
+        "listener_additions": [],
+        "listener_removals": []
+      }
+    },
+    "finished_at": "2026-11-13T06:19:57Z"
+  },
+  "test_helper_source_sha256": "2ef3911d8193a68c280c75c829a24274f782a40876a7dbb55a533fb0c825710a",
+  "private_evidence_root": ".local/meshstrata-t01-20261113-1338",
+  "provision_metadata": {
+    "ubuntu": {
+      "web_not_after": "Nov 14 06:16:31 2026 GMT",
+      "bootstrap_expires_at": "2026-11-13T06:46:31.78834463Z",
+      "prepare_cli_completed_at": "2026-11-13T06:16:32Z",
+      "web_remaining_seconds_at_prepare_completion": 86399.0,
+      "proof_remaining_seconds_at_prepare_completion": 1799.788,
+      "master_key_bytes_mode_uid": "32 600 0",
+      "no_private_material_exported": true
+    },
+    "alpine": {
+      "web_not_after": "Nov 14 06:16:23 2026 GMT",
+      "bootstrap_expires_at": "2026-11-13T14:46:23.398465087+08:00",
+      "prepare_cli_completed_at": "2026-11-13T06:16:23Z",
+      "web_remaining_seconds_at_prepare_completion": 86400.0,
+      "proof_remaining_seconds_at_prepare_completion": 1800.398,
+      "master_key_bytes_mode_uid": "32 600 0",
+      "no_private_material_exported": true
+    }
+  },
+  "driver_source_sha256": {
+    "scripts/integration/t01/README.md": "fc9551e484d776c918975c666884f2186cb60586d9e0a9f18b52b081b1f2ce6e",
+    "scripts/integration/t01/audit.py": "6fd2f6f56136cee11a930eb3e149333ed37d3a9909125c3bd5bfa8d410117434",
+    "scripts/integration/t01/extra.py": "0120aa2eed343386da1da831949dc8c1ebdd08bda3f6e3ff391f29fa19bf5572",
+    "scripts/integration/t01/kernel_test.go": "2ef3911d8193a68c280c75c829a24274f782a40876a7dbb55a533fb0c825710a",
+    "scripts/integration/t01/network.py": "f68bc4fe048c51720a57f8168ea3f24f2f742ab1010068703b66c99fb488b006",
+    "scripts/integration/t01/remote.py": "c66331496b3b38e209e492dabeea5a243effeaa00101aabad6218bc869abbf5a"
+  }
+}
