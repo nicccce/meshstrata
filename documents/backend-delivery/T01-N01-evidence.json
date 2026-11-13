@@ -1,0 +1,1528 @@
+{
+  "product_commit": "f5702078aa48f946fb3c9ee35af65e991a4fc493",
+  "test_report_base_commit": "b3cf64164eef7bf2fdf3a072624f5fe14bed8bcb",
+  "test_thread": "01a1d3da-def4-7640-bdef-25d87decd6d8",
+  "date_timezone": "Asia/Shanghai",
+  "result": "BLOCKED_BEFORE_TARGET_PACKET_TAP",
+  "stage2_gate": false,
+  "scope": "incremental credential-free IPv4 transport diagnosis; no product/proxy cross-host pass",
+  "product_artifacts_reused": {
+    "meshstrata-controller": "37999ee840c3589194fd85df8f5dbde7639dde80dd477e8937cd1d6f192a3327",
+    "meshstrata-agent": "35a94504e95073cf657357a5092608f5a24fa5d74a4e746cba9e0b4a5576e3df",
+    "b03.test": "5ce62b1c6e3b4f0a10398d747e3ae001d0e6fb1ac62ec66a316f376fe2d2adcb",
+    "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+  },
+  "helper_sha256": "60e3c5e56ba63cf8837dd34356fac1a975e0f243979bcd97aad955543e590a31",
+  "source_sha256": {
+    "scripts/integration/t01/netprobe/main.go": "ec3928e41bd5a8ad46dafa8759d7de43f607aae33a6ffed6261bd56c1876d89f",
+    "scripts/integration/t01/transport.py": "075f06be300a82315b7cb926f1265a6435c7a76f57c6f7ac6ad540d08c0a9947"
+  },
+  "runs": [
+    {
+      "kind": "all_target_ports",
+      "private_root": ".local/meshstrata-t01-n01-20261113-1435",
+      "started_at": "2026-11-13T07:45:37Z",
+      "finished_at": "2026-11-13T07:46:24Z",
+      "helper_sha256": "60e3c5e56ba63cf8837dd34356fac1a975e0f243979bcd97aad955543e590a31",
+      "server_exit": {
+        "ubuntu": 143,
+        "alpine": 143
+      },
+      "probe_results": [
+        {
+          "source": "ubuntu",
+          "target": "ubuntu",
+          "scope": "loopback",
+          "exit": 0,
+          "observations": [
+            {
+              "protocol": "tcp4",
+              "port": 9443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.291835262Z",
+              "seconds": 0.004
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.292436484Z",
+              "seconds": 0.005
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28444,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.292296901Z",
+              "seconds": 0.005
+            },
+            {
+              "protocol": "tcp4",
+              "port": 9443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.296749722Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.297013709Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28444,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.297255815Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 28443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.292480807Z",
+              "seconds": 0.006
+            },
+            {
+              "protocol": "tcp4",
+              "port": 8443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.291747817Z",
+              "seconds": 0.006
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28445,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.292006284Z",
+              "seconds": 0.006
+            },
+            {
+              "protocol": "udp4",
+              "port": 28446,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.291298732Z",
+              "seconds": 0.007
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.291536921Z",
+              "seconds": 0.007
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.29217966Z",
+              "seconds": 0.007
+            },
+            {
+              "protocol": "tcp4",
+              "port": 8443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.298154116Z",
+              "seconds": 0.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.29911841Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 28443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.298088852Z",
+              "seconds": 0.002
+            },
+            {
+              "protocol": "udp4",
+              "port": 28446,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.298914246Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.299040283Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28445,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.29836948Z",
+              "seconds": 0.002
+            }
+          ]
+        },
+        {
+          "source": "alpine",
+          "target": "alpine",
+          "scope": "loopback",
+          "exit": 0,
+          "observations": [
+            {
+              "protocol": "tcp4",
+              "port": 8443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.186018111Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28445,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.185936757Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 28446,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.185717595Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.185969839Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28444,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.185873194Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.185908781Z",
+              "seconds": 0.002
+            },
+            {
+              "protocol": "udp4",
+              "port": 28443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.186001643Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28444,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.187361154Z",
+              "seconds": 0.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.185733921Z",
+              "seconds": 0.002
+            },
+            {
+              "protocol": "udp4",
+              "port": 28443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.187567367Z",
+              "seconds": 0.0
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.187314338Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 28446,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.187182818Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28445,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.187037205Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.187437859Z",
+              "seconds": 0.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 9443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.186082267Z",
+              "seconds": 0.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.187772706Z",
+              "seconds": 0.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 8443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.186966142Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 9443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:46:12.188077841Z",
+              "seconds": 0.0
+            }
+          ]
+        },
+        {
+          "source": "ubuntu",
+          "target": "alpine",
+          "scope": "public-peer",
+          "exit": 0,
+          "observations": [
+            {
+              "protocol": "udp4",
+              "port": 28443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.295617141Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 28446,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.29481993Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28444,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.295427724Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28445,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.295494099Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.295560443Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.294861277Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.295101981Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 8443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.295164639Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 9443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.295260118Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "udp4",
+              "port": 28443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.296332707Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 28446,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.296712933Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.297158923Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.297304667Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28444,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.296932867Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 8443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.297487461Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 9443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.297621173Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.297390789Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28445,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.297071097Z",
+              "seconds": 2.001
+            }
+          ]
+        },
+        {
+          "source": "alpine",
+          "target": "ubuntu",
+          "scope": "public-peer",
+          "exit": 0,
+          "observations": [
+            {
+              "protocol": "tcp4",
+              "port": 9443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.177386464Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.177256929Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.177029593Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 8443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.177350766Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 28443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.177285244Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "udp4",
+              "port": 28446,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.176959429Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28444,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.177182913Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28445,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.177232493Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:12.17734817Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.178925568Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 9443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.178844367Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.178967114Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 8443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.17902379Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "udp4",
+              "port": 28443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.179056478Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "udp4",
+              "port": 28446,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.179216352Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28445,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.179372096Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.179406124Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28444,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:14.179313114Z",
+              "seconds": 2.001
+            }
+          ]
+        },
+        {
+          "source": "build",
+          "target": "ubuntu",
+          "scope": "public-build",
+          "exit": 0,
+          "observations": [
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.361834704Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 8443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.362162656Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "udp4",
+              "port": 28443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.362827009Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "udp4",
+              "port": 28446,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.362296488Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 9443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.362501584Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.36256843Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28444,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.362640134Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28445,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.362685468Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.362729918Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.364204554Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "udp4",
+              "port": 28446,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.364517172Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "udp4",
+              "port": 28443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.364419437Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 9443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.364578154Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.364628007Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28444,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.364676109Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28445,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.36472128Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 8443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.364274853Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.364786351Z",
+              "seconds": 2.0
+            }
+          ]
+        },
+        {
+          "source": "build",
+          "target": "alpine",
+          "scope": "public-build",
+          "exit": 0,
+          "observations": [
+            {
+              "protocol": "tcp4",
+              "port": 28443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.362652252Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.363242761Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.362985287Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 28443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.363417361Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28445,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.363146966Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28444,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.363202604Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 28446,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.363415462Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 8443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.363051931Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 9443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:16.363095196Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.363523846Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 28443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.363615382Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.363305422Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.36359252Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "udp4",
+              "port": 28446,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.363776628Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 9443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.363992061Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28444,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.363735969Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 8443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.363786131Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 28445,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:46:18.363683753Z",
+              "seconds": 2.002
+            }
+          ]
+        }
+      ],
+      "captures": {
+        "ubuntu": {
+          "packets_captured": 30,
+          "packets_dropped_by_kernel": 0,
+          "external_ingress": 0,
+          "external_egress": 30,
+          "loopback_headers": 0,
+          "external_SYN": 24,
+          "external_UDP": 6,
+          "tcpdump_exit": 0,
+          "headers_sha256": "1428e8178bc98b0b6dbe8c6838d6d1d4b7772b7bb18a340757a2c216fb6dae35"
+        },
+        "alpine": {
+          "packets_captured": 30,
+          "packets_dropped_by_kernel": 0,
+          "external_ingress": 0,
+          "external_egress": 30,
+          "loopback_headers": 0,
+          "external_SYN": 24,
+          "external_UDP": 6,
+          "tcpdump_exit": 0,
+          "headers_sha256": "6bf95c32f6648ab706b0da361d4aacdb2248fa4ea370ccea850c2d3f41159b38"
+        }
+      }
+    },
+    {
+      "kind": "isolated38443_no_source_filter_with_loopback_control",
+      "private_root": ".local/meshstrata-t01-n01-20261113-1549-confirm",
+      "started_at": "2026-11-13T07:48:36Z",
+      "finished_at": "2026-11-13T07:49:15Z",
+      "helper_sha256": "60e3c5e56ba63cf8837dd34356fac1a975e0f243979bcd97aad955543e590a31",
+      "server_exit": {
+        "ubuntu": 143,
+        "alpine": 143
+      },
+      "probe_results": [
+        {
+          "source": "ubuntu",
+          "target": "ubuntu",
+          "scope": "loopback",
+          "exit": 0,
+          "observations": [
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:49:03.801757786Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:49:03.801731787Z",
+              "seconds": 0.002
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:49:03.803788762Z",
+              "seconds": 0.006
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:49:03.803537059Z",
+              "seconds": 0.007
+            }
+          ]
+        },
+        {
+          "source": "alpine",
+          "target": "alpine",
+          "scope": "loopback",
+          "exit": 0,
+          "observations": [
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:49:03.704806903Z",
+              "seconds": 0.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:49:03.704829002Z",
+              "seconds": 0.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:49:03.705271528Z",
+              "seconds": 0.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": true,
+              "error_kind": null,
+              "started_at": "2026-11-13T07:49:03.705661011Z",
+              "seconds": 0.0
+            }
+          ]
+        },
+        {
+          "source": "ubuntu",
+          "target": "alpine",
+          "scope": "public-peer",
+          "exit": 0,
+          "observations": [
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:03.799071639Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:03.799602576Z",
+              "seconds": 2.002
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:05.801935632Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:05.802199528Z",
+              "seconds": 2.001
+            }
+          ]
+        },
+        {
+          "source": "alpine",
+          "target": "ubuntu",
+          "scope": "public-peer",
+          "exit": 0,
+          "observations": [
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:03.708738544Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:03.708674713Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:05.710256787Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:05.710370494Z",
+              "seconds": 2.001
+            }
+          ]
+        },
+        {
+          "source": "build",
+          "target": "ubuntu",
+          "scope": "public-build",
+          "exit": 0,
+          "observations": [
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:07.85377145Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:07.853779508Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:09.855283577Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:09.855518883Z",
+              "seconds": 2.0
+            }
+          ]
+        },
+        {
+          "source": "build",
+          "target": "alpine",
+          "scope": "public-build",
+          "exit": 0,
+          "observations": [
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:07.852714073Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 1,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:07.853066954Z",
+              "seconds": 2.0
+            },
+            {
+              "protocol": "tcp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:09.853671429Z",
+              "seconds": 2.001
+            },
+            {
+              "protocol": "udp4",
+              "port": 38443,
+              "attempt": 2,
+              "echo_matches": false,
+              "error_kind": "timeout",
+              "started_at": "2026-11-13T07:49:09.853537969Z",
+              "seconds": 2.001
+            }
+          ]
+        }
+      ],
+      "captures": {
+        "ubuntu": {
+          "packets_captured": 30,
+          "packets_dropped_by_kernel": 0,
+          "external_ingress": 0,
+          "external_egress": 6,
+          "loopback_headers": 24,
+          "external_SYN": 4,
+          "external_UDP": 2,
+          "tcpdump_exit": 0,
+          "headers_sha256": "de7fcbe29fec40cd4b11f08188bf793625d53a5461b497026a6af8ef3812d8ab"
+        },
+        "alpine": {
+          "packets_captured": 30,
+          "packets_dropped_by_kernel": 0,
+          "external_ingress": 0,
+          "external_egress": 6,
+          "loopback_headers": 24,
+          "external_SYN": 4,
+          "external_UDP": 2,
+          "tcpdump_exit": 0,
+          "headers_sha256": "c4179cc7cea250ff9d17a327ae627fc39817849cbcc164d1e9f3555b3225c122"
+        }
+      }
+    }
+  ],
+  "platforms": {
+    "ubuntu": {
+      "os": "Ubuntu 24.04.1 LTS",
+      "init": "systemd",
+      "public_ipv4_on_interface": true,
+      "input_policy": "ACCEPT; no matching guest-host deny found",
+      "ufw": "inactive",
+      "tc_filters": "empty for tested physical interface; no XDP attachment shown"
+    },
+    "alpine": {
+      "os": "Alpine 3.23.7",
+      "init": "OpenRC",
+      "public_ipv4_on_interface": false,
+      "public_path": "public NAT to private eth0; mapping not observable from guest",
+      "mem_total_kib": 445420,
+      "nft_running_ruleset": "empty (exit0)",
+      "iptables_policy": "all queried IPv4 tables ACCEPT; no rules",
+      "firewall_services": "iptables and nftables stopped; neither enabled in runlevels",
+      "installed_cli_packages": [
+        "tcpdump",
+        "iptables",
+        "nftables"
+      ],
+      "tc_filters": "tc unavailable; no XDP attachment shown; kernel pre-tap hooks not exhaustively excluded"
+    }
+  },
+  "conclusion": {
+    "confidence": "high for loss before observed target packet tap in tested windows; insufficient to attribute exact upstream component",
+    "observed": "both source NICs emit TCP SYN including retransmissions and 32-byte UDP; destination taps see no external ingress; no SYN-ACK/UDP echo returns",
+    "excluded_for_probe": [
+      "wrong IP-list parsing/platform order",
+      "IPv6 preference or wildcard compatibility",
+      "loopback-only bind",
+      "missing listener or expired server during probes",
+      "HTTP/SOCKS proxy environment",
+      "normal guest INPUT/nft rule denying these probes",
+      "source-IP capture filter hiding NAT-rewritten arrivals (isolated confirmation)"
+    ],
+    "unobserved": [
+      "provider ingress/egress ACL and flow logs",
+      "security group association/rules",
+      "Alpine public NAT/EIP port mapping",
+      "upstream or pre-tap kernel/hypervisor filtering"
+    ],
+    "not_claimed": "specific cloud security group root cause, successful cross-machine enrollment, protocol authentication rejection or proxy forwarding"
+  },
+  "external_recovery": {
+    "applied": false,
+    "private_exact_rules": ".local/meshstrata-t01-n01-20261113-1435/recovery-plan-private.md",
+    "ttl_minutes": 45,
+    "first_step": "read cloud flow logs and NAT mapping; narrowly allow peer/build /32 to dedicated38443 TCP+UDP only as needed",
+    "next_ports": {
+      "management_build_source_only": [
+        "8443/TCP"
+      ],
+      "control_peer_and_build": [
+        "9443/TCP"
+      ],
+      "proxy_peer_only": [
+        "28443/TCP",
+        "28443/UDP",
+        "28444/TCP",
+        "28445/TCP",
+        "28446/UDP"
+      ]
+    },
+    "rollback": "delete only newly created rule/mapping IDs; preserve SSH22 and all existing services"
+  },
+  "product_cross_host_rerun": {
+    "executed": false,
+    "reason": "public transport prerequisite still fails",
+    "directions": {
+      "Alpine_to_Ubuntu": {
+        "HTTPS_mTLS_enrollment_renew_reconnect_remove": "BLOCKED",
+        "SS2022_TCP_business_UDP_wrong_credentials": "BLOCKED",
+        "Trojan_TCP_business_UDP_wrong_credentials": "BLOCKED",
+        "VLESS_TCP_business_UDP_wrong_credentials": "BLOCKED",
+        "Hysteria2_TCP_business_UDP_new_QUIC_wrong_credentials": "BLOCKED"
+      },
+      "Ubuntu_to_Alpine": {
+        "HTTPS_mTLS_enrollment_renew_reconnect_remove": "BLOCKED",
+        "SS2022_TCP_business_UDP_wrong_credentials": "BLOCKED",
+        "Trojan_TCP_business_UDP_wrong_credentials": "BLOCKED",
+        "VLESS_TCP_business_UDP_wrong_credentials": "BLOCKED",
+        "Hysteria2_TCP_business_UDP_new_QUIC_wrong_credentials": "BLOCKED"
+      }
+    }
+  },
+  "network_rules_modified": false,
+  "new_proxy_credentials_or_private_keys_transferred": false,
+  "checks": {
+    "go_build_CGO0_p1": "passed",
+    "go_vet_netprobe": "passed",
+    "python_syntax": "passed",
+    "real_remote_echo_and_captures": "executed",
+    "git_diff_check": "passed"
+  },
+  "cleanup": {
+    ".local/meshstrata-t01-n01-20261113-1435": {
+      "ubuntu": {
+        "remaining_test_processes": 0,
+        "capture_remaining": false,
+        "active_test_unix_sockets": 0,
+        "host_listeners_unchanged": true,
+        "modes": [
+          "700 0 0",
+          "700 0 0"
+        ],
+        "fixed_sha256_exit": 0
+      },
+      "alpine": {
+        "remaining_test_processes": 0,
+        "capture_remaining": false,
+        "active_test_unix_sockets": 0,
+        "host_listeners_unchanged": true,
+        "modes": [
+          "700 0 0",
+          "700 0 0"
+        ],
+        "fixed_sha256_exit": 0
+      }
+    },
+    ".local/meshstrata-t01-n01-20261113-1549-confirm": {
+      "ubuntu": {
+        "remaining_test_processes": 0,
+        "capture_remaining": false,
+        "active_test_unix_sockets": 0,
+        "host_listeners_unchanged": true,
+        "modes": [
+          "700 0 0",
+          "700 0 0"
+        ],
+        "fixed_sha256_exit": 0
+      },
+      "alpine": {
+        "remaining_test_processes": 0,
+        "capture_remaining": false,
+        "active_test_unix_sockets": 0,
+        "host_listeners_unchanged": true,
+        "modes": [
+          "700 0 0",
+          "700 0 0"
+        ],
+        "fixed_sha256_exit": 0
+      }
+    }
+  },
+  "finished_at": "2026-11-13T07:52:06.229621+00:00"
+}

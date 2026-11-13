@@ -92,3 +92,50 @@ Do not transfer proxy test credentials until explicitly authorized for both test
 hosts. This run received that authorization after automatic approval rejected
 that operation. The private node-key upload approach was cancelled entirely;
 `TestNodeEndpoint` instead uses identities in place on the originating server.
+
+## T01-N01 transport isolation
+
+`transport.py` strictly parses the two IP table rows and verifies the platform
+order. It records private IPv4/IPv6 addresses, source routes, NAT/interface
+differences, socket owners, policy counters and immutable product digests.
+It never starts a Controller or interprets transport success as product success.
+N01 installed only Alpine diagnostic CLI packages (`tcpdump`, `iptables`,
+`nftables`) under existing authorization; it did not start their services or load
+the package's example firewall. Other drivers above do not install packages.
+
+Build only the independent helper, retaining its separate digest:
+
+```
+flock .local/cache/backend-check.lock env GOMAXPROCS=1 CGO_ENABLED=0 \
+  GOCACHE="$PWD/.local/cache/go" GOTMPDIR="$PWD/.local/cache/go-tmp" \
+  go build -p 1 -o .local/RUN/netprobe ./scripts/integration/t01/netprobe
+python3 scripts/integration/t01/transport.py --run RUN --phase inventory
+python3 scripts/integration/t01/transport.py --run RUN --phase diagnose
+python3 scripts/integration/t01/transport.py --run RUN --phase audit
+```
+
+RUN must begin `meshstrata-t01-n01-`; create its local 0700 directory before
+building. Inventory intentionally refuses an existing remote root. Each fresh
+confirmation gets a new run/root, preserving earlier evidence. Install missing
+diagnostic tools only on the authorized test hosts after checking resources.
+For a focused confirmation use `--phase diagnose --isolated-only` in a fresh run.
+That mode captures only dedicated 38443 TCP/UDP, including loopback as a positive
+control and any source to rule out a NAT source rewrite hiding received packets.
+It sends no business credentials, inspects no SSH traffic, and never forwards.
+
+The helper binds IPv4 wildcard explicitly, restricts echo sources to loopback,
+the other test host and the build source observed over SSH, sends two random
+32-byte probes per endpoint, and expires after 35 seconds. General diagnosis
+uses TCP8443/9443/28443/28444/28445/38443 and UDP28443/28446/38443, all checked
+free first. Concurrent public and loopback probes use raw IPv4 sockets, which
+ignore proxy settings; the driver also unsets its HTTP/SOCKS proxy environment.
+Captures are text headers only (no pcap/payload), limited to 200 packets and
+45 seconds; a supervisor records the actual tcpdump PID. N01's first capture
+predated the time limit but was stopped explicitly with its exact verified PID.
+SIGTERM143 is expected for a server deliberately stopped before its deadline.
+
+Audit verifies the probe and capture PIDs are gone, original listener sets and
+fixed product digests match, private directories remain0700, and only this run's
+SSH masters close. Raw endpoint/time evidence and the exact /32 recovery plan
+stay ignored; publish only aggregate observations and hashes. See
+`documents/backend-delivery/T01-N01.md` for scope and remaining external gates.
