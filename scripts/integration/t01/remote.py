@@ -99,6 +99,20 @@ class Host:
         self.ssh('tar -xzf - -C '+quote(self.root+'/bin'),arc,timeout=600)
         r=self.ssh(f'cd {quote(self.root+"/bin")} && sha256sum -c SHA256SUMS && chmod 700 meshstrata-* *.test mihomo && ./meshstrata-controller version && ./meshstrata-agent version && ./mihomo -v')
         save(self.out/'artifact-verification.txt',r.stdout)
+    def reuse_fixed(self, helper):
+        """Copy previously verified binaries on-host; refresh only the test helper."""
+        old='/root/meshstrata-t01-20261113-1338'+('-alpine' if self.label=='alpine' else '')+'/bin'
+        assert self.get(old+'/COMMIT').decode().strip()==COMMIT
+        checked=self.ssh('cd '+quote(old)+' && sha256sum -c SHA256SUMS')
+        save(self.out/'reuse-source-verification.txt',checked.stdout)
+        self.ssh('cp -p '+quote(old)+'/* '+quote(self.root+'/bin/'))
+        content=Path(helper).read_bytes(); digest=hashlib.sha256(content).hexdigest()
+        self.ssh('gzip -dc > '+quote(self.root+'/bin/t01-kernel.test')+' && chmod 700 '+quote(self.root+'/bin/t01-kernel.test'),gzip.compress(content,compresslevel=1),timeout=300)
+        manifest=self.get(old+'/SHA256SUMS').decode()
+        lines=[(digest+'  t01-kernel.test') if line.split()[-1]=='t01-kernel.test' else line for line in manifest.splitlines()]
+        self.put(self.root+'/bin/SHA256SUMS','\n'.join(lines)+'\n')
+        checked=self.ssh('cd '+quote(self.root+'/bin')+' && sha256sum -c SHA256SUMS && ./meshstrata-controller version && ./meshstrata-agent version && ./mihomo -v')
+        save(self.out/'reused-artifact-verification.txt',checked.stdout)
     def module(self, test, regex, name, env=''):
         base=self.root+'/evidence/'+name
         r=self.ssh(f'umask 077; {env} {quote(self.root+"/bin/"+test)} -test.run {quote(regex)} -test.v -test.timeout 8m > {quote(base+".log")} 2>&1; rc=$?; echo "$rc" > {quote(base+".exit")}; exit "$rc"',timeout=500,check=False)
@@ -235,8 +249,17 @@ def topology(controller,other,out,tag=None,local_only=False,management="public")
         mark(kind+' real enroll/retry/online/not_checked/lock')
         agents.append(dict(host=host,cfg=ac,cp=acp,p=a,path=nodepath,identity=identity,before=before,material=material,private=ap))
     # Drop the first committed enrollment response body, then recover using the
-    # same CSR over the real public endpoint. Private key stays on the driver.
-    if management=='public':
+    # same CSR over the real public endpoint. Cross-host recovery keys stay on
+    # the enrolling host; legacy local-smoke keys stay on their creating driver.
+    if management=='public' and not local_only:
+        lost=api.write('/api/v1/nodes',{**issue,'idempotency_key':'lost-response','name':'T01-lost-response'})
+        ld=other.root+'/private/'+tag+'-lost-response'
+        other.ssh('mkdir '+quote(ld))
+        other.put(ld+'/material.json',{'url':lost['controller_url'],'ca':lost['ca_pem'],'token':lost['token'],'node_id':lost['node_id']})
+        assert other.module('t01-kernel.test','^TestEnrollmentRecovery$',tag+'-cross-lost-response',f'T01_RECOVERY={quote(ld)}')==0
+        other.ssh('rm '+quote(ld+'/material.json'))
+        mark('cross-host first enrollment body discarded; same CSR identity recovered; key stays on node')
+    elif management=='public':
         lost=api.write('/api/v1/nodes',{**issue,'idempotency_key':'lost-response','name':'T01-lost-response'})
         ld=out/'private'/tag/'lost-response';ld.mkdir(parents=True,mode=0o700)
         subprocess.run(['openssl','req','-new','-newkey','ed25519','-nodes','-keyout',str(ld/'key.pem'),'-out',str(ld/'csr.pem'),'-subj','/CN=T01'],capture_output=True,check=True)
@@ -270,7 +293,11 @@ def topology(controller,other,out,tag=None,local_only=False,management="public")
         r=host.ssh(' '.join(map(quote,[host.root+'/bin/meshstrata-agent','enroll','-config',path])),check=False)
         save(host.out/(tag+'-race-'+Path(path).parent.name+'.log'),r.stdout+r.stderr);return r.returncode
     with concurrent.futures.ThreadPoolExecutor(2) as pool: race_codes=list(pool.map(race_enroll,racepaths))
-    assert sorted(race_codes)==[0,1];mark('distinct CSR single token race: '+('two local identities' if local_only else 'two hosts'))
+    assert sorted(race_codes)==[0,1]
+    for (host,path),code in zip(racepaths,race_codes):
+        env=f'T01_RACE_CONFIG={quote(path)} T01_RACE_WINNER={"1" if code==0 else "0"}'
+        assert host.module('t01-kernel.test','^TestEnrollmentRaceOutcome$',tag+'-race-outcome-'+host.label,env)==0
+    mark('distinct CSR single token race: '+('two local identities' if local_only else 'two hosts')+'; winning CSR200, losing CSR409, only winner has certificate')
     def node_probe(a,removed=False):
         host=a['host'];env=f'T01_IDENTITY={quote(a["identity"])} T01_CA={quote(a["private"]+"/ca.pem")} T01_URL={quote(a["cfg"]["control"]["controller_url"])} T01_REMOVED={"1" if removed else "0"}'
         label=tag+'-'+host.label+('-removed' if removed else '-mtls')
@@ -329,7 +356,7 @@ def topology(controller,other,out,tag=None,local_only=False,management="public")
     return {'status':'passed','transport':('remote loopback admin HTTPS; local node loopback; remote node public mTLS' if not local_only else 'remote loopback HTTPS/mTLS via SSH command') if management=='ssh' else 'public HTTPS/mTLS; no tunnel','instance_stable':True,'identity_stable':True,'csr_race_exit_codes':race_codes,'initialize_cli_seconds':round(initialize_seconds,3),'resource':resource,'api_samples':api.timings,'business_execution':'control_only; proxy not_checked','removal':'queued/applied=false/not_checked/cleanup=pending'}
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--run',default='meshstrata-t01-'+time.strftime('%Y%m%d-%H%M%S'));parser.add_argument('--phase',choices=['deploy','deploy-missing','refresh','modules','kernel','smoke','smoke-local','topologies','cleanup'],required=True);parser.add_argument('--host',choices=['ubuntu','alpine','all'],default='all');parser.add_argument('--attempt',default='');parser.add_argument('--management',choices=['public','ssh'],default='public');args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--run',default='meshstrata-t01-'+time.strftime('%Y%m%d-%H%M%S'));parser.add_argument('--phase',choices=['deploy','reuse-fixed','deploy-missing','refresh','modules','kernel','smoke','smoke-local','topologies','cleanup'],required=True);parser.add_argument('--helper');parser.add_argument('--host',choices=['ubuntu','alpine','all'],default='all');parser.add_argument('--attempt',default='');parser.add_argument('--management',choices=['public','ssh'],default='public');args=parser.parse_args()
     assert not args.attempt or re.fullmatch(r'[a-zA-Z0-9-]+',args.attempt)
     assert re.fullmatch(r'meshstrata-t01-[a-zA-Z0-9-]+',args.run)
     os.umask(0o077);out=ROOT/'.local'/args.run;out.mkdir(exist_ok=True,mode=0o700)
@@ -342,6 +369,9 @@ def main():
     try:
         if args.phase=='deploy':
             for h in selected:h.deploy();results['results'][h.label]='sha256 verified'
+        elif args.phase=='reuse-fixed':
+            assert args.helper, 'explicit test helper required'
+            for h in selected:h.reuse_fixed(args.helper);results['results'][h.label]='fixed product reused; test helper SHA256 verified'
         elif args.phase=='deploy-missing':
             for h in selected:
                 for line in (ROOT/'.local/stage1-artifacts/SHA256SUMS').read_text().splitlines():

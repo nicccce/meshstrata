@@ -139,3 +139,42 @@ fixed product digests match, private directories remain0700, and only this run's
 SSH masters close. Raw endpoint/time evidence and the exact /32 recovery plan
 stay ignored; publish only aggregate observations and hashes. See
 `documents/backend-delivery/T01-N01.md` for scope and remaining external gates.
+
+## T01-N02 public recheck
+
+Use a fresh unique `meshstrata-t01-n01-...-n02-...` name for the existing transport
+driver. Its isolated38443 mode checks peer and build-source TCP/UDP without
+credentials. A successful diagnostic does not replace the product tests below;
+a failed diagnostic does not by itself block reachable business ports.
+
+After inventory and diagnostic audit, reuse the same fresh root for product
+tests. Copy the verified old binaries on each host, never its expired state,
+certificates or removed identities. Build the current test helper in a separate
+local output under the backend-check lock before transferring it:
+
+```
+python3 scripts/integration/t01/remote.py --run RUN --phase reuse-fixed --helper LOCAL_HELPER
+python3 scripts/integration/t01/remote.py --run RUN --phase topologies
+python3 scripts/integration/t01/extra.py --run RUN --phase cross
+python3 scripts/integration/t01/remote.py --run RUN --phase cleanup
+python3 scripts/integration/t01/audit.py --run RUN
+```
+
+`reuse-fixed` verifies the old COMMIT/full manifest, copies binaries locally on
+each server, replaces only `t01-kernel.test` and its manifest entry, and verifies
+the complete new manifest. Do not use this phase on a running test directory.
+Public topologies generate fresh prepare-local materials and use verified public
+HTTPS/mTLS. The recovery probe discards the first committed enrollment body,
+then requires identical same-CSR responses and the same node/public key; its key
+is generated and retained on the enrolling host. The two-host race additionally
+requires the winning CSR to return the same certificate200, the losing CSR to
+return409 IDEMPOTENCY_CONFLICT, and only the winner to hold a certificate.
+
+Removal transport errors count as rejection only for an explicit remote TLS
+alert (or HTTP401/403), not a timeout. Public protocol bad-credential checks
+require an observed closed stream; generic SOCKS setup failure is inconclusive.
+Hysteria2 still requires an explicit authentication404 from a fresh client.
+Keep the earlier local trust-before-token request-count and independent
+revocation/session-cleanup evidence scoped to T01; do not relabel it as a new
+cross-host measurement. N02's results and limits are in
+`documents/backend-delivery/T01-N02.md`.

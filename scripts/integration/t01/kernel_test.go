@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/ecdh"
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/tls"
@@ -453,7 +454,7 @@ func TestRemoteKernel(t *testing.T) {
 			result["business_udp"] = socksUDP(addr, material.UDP)
 			badObservation := observeTCP(bad, material.TCP)
 			result["bad_credentials"] = badObservation
-			denial := badObservation.Reason == "closed" || badObservation.Reason == "socks_failed"
+			denial := badObservation.Reason == "closed"
 			if protocol == "hysteria2" {
 				log, _ := os.ReadFile(filepath.Join(dir, protocol+"-bad", "kernel.log"))
 				denial = strings.Contains(string(log), "authentication failed, status code: 404")
@@ -586,8 +587,11 @@ func TestNodeEndpoint(t *testing.T) {
 	if os.Getenv("T01_REMOVED") == "1" {
 		r, err := client.Get(url + "/control/v1")
 		if err != nil {
-			t.Log("old certificate transport rejected after removal")
-			return
+			if strings.Contains(err.Error(), "remote error: tls:") {
+				t.Log("old certificate explicitly rejected by TLS after removal")
+				return
+			}
+			t.Fatal("removal transport failed without explicit TLS rejection")
 		}
 		defer r.Body.Close()
 		if r.StatusCode != 401 && r.StatusCode != 403 {
@@ -641,4 +645,159 @@ func TestNodeEndpoint(t *testing.T) {
 		}
 	}
 	t.Log("artifact501; mTLS renewal same node/public key and changed certificate; no-certificate control/renew denied")
+}
+
+// Recovery keys are generated and retained only on the enrolling host.
+func TestEnrollmentRecovery(t *testing.T) {
+	dir := os.Getenv("T01_RECOVERY")
+	if dir == "" {
+		t.Skip("explicit private recovery directory required")
+	}
+	var material struct {
+		URL, CA, Token string
+		NodeID         string `json:"node_id"`
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "material.json"))
+	if err != nil || json.Unmarshal(b, &material) != nil {
+		t.Fatal("read recovery material")
+	}
+	pub, key, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal("generate key")
+	}
+	der, err := x509.MarshalPKCS8PrivateKey(key)
+	if err != nil {
+		t.Fatal("encode key")
+	}
+	if err = os.WriteFile(filepath.Join(dir, "key.der"), der, 0600); err != nil {
+		t.Fatal("persist key")
+	}
+	csr, err := x509.CreateCertificateRequest(rand.Reader, &x509.CertificateRequest{Subject: pkix.Name{CommonName: "T01-recovery"}}, key)
+	if err != nil {
+		t.Fatal("create CSR")
+	}
+	body, _ := json.Marshal(map[string]string{"token": material.Token, "csr_pem": string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csr}))})
+	roots := x509.NewCertPool()
+	if !roots.AppendCertsFromPEM([]byte(material.CA)) {
+		t.Fatal("CA")
+	}
+	tr := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: roots, MinVersion: tls.VersionTLS13}}
+	defer tr.CloseIdleConnections()
+	c := &http.Client{Transport: tr, Timeout: 8 * time.Second}
+	post := func() *http.Response {
+		r, e := c.Post(material.URL+"/enroll/v1", "application/json", bytes.NewReader(body))
+		if e != nil {
+			t.Fatal("enrollment HTTPS transport")
+		}
+		if r.StatusCode != 200 {
+			r.Body.Close()
+			t.Fatal("enrollment response status")
+		}
+		return r
+	}
+	first := post()
+	first.Body.Close() // Intentionally discard the committed response.
+	read := func() []byte {
+		r := post()
+		defer r.Body.Close()
+		v, e := io.ReadAll(io.LimitReader(r.Body, 65536))
+		if e != nil {
+			t.Fatal("response")
+		}
+		return v
+	}
+	a, b := read(), read()
+	if !bytes.Equal(a, b) {
+		t.Fatal("same CSR response changed")
+	}
+	var response struct {
+		NodeID      string `json:"node_id"`
+		Certificate string `json:"certificate_pem"`
+	}
+	if json.Unmarshal(a, &response) != nil || response.NodeID != material.NodeID {
+		t.Fatal("recovery node mismatch")
+	}
+	block, _ := pem.Decode([]byte(response.Certificate))
+	if block == nil {
+		t.Fatal("certificate PEM")
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		t.Fatal("certificate")
+	}
+	actual, ok := cert.PublicKey.(ed25519.PublicKey)
+	if !ok || !bytes.Equal(actual, pub) {
+		t.Fatal("recovered key mismatch")
+	}
+	t.Log("first body discarded; same CSR retry identical; node/key stable; private key retained locally")
+}
+
+func TestEnrollmentRaceOutcome(t *testing.T) {
+	path := os.Getenv("T01_RACE_CONFIG")
+	if path == "" {
+		t.Skip("explicit original race config required")
+	}
+	var cfg struct {
+		State   string `json:"state_dir"`
+		Control struct {
+			URL   string `json:"controller_url"`
+			CA    string `json:"ca_file"`
+			Token string `json:"token_file"`
+		} `json:"control"`
+	}
+	b, err := os.ReadFile(path)
+	if err != nil || json.Unmarshal(b, &cfg) != nil {
+		t.Fatal("race config")
+	}
+	var identity struct {
+		CSR         []byte `json:"csr_pem"`
+		Certificate []byte `json:"certificate_pem"`
+	}
+	b, err = os.ReadFile(filepath.Join(cfg.State, "identity", "management-identity.json"))
+	if err != nil || json.Unmarshal(b, &identity) != nil || len(identity.CSR) == 0 {
+		t.Fatal("race identity")
+	}
+	winner := os.Getenv("T01_RACE_WINNER") == "1"
+	if (len(identity.Certificate) > 0) != winner {
+		t.Fatal("only winner may hold a certificate")
+	}
+	ca, err := os.ReadFile(cfg.Control.CA)
+	if err != nil {
+		t.Fatal("CA")
+	}
+	token, err := os.ReadFile(cfg.Control.Token)
+	if err != nil {
+		t.Fatal("token")
+	}
+	roots := x509.NewCertPool()
+	if !roots.AppendCertsFromPEM(ca) {
+		t.Fatal("CA PEM")
+	}
+	tr := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: roots, MinVersion: tls.VersionTLS13}}
+	defer tr.CloseIdleConnections()
+	c := &http.Client{Transport: tr, Timeout: 8 * time.Second}
+	body, _ := json.Marshal(map[string]string{"token": strings.TrimSpace(string(token)), "csr_pem": string(identity.CSR)})
+	r, err := c.Post(cfg.Control.URL+"/enroll/v1", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal("race outcome HTTPS failed; not authentication rejection")
+	}
+	defer r.Body.Close()
+	if winner {
+		var v struct {
+			Certificate string `json:"certificate_pem"`
+		}
+		if r.StatusCode != 200 || json.NewDecoder(r.Body).Decode(&v) != nil || v.Certificate != string(identity.Certificate) {
+			t.Fatal("winning CSR retry must retain certificate")
+		}
+	} else {
+		var v struct {
+			Error struct {
+				Code string `json:"code"`
+			} `json:"error"`
+		}
+		if r.StatusCode != 409 || json.NewDecoder(r.Body).Decode(&v) != nil || v.Error.Code != "IDEMPOTENCY_CONFLICT" {
+			t.Fatal("losing CSR must receive explicit409 conflict")
+		}
+	}
+	t.Log("race outcome confirmed by HTTPS response and original local identity")
 }

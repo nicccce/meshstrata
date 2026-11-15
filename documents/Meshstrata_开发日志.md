@@ -354,3 +354,14 @@ Agent 退出期间，到期调度会暂停；systemd/OpenRC 自动恢复和启�
 - Ubuntu本机INPUT ACCEPT；Alpine获授权安装小型诊断CLI后确认运行nft为空、iptables ACCEPT、防火墙服务未启动；未加载包内示例规则。未修改网络/SSH/云规则；尚不能区分具体云ACL、安全组或Alpine公网NAT映射。没有以超时计认证拒绝或以随机回显计代理业务成功。
 - 本轮44次回环字节相等，88次公网探针超时，真实跨机控制/CSR竞争及双向四协议补验仍阻塞。T01原结论不覆盖，阶段2门槛仍否；给出含精确/32及45分钟规则/回滚的私有恢复操作单，需云侧定位/最小恢复后再补验。
 - 两轮各自精确PID/tcpdump/Unix socket清理、原监听一致、固定产物最终SHA校验均通过；0700失败证据保留，SSH复用关闭，无公共代理。Go构建/vet、Python语法及diff检查通过，不跑无关前端全套。交付backend-delivery/T01-N01.md与对应JSON，独占Git提交推送后停止。
+
+### 2026-11-15｜T01-N02 公网恢复复查与双机验收
+
+- 实际会话01a1df43-8ece-7ab1-bf65-a7db36d1e829，沿用checkout与固定待验产品f5702078aa48f946fb3c9ee35af65e991a4fc493。仅测试驱动/报告，无产品业务、迁移、依赖、前端变更，无其他会话/子代理/阶段2。
+- 两机旧产物完整SHA/COMMIT/锁定Mihomo再次核验；远端本地复制二进制，在全新0700状态重新prepare-local/初始化/入网，不复用过期或已移除身份。共享锁低并发CGO0编译测试helper，目标不装Go/Node。
+- 独占38443真实IPv4探针16次公网、8次回环全部匹配，双端限时限量包头有实际入站/返回、丢弃0。没有云规则修改记录，不声称用户具体改动哪条规则；T01/N01旧失败证据保持。
+- A Controller+A/B Agent及B Controller+B/A Agent两个公网拓扑通过：受信HTTPS/鉴权/CSRF、跨机入网/mTLS/续期、重连/双端重启身份保持、202移除旧连接消失/旧证书明确TLS拒绝；缺bundle/可信Relay仍501，任务仍queued/not_checked/cleanup pending。
+- 两主机CSR竞争仅一胜，进一步证实获胜CSR200同证书、失败CSR409且无证书；丢首个响应体后同CSR安全恢复，私钥各留生成节点。信任负向请求计数沿用T01本机证据，未伪称新增跨机错SAN或HTTP计数覆盖。
+- 双向SS2022/Trojan/VLESS REALITY-Vision/Hy2八组TCP业务、独立UDP业务和错误凭据全部通过；Hy2用全新客户端明确认证404，不以业务超时判拒绝。受控REALITY目标、既有独立撤销/精准会话清理的范围仍分清。
+- 两机oom_kill均0→0，Alpine正式Controller采样VmHWM149256KiB、Agent最高9120KiB；未连续采样Mihomo峰值，不作固定资源承诺。精确PID退出、活动socket0，每机3个失效socket文件已清理；原监听A14/B2完全一致，SSH正常、复用关闭、无公共代理，0700证据保留。
+- helper编译/Go vet、Python语法、真实双机运行、diff检查通过；固定产品路径无差异。交付T01-N02报告/脱敏JSON及私有窗口结束说明，临时测试规则可按实际新增ID撤回。结合T01原本机通过项，阶段1门槛现已满足；Agent仍control_only、前端demo，后续由主协调等待用户下一次“继续”再安排，本会话提交推送后停止。

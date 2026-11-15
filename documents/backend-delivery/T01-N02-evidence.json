@@ -1,0 +1,876 @@
+{
+  "product_commit": "f5702078aa48f946fb3c9ee35af65e991a4fc493",
+  "test_report_base_commit": "6154cf59a895e6d7b1668fe55cb6a07ffc168042",
+  "test_thread": "01a1df43-8ece-7ab1-bf65-a7db36d1e829",
+  "session_id_matches": true,
+  "date_timezone": "2026-11-15 Asia/Shanghai",
+  "result": "PASS_STAGE1_INCREMENTAL_CROSS_HOST",
+  "stage2_gate": true,
+  "stage2_started": false,
+  "scope": "T01-N02 incremental real public acceptance; previous T01 local coverage remains scoped to that report",
+  "private_evidence_root": ".local/meshstrata-t01-n01-20261115-n02-0840",
+  "platforms": {
+    "A": {
+      "os": "Ubuntu 24.04.1 LTS",
+      "init": "systemd",
+      "mem_total_kib": 4010012,
+      "initial_mem_available_kib": 2465540,
+      "formal_controller_and_agent_executed": true,
+      "go_node_installed": false,
+      "public_ipv4_on_interface": true
+    },
+    "B": {
+      "os": "Alpine 3.23.7",
+      "init": "OpenRC",
+      "mem_total_kib": 445420,
+      "initial_mem_available_kib": 389904,
+      "formal_controller_and_agent_executed": true,
+      "go_node_installed": false,
+      "public_ipv4_on_interface": false
+    }
+  },
+  "artifact_sha256": {
+    "meshstrata-controller": "37999ee840c3589194fd85df8f5dbde7639dde80dd477e8937cd1d6f192a3327",
+    "meshstrata-agent": "35a94504e95073cf657357a5092608f5a24fa5d74a4e746cba9e0b4a5576e3df",
+    "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa",
+    "version-lock.json": "3e4441857413d457067861bcee9b76f4209464e1153c830077edc967cfae4cd7",
+    "COMMIT": "db0ca4542927d2ae0b865b304820766edca5a3f99118eccab51d977119d93880"
+  },
+  "helper": {
+    "netprobe_sha256": "60e3c5e56ba63cf8837dd34356fac1a975e0f243979bcd97aad955543e590a31",
+    "executed_t01_kernel_sha256": "7b15bbd2c3c5c4e8736a4ae845c562922fa90125ef4ff0ab5742a546640fd207",
+    "first_helper_sha256_not_executed_for_acceptance": "db5f3dd1a19b21302f88105fb4376b330982432dcc371fc66b8c8f957b769640",
+    "build": "backend-check.lock; GOMAXPROCS=1 CGO_ENABLED=0; go test -p 1 -c; existing cache",
+    "product_rebuilt": false
+  },
+  "transport": {
+    "started_at": "2026-11-15T12:53:24Z",
+    "finished_at": "2026-11-15T12:53:58Z",
+    "port": 38443,
+    "payload_bytes": 32,
+    "public_success": 16,
+    "public_attempts": 16,
+    "loopback_success": 8,
+    "loopback_attempts": 8,
+    "proxy_environment_removed": true,
+    "tunnel": false,
+    "runs": [
+      {
+        "source": "A",
+        "target": "A",
+        "scope": "loopback",
+        "exit": 0,
+        "observations": [
+          {
+            "protocol": "udp4",
+            "port": 38443,
+            "attempt": 1,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.500586527Z",
+            "seconds": 0.003
+          },
+          {
+            "protocol": "tcp4",
+            "port": 38443,
+            "attempt": 1,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.500635711Z",
+            "seconds": 0.004
+          },
+          {
+            "protocol": "udp4",
+            "port": 38443,
+            "attempt": 2,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.504406519Z",
+            "seconds": 0.003
+          },
+          {
+            "protocol": "tcp4",
+            "port": 38443,
+            "attempt": 2,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.504598501Z",
+            "seconds": 0.003
+          }
+        ]
+      },
+      {
+        "source": "B",
+        "target": "B",
+        "scope": "loopback",
+        "exit": 0,
+        "observations": [
+          {
+            "protocol": "udp4",
+            "port": 38443,
+            "attempt": 1,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.366422043Z",
+            "seconds": 0.0
+          },
+          {
+            "protocol": "tcp4",
+            "port": 38443,
+            "attempt": 1,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.366466965Z",
+            "seconds": 0.001
+          },
+          {
+            "protocol": "tcp4",
+            "port": 38443,
+            "attempt": 2,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.367101162Z",
+            "seconds": 0.0
+          },
+          {
+            "protocol": "udp4",
+            "port": 38443,
+            "attempt": 2,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.36701824Z",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "source": "A",
+        "target": "B",
+        "scope": "public-peer",
+        "exit": 0,
+        "observations": [
+          {
+            "protocol": "udp4",
+            "port": 38443,
+            "attempt": 1,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.501171592Z",
+            "seconds": 0.005
+          },
+          {
+            "protocol": "tcp4",
+            "port": 38443,
+            "attempt": 1,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.501215054Z",
+            "seconds": 0.006
+          },
+          {
+            "protocol": "udp4",
+            "port": 38443,
+            "attempt": 2,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.506251071Z",
+            "seconds": 0.002
+          },
+          {
+            "protocol": "tcp4",
+            "port": 38443,
+            "attempt": 2,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.507342451Z",
+            "seconds": 0.004
+          }
+        ]
+      },
+      {
+        "source": "B",
+        "target": "A",
+        "scope": "public-peer",
+        "exit": 0,
+        "observations": [
+          {
+            "protocol": "udp4",
+            "port": 38443,
+            "attempt": 1,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.372922834Z",
+            "seconds": 0.04
+          },
+          {
+            "protocol": "udp4",
+            "port": 38443,
+            "attempt": 2,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.413441196Z",
+            "seconds": 0.005
+          },
+          {
+            "protocol": "tcp4",
+            "port": 38443,
+            "attempt": 1,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.372954083Z",
+            "seconds": 0.048
+          },
+          {
+            "protocol": "tcp4",
+            "port": 38443,
+            "attempt": 2,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.420742614Z",
+            "seconds": 0.004
+          }
+        ]
+      },
+      {
+        "source": "build",
+        "target": "A",
+        "scope": "public-build",
+        "exit": 0,
+        "observations": [
+          {
+            "protocol": "udp4",
+            "port": 38443,
+            "attempt": 1,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.620817276Z",
+            "seconds": 0.068
+          },
+          {
+            "protocol": "udp4",
+            "port": 38443,
+            "attempt": 2,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.68933241Z",
+            "seconds": 0.074
+          },
+          {
+            "protocol": "tcp4",
+            "port": 38443,
+            "attempt": 1,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.620847571Z",
+            "seconds": 0.155
+          },
+          {
+            "protocol": "tcp4",
+            "port": 38443,
+            "attempt": 2,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.776216644Z",
+            "seconds": 0.143
+          }
+        ]
+      },
+      {
+        "source": "build",
+        "target": "B",
+        "scope": "public-build",
+        "exit": 0,
+        "observations": [
+          {
+            "protocol": "udp4",
+            "port": 38443,
+            "attempt": 1,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.622084885Z",
+            "seconds": 0.024
+          },
+          {
+            "protocol": "udp4",
+            "port": 38443,
+            "attempt": 2,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.646591222Z",
+            "seconds": 0.014
+          },
+          {
+            "protocol": "tcp4",
+            "port": 38443,
+            "attempt": 1,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.622091845Z",
+            "seconds": 0.048
+          },
+          {
+            "protocol": "tcp4",
+            "port": 38443,
+            "attempt": 2,
+            "echo_matches": true,
+            "error_kind": null,
+            "started_at": "2026-11-15T12:53:53.669939507Z",
+            "seconds": 0.037
+          }
+        ]
+      }
+    ],
+    "captures": {
+      "A": {
+        "captured": 100,
+        "received_by_filter": 124,
+        "dropped_by_kernel": 0,
+        "external_ingress_headers": 39,
+        "external_egress_headers": 37,
+        "headers_sha256": "571338b93659645ed4092ad7855147ebb0dd970c336f55130700374116467bff",
+        "tcpdump_exit": 0,
+        "capture_max_seconds": 45,
+        "capture_max_packets": 200,
+        "payload_or_ssh_capture": false
+      },
+      "B": {
+        "captured": 99,
+        "received_by_filter": 123,
+        "dropped_by_kernel": 0,
+        "external_ingress_headers": 37,
+        "external_egress_headers": 38,
+        "headers_sha256": "ee1369c93f9d5a1917623fbaad0514443d79391eb3730acad421baa0adb213ad",
+        "tcpdump_exit": 0,
+        "capture_max_seconds": 45,
+        "capture_max_packets": 200,
+        "payload_or_ssh_capture": false
+      }
+    }
+  },
+  "topologies": {
+    "A": {
+      "status": "passed",
+      "controller": "A",
+      "local_agent": "A",
+      "remote_agent": "B",
+      "first_pass_at": "2026-11-15T12:59:09Z",
+      "completed_at": "2026-11-15T13:00:23Z",
+      "transport": "public HTTPS/mTLS; no tunnel",
+      "instance_stable": true,
+      "identity_stable": true,
+      "race_host_order": [
+        "A",
+        "B"
+      ],
+      "csr_race_exit_codes": [
+        1,
+        0
+      ],
+      "winning_csr_retry": "200 same certificate",
+      "losing_csr_retry": "409 IDEMPOTENCY_CONFLICT; original identity has no certificate",
+      "cross_host_lost_first_body_recovery": "passed; same node/public key; identical retry responses; key generated and retained on enrolling host",
+      "removal": "queued/applied=false/not_checked/cleanup=pending",
+      "old_established_agent_socket_absent": true,
+      "old_certificate_rejection": "explicit remote TLS alert on both nodes",
+      "business_execution": "control_only; proxy not_checked",
+      "mTLS_renewal": "200 same node and public key, different certificate; original-host probe",
+      "missing_B04_bundle": 501,
+      "reverse_without_trusted_relay": 501,
+      "steps": [
+        {
+          "case": "HTTPS chain/SAN, health/ready, embedded demo",
+          "actual": "passed",
+          "at": "2026-11-15T12:59:09Z"
+        },
+        {
+          "case": "bootstrap proof/Origin/one-time initialize and cookie flags",
+          "actual": "passed",
+          "at": "2026-11-15T12:59:18Z"
+        },
+        {
+          "case": "administrator authentication/Origin/CSRF and Reverse501",
+          "actual": "passed",
+          "at": "2026-11-15T12:59:20Z"
+        },
+        {
+          "case": "local real enroll/retry/online/not_checked/lock",
+          "actual": "passed",
+          "at": "2026-11-15T12:59:32Z"
+        },
+        {
+          "case": "remote real enroll/retry/online/not_checked/lock",
+          "actual": "passed",
+          "at": "2026-11-15T12:59:37Z"
+        },
+        {
+          "case": "cross-host first enrollment body discarded; same CSR identity recovered; key stays on node",
+          "actual": "passed",
+          "at": "2026-11-15T12:59:38Z"
+        },
+        {
+          "case": "distinct CSR single token race: two hosts; winning CSR200, losing CSR409, only winner has certificate",
+          "actual": "passed",
+          "at": "2026-11-15T12:59:41Z"
+        },
+        {
+          "case": "mTLS renew updated certificate, artifact501 and no-certificate denial",
+          "actual": "passed",
+          "at": "2026-11-15T12:59:41Z"
+        },
+        {
+          "case": "controller and tested agents restart/reconnect/identity persistence/independence",
+          "actual": "passed",
+          "at": "2026-11-15T12:59:59Z"
+        },
+        {
+          "case": "remove202/detail404/old certificate rejected/agents SIGTERM",
+          "actual": "passed",
+          "at": "2026-11-15T13:00:10Z"
+        },
+        {
+          "case": "password invalidates both sessions; logout invalidates session",
+          "actual": "passed",
+          "at": "2026-11-15T13:00:20Z"
+        },
+        {
+          "case": "removal database queued/applied=false/not_checked/cleanup=pending",
+          "actual": "passed",
+          "at": "2026-11-15T13:00:23Z"
+        }
+      ],
+      "resource_samples_kib": {
+        "A": {
+          "VmHWM": 8704,
+          "VmRSS": 8704
+        },
+        "B": {
+          "VmHWM": 9120,
+          "VmRSS": 9120
+        },
+        "controller": {
+          "VmHWM": 81152,
+          "VmRSS": 81152
+        },
+        "controller_after_password": {
+          "VmHWM": 149120,
+          "VmRSS": 149120
+        }
+      }
+    },
+    "B": {
+      "status": "passed",
+      "controller": "B",
+      "local_agent": "B",
+      "remote_agent": "A",
+      "first_pass_at": "2026-11-15T13:00:31Z",
+      "completed_at": "2026-11-15T13:01:00Z",
+      "transport": "public HTTPS/mTLS; no tunnel",
+      "instance_stable": true,
+      "identity_stable": true,
+      "race_host_order": [
+        "B",
+        "A"
+      ],
+      "csr_race_exit_codes": [
+        1,
+        0
+      ],
+      "winning_csr_retry": "200 same certificate",
+      "losing_csr_retry": "409 IDEMPOTENCY_CONFLICT; original identity has no certificate",
+      "cross_host_lost_first_body_recovery": "passed; same node/public key; identical retry responses; key generated and retained on enrolling host",
+      "removal": "queued/applied=false/not_checked/cleanup=pending",
+      "old_established_agent_socket_absent": true,
+      "old_certificate_rejection": "explicit remote TLS alert on both nodes",
+      "business_execution": "control_only; proxy not_checked",
+      "mTLS_renewal": "200 same node and public key, different certificate; original-host probe",
+      "missing_B04_bundle": 501,
+      "reverse_without_trusted_relay": 501,
+      "steps": [
+        {
+          "case": "HTTPS chain/SAN, health/ready, embedded demo",
+          "actual": "passed",
+          "at": "2026-11-15T13:00:31Z"
+        },
+        {
+          "case": "bootstrap proof/Origin/one-time initialize and cookie flags",
+          "actual": "passed",
+          "at": "2026-11-15T13:00:33Z"
+        },
+        {
+          "case": "administrator authentication/Origin/CSRF and Reverse501",
+          "actual": "passed",
+          "at": "2026-11-15T13:00:33Z"
+        },
+        {
+          "case": "local real enroll/retry/online/not_checked/lock",
+          "actual": "passed",
+          "at": "2026-11-15T13:00:35Z"
+        },
+        {
+          "case": "remote real enroll/retry/online/not_checked/lock",
+          "actual": "passed",
+          "at": "2026-11-15T13:00:42Z"
+        },
+        {
+          "case": "cross-host first enrollment body discarded; same CSR identity recovered; key stays on node",
+          "actual": "passed",
+          "at": "2026-11-15T13:00:44Z"
+        },
+        {
+          "case": "distinct CSR single token race: two hosts; winning CSR200, losing CSR409, only winner has certificate",
+          "actual": "passed",
+          "at": "2026-11-15T13:00:47Z"
+        },
+        {
+          "case": "mTLS renew updated certificate, artifact501 and no-certificate denial",
+          "actual": "passed",
+          "at": "2026-11-15T13:00:48Z"
+        },
+        {
+          "case": "controller and tested agents restart/reconnect/identity persistence/independence",
+          "actual": "passed",
+          "at": "2026-11-15T13:00:52Z"
+        },
+        {
+          "case": "remove202/detail404/old certificate rejected/agents SIGTERM",
+          "actual": "passed",
+          "at": "2026-11-15T13:00:56Z"
+        },
+        {
+          "case": "password invalidates both sessions; logout invalidates session",
+          "actual": "passed",
+          "at": "2026-11-15T13:00:58Z"
+        },
+        {
+          "case": "removal database queued/applied=false/not_checked/cleanup=pending",
+          "actual": "passed",
+          "at": "2026-11-15T13:01:00Z"
+        }
+      ],
+      "resource_samples_kib": {
+        "B": {
+          "VmHWM": 9112,
+          "VmRSS": 9112
+        },
+        "A": {
+          "VmHWM": 8704,
+          "VmRSS": 8704
+        },
+        "controller": {
+          "VmHWM": 81248,
+          "VmRSS": 81248
+        },
+        "controller_after_password": {
+          "VmHWM": 149256,
+          "VmRSS": 149256
+        }
+      }
+    }
+  },
+  "public_protocols": {
+    "B_to_A": {
+      "source": "B",
+      "destination": "A",
+      "client_exit": 0,
+      "server_exit": 0,
+      "ports": {
+        "ss2022": "28443 TCP+UDP",
+        "trojan": "28444 TCP",
+        "vless": "28445 TCP",
+        "hysteria2": "28446 UDP"
+      },
+      "target_scope": "server-local controlled TCP/UDP echo; VLESS controlled TLS1.3 target",
+      "tunnel": false,
+      "protocols": {
+        "hysteria2": {
+          "bad_credential_denial_confirmed": true,
+          "bad_credentials": {
+            "forwarded": false,
+            "reason": "timeout"
+          },
+          "business_udp": true,
+          "checked_at": "2026-11-15T13:02:03.727156492Z",
+          "explicit_authentication_rejected": true,
+          "status": "passed",
+          "tcp": {
+            "forwarded": true,
+            "reason": "echo_matched"
+          },
+          "transport": "public direct; no SSH forwarding"
+        },
+        "ss2022": {
+          "bad_credential_denial_confirmed": true,
+          "bad_credentials": {
+            "forwarded": false,
+            "reason": "closed"
+          },
+          "business_udp": true,
+          "checked_at": "2026-11-15T13:02:03.188859657Z",
+          "status": "passed",
+          "tcp": {
+            "forwarded": true,
+            "reason": "echo_matched"
+          },
+          "transport": "public direct; no SSH forwarding"
+        },
+        "trojan": {
+          "bad_credential_denial_confirmed": true,
+          "bad_credentials": {
+            "forwarded": false,
+            "reason": "closed"
+          },
+          "business_udp": true,
+          "checked_at": "2026-11-15T13:02:03.329200098Z",
+          "status": "passed",
+          "tcp": {
+            "forwarded": true,
+            "reason": "echo_matched"
+          },
+          "transport": "public direct; no SSH forwarding"
+        },
+        "vless": {
+          "bad_credential_denial_confirmed": true,
+          "bad_credentials": {
+            "forwarded": false,
+            "reason": "closed"
+          },
+          "business_udp": true,
+          "checked_at": "2026-11-15T13:02:03.515137514Z",
+          "status": "passed",
+          "tcp": {
+            "forwarded": true,
+            "reason": "echo_matched"
+          },
+          "transport": "public direct; no SSH forwarding"
+        }
+      },
+      "evidence_sha256": "b4cff9e3353d89e342c17fdc90752feba321d02c5bdc43495f06a3bd1d1b5a8d",
+      "client_log_sha256": "b34c4f2b2bae8e0f2c39341d470207affbb23948e5796322f7dd11aa313d0907"
+    },
+    "A_to_B": {
+      "source": "A",
+      "destination": "B",
+      "client_exit": 0,
+      "server_exit": 0,
+      "ports": {
+        "ss2022": "28443 TCP+UDP",
+        "trojan": "28444 TCP",
+        "vless": "28445 TCP",
+        "hysteria2": "28446 UDP"
+      },
+      "target_scope": "server-local controlled TCP/UDP echo; VLESS controlled TLS1.3 target",
+      "tunnel": false,
+      "protocols": {
+        "hysteria2": {
+          "bad_credential_denial_confirmed": true,
+          "bad_credentials": {
+            "forwarded": false,
+            "reason": "timeout"
+          },
+          "business_udp": true,
+          "checked_at": "2026-11-15T13:02:10.941285558Z",
+          "explicit_authentication_rejected": true,
+          "status": "passed",
+          "tcp": {
+            "forwarded": true,
+            "reason": "echo_matched"
+          },
+          "transport": "public direct; no SSH forwarding"
+        },
+        "ss2022": {
+          "bad_credential_denial_confirmed": true,
+          "bad_credentials": {
+            "forwarded": false,
+            "reason": "closed"
+          },
+          "business_udp": true,
+          "checked_at": "2026-11-15T13:02:09.823116211Z",
+          "status": "passed",
+          "tcp": {
+            "forwarded": true,
+            "reason": "echo_matched"
+          },
+          "transport": "public direct; no SSH forwarding"
+        },
+        "trojan": {
+          "bad_credential_denial_confirmed": true,
+          "bad_credentials": {
+            "forwarded": false,
+            "reason": "closed"
+          },
+          "business_udp": true,
+          "checked_at": "2026-11-15T13:02:10.203818689Z",
+          "status": "passed",
+          "tcp": {
+            "forwarded": true,
+            "reason": "echo_matched"
+          },
+          "transport": "public direct; no SSH forwarding"
+        },
+        "vless": {
+          "bad_credential_denial_confirmed": true,
+          "bad_credentials": {
+            "forwarded": false,
+            "reason": "closed"
+          },
+          "business_udp": true,
+          "checked_at": "2026-11-15T13:02:10.63802303Z",
+          "status": "passed",
+          "tcp": {
+            "forwarded": true,
+            "reason": "echo_matched"
+          },
+          "transport": "public direct; no SSH forwarding"
+        }
+      },
+      "evidence_sha256": "d6c0c073627a2854fb9088e865db52d661832721031478dc77fbb2c0d842aa36",
+      "client_log_sha256": "d73257dd8fa70bf0020cfdeb6f5fa37e9d08a64195bc8db0ccb18c88a7228d76"
+    }
+  },
+  "trust_negative_scope": {
+    "new_formal_agent_wrong_CA": "local and actual remote host exit1, subsequent valid enrollment succeeds",
+    "new_wrong_SAN_CLI": "Controller-local only",
+    "prior_request_count_evidence": "T01 both-platform TestTrustBeforeToken: wrong CA/SAN HTTP calls=0",
+    "new_cross_host_wrong_SAN_request_count": false,
+    "new_cross_host_HTTP_request_count": false
+  },
+  "resource_observation": {
+    "A": {
+      "oom_kill_before": 0,
+      "oom_kill_after": 0,
+      "protocol_clients_serial": true,
+      "continuous_mihomo_peak_sampling": false
+    },
+    "B": {
+      "oom_kill_before": 0,
+      "oom_kill_after": 0,
+      "protocol_clients_serial": true,
+      "continuous_mihomo_peak_sampling": false
+    }
+  },
+  "cleanup": {
+    "A": {
+      "root_and_private_modes": [
+        "700 0 0",
+        "700 0 0"
+      ],
+      "terminated_in_final_audit": [],
+      "active_test_unix_sockets": 0,
+      "host_listener_endpoints_unchanged": true,
+      "sha256_exit": 0,
+      "local_ssh_master_closed": true,
+      "remaining_test_processes": 0,
+      "original_listener_count": 14,
+      "metadata": {
+        "expected_product_digests_match": true,
+        "commit_match": true,
+        "mihomo_version_match": true,
+        "inactive_socket_files_removed": 3,
+        "socket_files_remaining": 0,
+        "capture_remaining": false,
+        "ssh_command_success": true,
+        "local_ssh_master_closed": true
+      }
+    },
+    "B": {
+      "root_and_private_modes": [
+        "700 0 0",
+        "700 0 0"
+      ],
+      "terminated_in_final_audit": [],
+      "active_test_unix_sockets": 0,
+      "host_listener_endpoints_unchanged": true,
+      "sha256_exit": 0,
+      "local_ssh_master_closed": true,
+      "remaining_test_processes": 0,
+      "original_listener_count": 2,
+      "metadata": {
+        "expected_product_digests_match": true,
+        "commit_match": true,
+        "mihomo_version_match": true,
+        "inactive_socket_files_removed": 3,
+        "socket_files_remaining": 0,
+        "capture_remaining": false,
+        "ssh_command_success": true,
+        "local_ssh_master_closed": true
+      }
+    }
+  },
+  "checks": {
+    "python_AST": "passed",
+    "go_helper_compile_CGO0_p1": "passed",
+    "go_vet_t01": "passed",
+    "real_public_transport": "passed",
+    "real_public_topologies": 2,
+    "real_public_protocol_direction_combinations": 8,
+    "git_diff_check": "passed",
+    "product_paths_equal_fixed_commit": true,
+    "unrelated_frontend_suite_rerun": false
+  },
+  "remaining_stage1_blockers": [],
+  "confirmed_product_defects": [],
+  "source_sha256": {
+    "scripts/integration/t01/extra.py": "0120aa2eed343386da1da831949dc8c1ebdd08bda3f6e3ff391f29fa19bf5572",
+    "scripts/integration/t01/network.py": "f68bc4fe048c51720a57f8168ea3f24f2f742ab1010068703b66c99fb488b006",
+    "scripts/integration/t01/remote.py": "cee07c600ade8caafaa18a676ca88714b893477aebe7c4b9aea577f133f13a77",
+    "scripts/integration/t01/audit.py": "6fd2f6f56136cee11a930eb3e149333ed37d3a9909125c3bd5bfa8d410117434",
+    "scripts/integration/t01/transport.py": "075f06be300a82315b7cb926f1265a6435c7a76f57c6f7ac6ad540d08c0a9947",
+    "scripts/integration/t01/kernel_test.go": "cef911842c53d3188f1d301fa65cb0f513dab6ceacbc6dc0d9aadc4fc2f6b743",
+    "scripts/integration/t01/netprobe/main.go": "ec3928e41bd5a8ad46dafa8759d7de43f607aae33a6ffed6261bd56c1876d89f"
+  },
+  "topology_window": {
+    "started_at": "2026-11-15T12:58:59Z",
+    "finished_at": "2026-11-15T13:01:05Z"
+  },
+  "protocol_window": {
+    "started_at": "2026-11-15T13:01:52Z",
+    "finished_at": "2026-11-15T13:02:14Z"
+  },
+  "audit_window": {
+    "started_at": "2026-11-15T13:02:37Z",
+    "finished_at": "2026-11-15T13:02:43Z",
+    "metadata_followup_at": "2026-11-15T13:04:34Z"
+  },
+  "prior_evidence_referenced": {
+    "report": "documents/backend-delivery/T01.md",
+    "evidence": "documents/backend-delivery/T01-evidence.json",
+    "scope": [
+      "local trust-before-token request counts",
+      "both-platform independent four-protocol revocation/session closure/other identity unaffected/API false-success",
+      "unrelated local fault refusal cases"
+    ],
+    "relabelled_as_new_cross_host": false
+  },
+  "cloud_rule_changes_observed": null,
+  "network_or_ssh_rules_modified_by_test": false,
+  "window_ended": true,
+  "temporary_rule_withdrawal": {
+    "minimum_remaining_rules": [],
+    "may_withdraw_only_new_test_rule_or_mapping_ids": {
+      "TCP": [
+        8443,
+        9443,
+        28443,
+        28444,
+        28445,
+        38443
+      ],
+      "UDP": [
+        28443,
+        28446,
+        38443
+      ]
+    },
+    "preserve": "SSH22 and all preexisting rules/services",
+    "exact_private_note": ".local/meshstrata-t01-n01-20261115-n02-0840/window-closed-private.md"
+  },
+  "limitations": [
+    "control_only, no B04/B05 business publication",
+    "proxy verification remains not_checked; removal cleanup pending",
+    "frontend remains demo",
+    "controlled server-local REALITY TLS1.3 target only; no external target acceptance",
+    "no full DNS/domain UDP/MTU/multi-hop/shared listener acceptance",
+    "T02/T05/T07 and phase2 not started",
+    "process HWM samples only; no continuous Mihomo peak memory sampling"
+  ]
+}
