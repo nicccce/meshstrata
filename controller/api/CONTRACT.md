@@ -75,3 +75,16 @@
 Agent `control.mode=control_only` 是阶段1有限运行边界：组件锁内持久 `stage1-control.json`，绑定 node_id、applied_revision=0、空摘要、初始 revocation_epoch=1 和零 pending；只允许新节点明确无业务状态。未知文件/其他节点/非初始状态均拒绝，不删除或归零。HelloSource 与 B05 Runtime 二选一；命令和 receipt 在该模式以 WebSocket policy violation 拒绝，不生成 result/outbox/Applied/Verified。Controller 只接受相同初始 Hello，未装业务结果消费者。B05 仍须实现先持久 checkpoint/tombstone/outbox 再返回结果、精确持久确认回执的完整 Runtime。
 
 Controller/Agent 关闭分别取消 HTTP、续期与重连，并显式关闭 hijacked WebSocket；不操作 Mihomo/frp。移除只撤销管理身份并断控制，revoke task 保持 queued/cleanup pending。其目标摘要是管理清理意图，不是配置产物，后续 B04 不得据此投递或伪造清理成功。控制在线、Agent health 和业务 verification 始终分开。
+
+## I02-P：阶段二私有配置包与离线证据
+
+`internal/control/{bundle,state,message}.go`及[bundle.schema.json](bundle.schema.json)冻结可编译包格式1；[阶段2交接](../../documents/backend-delivery/阶段2交接.md)为B04/B05所有权/构造/接线的权威补充。此项是准备代码，没有注册发布API、安装006/007或启用业务runtime；现有control_only及缺产物认证后501保留。
+
+- 仅`EncodeBundle`产生的紧凑UTF-8 JSON可传输，字段顺序为Go结构顺序，集合按ID升序，DNS优先次序保留；所有非optional字段必须出现（空列表为[]）。`DecodeBundle`先限1MiB、核验外部ArtifactKey SHA256，再严格解码/重编码逐字节比较；重复/未知/缺失字段、空列表null、尾随空白/内容、其他编码和版本均拒绝。最大128 Listener、512包内墓碑、256资源、DNS各8、协议列表各8；其余边界与跨字段规则由Go验证器约束。
+- ArtifactKey在包外，整包没有自摘要字段；摘要覆盖实际传输字节，包含task/node/target revision/epoch及rules/DNS/egress修订向量。Pin还验证实际组件：规则默认动作JSON字符串、DNSPolicy结构、出口mode JSON字符串的SHA256。mTLS认证并授权节点，digest仅验证完整性，不授予读取权。B04对每次Open/Resolve复核活跃节点、真实task-node目标/权限；B05对下载字节DecodeBundle并BindCommand（含epoch）。
+- 格式1仅支持单节点四协议独立身份Listener、节点级DNS（numeric IP bootstrap及numeric IP/HTTPS numeric-IP DoH）、显式DIRECT/REJECT唯一末尾MATCH和direct/reject出口。没有任意YAML、脚本、宿主路径、URL资源下载或多跳线路编译；B06–B08扩展须新格式及兼容策略。
+- 包内PrivateCredential只承载Controller分配的入口password/UUID，绑定credential ref及唯一audience节点；普通API DTO/日志不得携带Bundle/Grant。TLS证书/私钥、REALITY私钥均为受限LocalMaterial ID+purpose，由Agent本地allowlist解析，节点管理私钥/本地Mihomo API secret没有可表达的purpose。B04负责私有产物加密落盘（B01 Cipher、独立绑定），B05负责本地包/渲染/状态的独立密钥与0700目录/0600文件及原子持久化；不得复用Controller DB/主密钥。
+- 授权identity_id是不可变代次ID；generation为正整数，同identity的entry/listener/协议/凭据/到期不可改变，CheckGrant拒绝变形；续期创建新identity及更高generation。到期边界now>=expires_at立即禁止；revoked_at非null立即禁止。同identity墓碑永久合并，epoch只接受单调Controller值，本地到期不制造epoch。回滚/重启先从独立授权账本合并墓碑及最大时钟，再过滤所有启动候选；不因旧包或Controller离线绕过。FilterAuthorizations是纯辅助函数，不能代替持久状态机或真实撤销探测。
+- Result新增可选`restrictions`（最多32）携带identity/listener/generation/reason/observed_at/epoch/effective_digest。它绑定**最初真实授权任务**的task/node/target，sequence仍按(task,node)持久递增；不能伪造任务、复用sequence更改结果或把到期表示为原授权重新Applied/Verified。B05永久保留Grant.Origin，在checkpoint+墓碑+证据outbox同事务落盘。B04持久存完整证据并验证原任务授权，再receipt；终态任务也可追加证据，不能覆盖原发布历史或新修订状态。现有stage1 Store对扩展结果明确NOT_IMPLEMENTED，避免丢弃证据后receipt。
+- Hello仍最多100条PendingResults，且整个消息<=1MiB；B05按条数及实际编码字节分页，不截断/删除outbox；B02已有receipt耗尽后继续Hello机制。只收精确(task,node,sequence)receipt后清除对应项，重复/乱序receipt不删除其他项。本地限制失败同样持久证据，cleanup=pending且不宣称确认；失败关闭本平台相关入口并保持重试，不能继续过期授权。
+- 兼容性：消息版本/WS subprotocol仍v1；新增字段可选，旧消息及control_only字节形状不变。旧严格v1对扩展结果会拒绝，因此I02启用业务runtime必须成对升级Controller/Agent，不能滚动混用旧Controller。当前未启用runtime，不向旧端主动发送扩展字段。LocalState/Checkpoint是无现存实现的内部准备接口，本轮将其细化为可持久化中间阶段的CAS DurableState，无外部ABI迁移。

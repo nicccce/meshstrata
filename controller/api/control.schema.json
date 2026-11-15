@@ -314,6 +314,13 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 9007199254740991
+        },
+        "restrictions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Restriction"
+          },
+          "maxItems": 32
         }
       },
       "required": [
@@ -447,7 +454,46 @@
         "pending_results"
       ],
       "additionalProperties": false
+    },
+    "Restriction": {
+      "type": "object",
+      "properties": {
+        "identity_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "listener_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "generation": {
+          "$ref": "#/$defs/Revision"
+        },
+        "reason": {
+          "enum": [
+            "expired",
+            "revoked"
+          ]
+        },
+        "observed_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "epoch": {
+          "$ref": "#/$defs/Revision"
+        },
+        "effective_digest": {
+          "$ref": "#/$defs/Digest"
+        }
+      },
+      "required": [
+        "identity_id",
+        "listener_id",
+        "generation",
+        "reason",
+        "observed_at",
+        "epoch",
+        "effective_digest"
+      ],
+      "additionalProperties": false
     }
   },
-  "description": "Stage 1 control_only uses a durable pristine node state: applied_revision=0, applied_digest empty, revocation_epoch=1, pending_results=[]; commands and receipts close with policy violation, with no result. B05 Runtime retains durable checkpoint/outbox before results and receipts. No business execution capability is inferred from connection."
+  "description": "Stage 1 control_only uses a durable pristine node state: applied_revision=0, applied_digest empty, revocation_epoch=1, pending_results=[]; commands and receipts close with policy violation, with no result. B05 Runtime retains durable checkpoint/outbox before results and receipts. No business execution capability is inferred from connection. I02-P adds optional Result.restrictions bound to the original real grant task and monotonically increasing sequence, using the existing exact receipt. B04 must durably retain evidence, including after task completion. Existing control_only emits no new fields; business runtime requires the paired I02 Controller/Agent upgrade. Older strict v1 peers reject extended results; never enable runtime against them."
 }

@@ -32,7 +32,8 @@ type Command struct {
 type Result struct {
 	TaskID domain.ID `json:"task_id"`
 	domain.NodeResult
-	Sequence int64 `json:"sequence"` // monotonic per (task,node), durable before send
+	Sequence     int64         `json:"sequence"`               // monotonic per (task,node), durable before send
+	Restrictions []Restriction `json:"restrictions,omitempty"` // local evidence, tied to original grant task
 }
 type Receipt struct {
 	TaskID   domain.ID `json:"task_id"`
@@ -81,6 +82,20 @@ func validTarget(rev domain.Revision, digest string) bool {
 func (r Result) validate(node domain.ID) error {
 	if !r.TaskID.Valid() || r.NodeID != node || !validTarget(r.TargetRevision, r.TargetDigest) || r.Sequence < 1 || r.Sequence > int64(domain.MaxRevision) {
 		return fmt.Errorf("invalid task result identity or target")
+	}
+	if len(r.Restrictions) > 32 {
+		return ErrAuthorization
+	}
+	seen := map[domain.ID]bool{}
+	for _, evidence := range r.Restrictions {
+		if evidence.validate() != nil || seen[evidence.IdentityID] {
+			return ErrAuthorization
+		}
+		seen[evidence.IdentityID] = true
+	}
+	// Local restriction evidence is not a successful re-application of an expired grant.
+	if len(r.Restrictions) > 0 && (r.Applied || r.Verification == domain.Verified) {
+		return ErrAuthorization
 	}
 	switch r.Verification {
 	case domain.NotChecked, domain.Verified, domain.Failed, domain.Incomplete:
@@ -156,35 +171,59 @@ func (m Message) Validate(authenticatedNode domain.ID) error {
 	return nil
 }
 
-// Checkpoint records candidate/applied/verified/startup separately. B05 must persist it
-// atomically with the authorization tombstones before acknowledging a command.
+// Checkpoint tracks artifact AND effective rendered digests at each phase.
+// Candidate survives validation; Applied means reload/start was attempted; Verified
+// requires fresh B03 evidence; Startup is the durable restart pointer; PreviousGood
+// is a rollback input which must be filtered and verified again, never a bypass.
 type Checkpoint struct {
-	NodeID             domain.ID
-	TaskID             domain.ID
-	TargetRevision     domain.Revision
-	CandidateDigest    string
-	AppliedDigest      string
-	VerifiedDigest     string
-	StartupDigest      string
-	PreviousGoodDigest string
-	RevocationEpoch    domain.Revision
-	ResultSequence     int64
-}
-type Authorization struct {
-	IdentityID domain.ID // tombstones key this identity, never erase them on entry renewal
-	EntryID    domain.ID
-	ExpiresAt  time.Time
-	RevokedAt  *time.Time
+	NodeID       domain.ID
+	Candidate    *Snapshot
+	Applied      *Snapshot
+	Verified     *Snapshot
+	Startup      *Snapshot
+	PreviousGood *Snapshot
 }
 
-func (a Authorization) Active(now time.Time) bool {
-	return a.RevokedAt == nil && now.Before(a.ExpiresAt)
+// Grant keeps the first real task that authorized an immutable identity. Local
+// expiry results use this Origin, even after newer publishes replace the checkpoint.
+// Listener is private; never log it. Same-identity fields are immutable (CheckGrant).
+type Grant struct {
+	Origin   ArtifactKey
+	Listener BundleListener
 }
 
-// LocalState is an Agent-only boundary. It never uploads local Mihomo API secrets.
-// Commit must merge monotonic tombstones and persist checkpoint + result outbox in one operation.
+// Execution retains command/idempotency identity and the sequence high-water mark
+// even after all receipts drain Outbox. LastResult permits durable command replay;
+// it must not be discarded or reset by checkpoint rollback or acknowledgement.
+// Sequence is monotonic per (Command.TaskID, Command.NodeID); overflow fails closed.
+type Execution struct {
+	Command    Command
+	Sequence   int64
+	LastResult *Result
+}
+
+// DurableState is Agent-local, independent of Controller SQL and master keys.
+// Revision is local CAS; zero only before the first commit. ClockFloor and all
+// identity grants/tombstones survive rollback; tombstones are never garbage-collected
+// on the basis of a Controller snapshot. Outbox can exceed 100; Hello pages it.
+type DurableState struct {
+	Revision        domain.Revision
+	Checkpoint      Checkpoint
+	RevocationEpoch domain.Revision
+	ClockFloor      time.Time
+	Grants          []Grant
+	Tombstones      []Tombstone
+	Outbox          []Result
+	Executions      []Execution
+}
+
+// LocalState transactions can persist intermediate phases without inventing a
+// Result. Commit must merge durable grants/tombstones/clock floor monotonically,
+// CAS expectedRevision, and atomically persist checkpoint + outbox. Acknowledge
+// deletes only the exact (task,node,sequence) receipt, including duplicate receipts.
+// B05 implements file/database crash durability and fsync; this is only a boundary.
 type LocalState interface {
-	Load(context.Context) (Checkpoint, []Authorization, []Result, error)
-	Commit(context.Context, Checkpoint, []Authorization, Result) error
+	Load(context.Context) (DurableState, error)
+	Commit(context.Context, domain.Revision, DurableState) error
 	Acknowledge(context.Context, Receipt) error
 }

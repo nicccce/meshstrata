@@ -23,3 +23,9 @@ type ArtifactKey struct {
 type ArtifactSource interface {
 	Open(context.Context, domain.ID, ArtifactKey) (io.ReadCloser, error)
 }
+
+// ArtifactDownloader is satisfied by B02's Agent Client. I02 injects a closure or
+// this interface after constructing transport; B05 never imports Controller code.
+type ArtifactDownloader interface {
+	DownloadArtifact(context.Context, ArtifactKey, int64) ([]byte, error)
+}

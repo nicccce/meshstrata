@@ -1,0 +1,448 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meshstrata.invalid/contracts/bundle/v1",
+  "title": "Private configuration bundle v1",
+  "description": "Maximum canonical UTF-8 bytes: 1048576. Go EncodeBundle/DecodeBundle are normative for exact encoding, ordering, component hashes and cross-field invariants. Never a management DTO. SHA256 is outside this object in ArtifactKey.",
+  "x-max-bytes": 1048576,
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": 1
+    },
+    "kind": {
+      "enum": [
+        "publish",
+        "rollback",
+        "revoke",
+        "cleanup"
+      ]
+    },
+    "task_id": {
+      "$ref": "#/$defs/ID"
+    },
+    "node_id": {
+      "$ref": "#/$defs/ID"
+    },
+    "target_revision": {
+      "$ref": "#/$defs/Revision"
+    },
+    "revocation_epoch": {
+      "$ref": "#/$defs/Revision"
+    },
+    "rules": {
+      "$ref": "#/$defs/RuleInput"
+    },
+    "dns": {
+      "$ref": "#/$defs/DNSInput"
+    },
+    "egress": {
+      "$ref": "#/$defs/EgressInput"
+    },
+    "listeners": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/BundleListener"
+      },
+      "maxItems": 128
+    },
+    "tombstones": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Tombstone"
+      },
+      "maxItems": 512
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Resource"
+      },
+      "maxItems": 256
+    }
+  },
+  "required": [
+    "format",
+    "kind",
+    "task_id",
+    "node_id",
+    "target_revision",
+    "revocation_epoch",
+    "rules",
+    "dns",
+    "egress",
+    "listeners",
+    "tombstones",
+    "resources"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "ID": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+    },
+    "Revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "Digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "Pin": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ID"
+        },
+        "revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "digest"
+      ],
+      "additionalProperties": false
+    },
+    "RuleInput": {
+      "type": "object",
+      "properties": {
+        "pin": {
+          "$ref": "#/$defs/Pin"
+        },
+        "default": {
+          "enum": [
+            "DIRECT",
+            "REJECT"
+          ]
+        }
+      },
+      "required": [
+        "pin",
+        "default"
+      ],
+      "additionalProperties": false
+    },
+    "DNSInput": {
+      "type": "object",
+      "properties": {
+        "pin": {
+          "$ref": "#/$defs/Pin"
+        },
+        "bootstrap": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "maxItems": 8,
+          "minItems": 1
+        },
+        "resolvers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "maxItems": 8,
+          "minItems": 1
+        },
+        "ipv6": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pin",
+        "bootstrap",
+        "resolvers",
+        "ipv6"
+      ],
+      "additionalProperties": false
+    },
+    "EgressInput": {
+      "type": "object",
+      "properties": {
+        "pin": {
+          "$ref": "#/$defs/Pin"
+        },
+        "mode": {
+          "enum": [
+            "direct",
+            "reject"
+          ]
+        }
+      },
+      "required": [
+        "pin",
+        "mode"
+      ],
+      "additionalProperties": false
+    },
+    "Resource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ID"
+        },
+        "kind": {
+          "enum": [
+            "listener",
+            "identity",
+            "certificate"
+          ]
+        },
+        "revision": {
+          "$ref": "#/$defs/Revision"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "LocalMaterial": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ID"
+        },
+        "purpose": {
+          "enum": [
+            "tls_certificate",
+            "tls_private_key",
+            "reality_private_key"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "purpose"
+      ],
+      "additionalProperties": false
+    },
+    "PrivateCredential": {
+      "type": "object",
+      "properties": {
+        "ref": {
+          "$ref": "#/$defs/ID"
+        },
+        "audience": {
+          "$ref": "#/$defs/ID"
+        },
+        "password": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "uuid": {
+          "type": "string",
+          "maxLength": 36
+        }
+      },
+      "required": [
+        "ref",
+        "audience",
+        "password",
+        "uuid"
+      ],
+      "additionalProperties": false
+    },
+    "BundleAuthorization": {
+      "type": "object",
+      "properties": {
+        "entry_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "identity_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "generation": {
+          "$ref": "#/$defs/Revision"
+        },
+        "expires_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "revoked_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "entry_id",
+        "identity_id",
+        "generation",
+        "expires_at",
+        "revoked_at"
+      ],
+      "additionalProperties": false
+    },
+    "Tombstone": {
+      "type": "object",
+      "properties": {
+        "identity_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "generation": {
+          "$ref": "#/$defs/Revision"
+        },
+        "epoch": {
+          "$ref": "#/$defs/Revision"
+        },
+        "at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "reason": {
+          "enum": [
+            "expired",
+            "revoked"
+          ]
+        }
+      },
+      "required": [
+        "identity_id",
+        "generation",
+        "epoch",
+        "at",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "BundleListener": {
+      "type": "object",
+      "properties": {
+        "listener_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "protocol": {
+          "enum": [
+            "ss2022",
+            "trojan",
+            "vless",
+            "hysteria2"
+          ]
+        },
+        "address": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "transport": {
+          "enum": [
+            "tcp",
+            "udp",
+            "tcp_udp"
+          ]
+        },
+        "business_udp": {
+          "type": "boolean"
+        },
+        "authorization": {
+          "$ref": "#/$defs/BundleAuthorization"
+        },
+        "credential": {
+          "$ref": "#/$defs/PrivateCredential"
+        },
+        "cipher": {
+          "enum": [
+            "",
+            "2022-blake3-aes-128-gcm",
+            "2022-blake3-aes-256-gcm",
+            "2022-blake3-chacha20-poly1305"
+          ]
+        },
+        "certificate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalMaterial"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "private_key": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalMaterial"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reality_key": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalMaterial"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reality_destination": {
+          "type": "string",
+          "maxLength": 320
+        },
+        "server_names": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 253
+          },
+          "maxItems": 8
+        },
+        "short_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 16
+          },
+          "maxItems": 8
+        }
+      },
+      "required": [
+        "listener_id",
+        "node_id",
+        "protocol",
+        "address",
+        "port",
+        "transport",
+        "business_udp",
+        "authorization",
+        "credential",
+        "cipher",
+        "certificate",
+        "private_key",
+        "reality_key",
+        "reality_destination",
+        "server_names",
+        "short_ids"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

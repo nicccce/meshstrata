@@ -46,7 +46,7 @@ func fields(t reflect.Type) map[string]bool {
 func TestContractReferencesAndGoFields(t *testing.T) {
 	open := parse(t, OpenAPI)
 	ws := parse(t, ControlSchema)
-	for _, root := range []map[string]any{open, ws} {
+	for _, root := range []map[string]any{open, ws, parse(t, BundleSchema)} {
 		var walk func(any)
 		walk = func(v any) {
 			switch n := v.(type) {
@@ -189,5 +189,36 @@ func TestI01SecureAuthContract(t *testing.T) {
 	security := schema(t, open, "paths", "/api/v1/auth/password", "post")["security"].([]any)[0].(map[string]any)
 	if security["AdminSession"] == nil || security["CSRF"] == nil {
 		t.Fatal("password lacks auth/CSRF")
+	}
+}
+
+func TestPrivateBundleSchemaFields(t *testing.T) {
+	root := parse(t, BundleSchema)
+	models := map[string]any{"Bundle": control.Bundle{}, "Pin": control.Pin{}, "RuleInput": control.RuleInput{}, "DNSInput": control.DNSInput{}, "EgressInput": control.EgressInput{}, "Resource": control.Resource{}, "LocalMaterial": control.LocalMaterial{}, "PrivateCredential": control.PrivateCredential{}, "BundleAuthorization": control.BundleAuthorization{}, "BundleListener": control.BundleListener{}, "Tombstone": control.Tombstone{}}
+	for name, value := range models {
+		spec := root
+		if name != "Bundle" {
+			spec = schema(t, root, "$defs", name)
+		}
+		got := spec["properties"].(map[string]any)
+		want := fields(reflect.TypeOf(value))
+		if len(got) != len(want) || spec["additionalProperties"] != false {
+			t.Fatalf("%s fields/unknown policy mismatch", name)
+		}
+		for k := range want {
+			if got[k] == nil {
+				t.Fatalf("%s.%s missing", name, k)
+			}
+		}
+		if len(spec["required"].([]any)) != len(want) {
+			t.Fatalf("%s required mismatch", name)
+		}
+	}
+	ws := parse(t, ControlSchema)
+	if len(schema(t, ws, "$defs", "Restriction", "properties")) != len(fields(reflect.TypeOf(control.Restriction{}))) {
+		t.Fatal("restriction schema mismatch")
+	}
+	if int(root["x-max-bytes"].(float64)) != control.MaxBundleBytes {
+		t.Fatal("bundle length mismatch")
 	}
 }

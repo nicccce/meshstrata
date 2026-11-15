@@ -365,3 +365,13 @@ Agent 退出期间，到期调度会暂停；systemd/OpenRC 自动恢复和启�
 - 双向SS2022/Trojan/VLESS REALITY-Vision/Hy2八组TCP业务、独立UDP业务和错误凭据全部通过；Hy2用全新客户端明确认证404，不以业务超时判拒绝。受控REALITY目标、既有独立撤销/精准会话清理的范围仍分清。
 - 两机oom_kill均0→0，Alpine正式Controller采样VmHWM149256KiB、Agent最高9120KiB；未连续采样Mihomo峰值，不作固定资源承诺。精确PID退出、活动socket0，每机3个失效socket文件已清理；原监听A14/B2完全一致，SSH正常、复用关闭、无公共代理，0700证据保留。
 - helper编译/Go vet、Python语法、真实双机运行、diff检查通过；固定产品路径无差异。交付T01-N02报告/脱敏JSON及私有窗口结束说明，临时测试规则可按实际新增ID撤回。结合T01原本机通过项，阶段1门槛现已满足；Agent仍control_only、前端demo，后续由主协调等待用户下一次“继续”再安排，本会话提交推送后停止。
+
+## 2026-11-15｜I02-P 阶段二契约与并行开发准备
+
+实际会话`01a1df57-e740-7071-a41e-36865f4fd981`，沿用原checkout/分支，起点c5b8d09，独占本批共享代码/构建/Git；未开子代理、会话或worktree，未远程部署。T01-N02已满足阶段1门槛，历史T01/N01失败不改。
+
+新增根control强类型私有Bundle格式1、确定性编码/严格解码/摘要与任务节点绑定、固定修订向量/受限材料引用、授权过滤及永久墓碑、五阶段Snapshot与CAS DurableState；离线到期restriction证据绑定原真实授权任务并沿用sequence/receipt/Hello分页，保留命令与序号高水位。阶段一Store对无法持久的扩展结果拒绝确认，B04新Service负责未来完整证据存储；control_only及未实现路由行为保持。API schema/契约同步，未实现发布或执行业务。
+
+扩展隔离检查支持B04→006、B05→007，正式001–005摘要冻结；B05的缺006仅副本scratch no-op。11项工具回归通过，含临时fixture真实sqlc/test/vet及隔离/缺源码/prepare-only等负向检查；这不是B04/B05业务通过。最终完整make check、check-pages、公共协议/API/storage/B02/control_only针对性test/vet及schema检查通过。首次沙箱socket限制失败保留，批准后完整原命令通过。详见[报告](backend-delivery/I02-P.md)和[阶段2交接](backend-delivery/阶段2交接.md)。
+
+B04/B05已具备同一I02-P最终提交并行启动条件；006/007、依赖/dbgen、入口/CLI/生命周期共享接线仍由I02在两模块完成后统一处理，T02另行独立验收。当前Agent仍control_only、缺产物认证后501、前端demo，未称完整发布或上线。最终提交hash/推送状态由本轮最终回复提供，本批完成即停，等用户在主协调会话再次“继续”。

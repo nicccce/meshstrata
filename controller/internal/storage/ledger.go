@@ -157,6 +157,12 @@ func (s *Store) EnqueueTask(ctx context.Context, scope, key string, request Task
 // after this returns nil. Replays are accepted, changed replays and target drift fail.
 // B04 owns deadline/phase/dependency checks before advancing any release state.
 func (s *Store) RecordResult(ctx context.Context, authenticatedNode domain.ID, result control.Result) (bool, error) {
+	// The legacy stage-1 row cannot retain restriction payloads. B04 must use
+	// its own durable ResultStore; this fallback must never receipt and lose them.
+	if len(result.Restrictions) != 0 {
+		return false, &domain.Problem{Code: domain.NotImplemented}
+	}
+
 	messageID, err := domain.NewID("msg")
 	if err != nil {
 		return false, err

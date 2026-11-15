@@ -4,8 +4,8 @@
 
 ## 执行与停止规则
 
-1. 主协调会话只拆分、派发、审核。每批派发后停止，用户说“继续”再安排下一步；开发会话只完成自己的 Bxx，不自动启动后续阶段，不向其他会话发送消息。登记实际会话 ID，无法可靠获取写“待补”，不得推测。B00和本轮I00均为各批唯一写入会话，当前 checkout/分支，不建 worktree、不启其他会话或子代理。
-2. 后续同目录最多三个开发会话并行。每项独占下表目录，公共文件只由当批独立集成会话修改。原工作区集成、sqlc生成、依赖/构建、Git index/提交/推送仅由集成串行执行；业务会话不执行Git写操作。阶段1业务会话仅能按[阶段1交接](backend-delivery/阶段1交接.md)在自己的.local/backend-check/Bxx临时副本应用本模块提案并检查，后端flock限制并发；前端沿用现有flock。不得复制其他正在编辑的模块、真实密钥/数据库或node_modules。
+1. 主协调会话只拆分、派发、审核。每批派发后停止，用户说“继续”再安排下一步；开发会话只完成自己的 Bxx，不自动启动后续阶段，不向其他会话发送消息。登记实际会话 ID，无法可靠获取写“待补”，不得推测。B00/I00/I02-P均为各自准备批次的唯一写入会话，当前 checkout/分支，不建 worktree、不启其他会话或子代理。
+2. 后续同目录最多三个开发会话并行。每项独占下表目录，公共文件只由当批独立集成会话修改。原工作区集成、sqlc生成、依赖/构建、Git index/提交/推送仅由集成串行执行；业务会话不执行Git写操作。阶段1业务会话按[阶段1交接](backend-delivery/阶段1交接.md)，阶段2业务会话按[阶段2交接](backend-delivery/阶段2交接.md)在自己的.local/backend-check/Bxx临时副本应用本模块提案并检查，后端flock限制并发；前端沿用现有flock。不得复制其他正在编辑的模块、真实密钥/数据库或node_modules。
 3. 每阶段开发交付后，新开独立集成会话审代码、串行接线、运行检查、提交推送；随后再新开对应 Txx 多机功能/故障测试会话。阶段1–6采用隔离测试部署脚本，7验正式安装器。B00和I00按各次授权独占Git并完成各自提交推送。
 4. 测试服务器地址/凭据只能从忽略的 `.local/test-servers.md` 读取；不提交文件、不把凭据/命令中的secret复制到文档。用户已授权后续测试会话远程安装测试；B00不远程部署。现有确认环境为一台Ubuntu24.04 x86_64约4GiB/systemd、一台Alpine3.23 x86_64约435MiB/OpenRC。开发机约1.7GiB且有既有Mihomo，所有测试独立实例，不修改原服务、配置、端口或通用进程。
 5. 小内存机串行安装/构建/协议测试；服务器只运行预编译产物，不安装Node/Go。客户端先以Linux固定版本Mihomo完成自动验收，再记录其他平台边界。B03锁定版本，不能把开发机已有Mihomo直接当作平台实例。
@@ -14,13 +14,13 @@
 
 | 范围 | B00后负责人 | 修改方式 |
 | --- | --- | --- |
-| `internal/domain/*`、`internal/control/{message,artifact}.go`、`internal/platform/service.go`、`internal/{secretstore,adminauth}/*` | 每批独立集成会话 | 模块提出具体字段/接口变更及兼容性，集成审后统一落地；禁止并行改定义 |
+| `internal/domain/*`、`internal/control/**`、`internal/platform/service.go`、`internal/{secretstore,adminauth}/*` | 每批独立集成会话 | 模块提出具体字段/接口变更及兼容性，集成审后统一落地；禁止并行改定义 |
 | `controller/api/*`、`controller/web/FRONTEND_CONTRACT.md`、`src/data/{contracts,live,demo}.ts`、旧`src/api.ts` | 集成 | 模块可新增其私有API DTO/adapter，不能自行切换全局模式/删除demo |
 | `controller/internal/controller/{app,http}.go`、`agent/internal/agent/app.go`、`internal/config/*`、各cmd入口 | 集成 | 各模块交付构造函数/Handler/接口及接线提案，由集成串行注册；先安装安全中间件再开放写路由 |
-| `controller/internal/storage/{storage,database}.go`、`queries.sql`、`migrations/*`、`dbgen/*`、`sqlc.yaml` | 集成 | 已应用迁移不可改写，001/002冻结；sqlc输出只生成，不手改 |
+| `controller/internal/storage/{storage,database}.go`、`queries.sql`、`migrations/*`、`dbgen/*`、`sqlc.yaml` | 集成 | 已应用迁移不可改写，当前001–005冻结；sqlc输出只生成，不手改 |
 | `Makefile`、`go.mod/go.sum`、前端package/lock、构建脚本、公共i18n/router/domain/components | 集成 | 依赖精确锁定；不削弱既有检查，新增门禁先实跑 |
 | README、产品/交互/开发日志、本任务书、会话登记 | 集成 | 业务会话仅写各自`backend-delivery/Bxx.md`和精确依赖提案`Bxx.deps`；测试写`Txx.md`，集成汇总实际状态 |
-| Git与发布产物 | 集成（本轮I00独占） | 保护用户修改，检查通过后提交并推送当前分支；失败保留本地提交并报告真实原因 |
+| Git与发布产物 | 集成/准备（本轮I02-P独占） | 保护用户修改，检查通过后提交并推送当前分支；失败保留本地提交并报告真实原因 |
 
 后续迁移槽位固定为 **B01→003、B02→004、B03→005、B04→006、B05→007、B06→008、B07→009、B08→010、B09→011、B10→012、B11→013、B12→014、B13→015、B14→016、B15→017、B16→018、B17→019、B18→020**。每项只写 `controller/internal/storage/proposals/Bxx.sql` 提案（不被embed/sqlc扫描），集成按槽位顺序审阅安装为 `NNN_bxx.sql`，无变更写带原因的 `SELECT 1;`。保证迁移连续，不能提前提交带缺口的高编号；跨模块约束先联合审阅，不把整个Workspace塞成JSON。002交付前可修，交付后不可重写。额外迁移只能由集成更新登记并在020之后分配，禁止抢用其他槽位。
 
@@ -110,3 +110,10 @@
 ## I01阶段1集成状态
 
 B01/B02/B03已合入正式003–005/依赖/sqlc，显式HTTPS认证、CA、入网、续期与控制连接已接普通二进制。Agent只提供持久初始状态的control_only运行，拒绝业务命令，不等价B05。具体检查与限制见[I01](backend-delivery/I01.md)，后续独立验收按[T01计划](backend-delivery/T01计划.md)。T01只做阶段1真实控制和内核协议及Ubuntu/Alpine基础运行；完整发布到期/回滚T02、Reverse T05、三角色systemd/OpenRC安装及frp T07。本批停止，不自动开T01/阶段2。
+
+
+## I02-P 阶段2准备状态（2026-11-15）
+
+T01-N02已补齐阶段1公网门槛，T01/N01历史失败保持原样。I02-P独占本轮代码/共享文件/构建/Git，已冻结可编译配置包与授权过滤/离线restriction证据契约、CAS本地状态边界，扩展并实测B04/B05隔离检查工具；细节见[阶段2交接](backend-delivery/阶段2交接.md)与[I02-P报告](backend-delivery/I02-P.md)。001–005未改，006/007未安装，正式sqlc/依赖未改。
+
+B04/B05已具备从同一I02-P最终推送提交并行启动的公共契约和验证工具条件；完整hash由主协调从最终回复填入两份派发，不在提交内部自指。业务模块、I02接线和T02仍未执行。Agent仍control_only、缺产物认证后501、前端demo。只有用户在主协调会话再次说“继续”才推进下一批，不自动开B04/B05/T02。

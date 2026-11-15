@@ -32,7 +32,7 @@ class SnapshotIsolation(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content)
 
-    def prepare(self):
+    def prepare(self, module="B02", invoke_main=False, prepare_only=False):
         archive = io.BytesIO()
         with tarfile.open(fileobj=archive, mode='w') as tar:
             for name, content in self.baseline.items():
@@ -42,7 +42,10 @@ class SnapshotIsolation(unittest.TestCase):
         with patch.object(check, 'ROOT', self.root), patch.object(
             check.subprocess, 'check_output', side_effect=['a' * 40 + '\n', archive.getvalue()]
         ), contextlib.redirect_stdout(io.StringIO()):
-            return check.prepare('B02', 'explicit-I00-commit')
+            if not invoke_main:
+                return check.prepare(module, 'a' * 40)
+            with patch('sys.argv', ['backend_check.py', module, '--base', 'a' * 40] + (['--prepare-only'] if prepare_only else [])):
+                check.main()
 
     def test_only_owned_overlay_and_proposal(self):
         self.put('controller/internal/enrollment/new.go', 'own module')
@@ -91,6 +94,140 @@ class SnapshotIsolation(unittest.TestCase):
         self.put('documents/backend-delivery/B02.deps', 'example.invalid/dependency@latest')
         with self.assertRaisesRegex(SystemExit, 'exact module'):
             self.prepare()
+
+
+class Stage2Isolation(SnapshotIsolation):
+    def setUp(self):
+        super().setUp()
+        repo = Path(check.__file__).resolve().parents[1]
+        for name in check.STAGE2_MIGRATIONS:
+            self.baseline[f'{check.STORAGE}/migrations/{name}'] = (repo / check.STORAGE / 'migrations' / name).read_bytes()
+        for rel in ['internal/control/bundle.go', 'internal/control/state.go']:
+            self.baseline[rel] = (repo / rel).read_bytes()
+        self.baseline['agent/internal/runtime/deleted.go'] = b'package runtime'
+        self.baseline['controller/internal/releases/release.go'] = b'committed sibling'
+        self.baseline[f'{check.STORAGE}/queries/b05_deleted.sql'] = b'old query'
+        self.baseline['controller/internal/webui/dist/full.js'] = b'no build assets'
+        self.baseline['controller/internal/webui/dist/.gitkeep'] = b''
+        self.put(f'{check.STORAGE}/proposals/B04.sql', '-- fixture B04\nSELECT 6;')
+        self.put(f'{check.STORAGE}/proposals/B05.sql', '-- no Controller state: fixture B05\nSELECT 7;')
+
+    # Stage-1-specific inherited scenarios use the original fixture in that class.
+    def prepare(self, module='B05', **kwargs):
+        return super().prepare(module, **kwargs)
+
+    def test_only_owned_overlay_and_proposal(self):
+        self.put('agent/internal/runtime/runtime.go', 'package runtime\nfunc Private() {}')
+        self.put('controller/internal/releases/release.go', 'active sibling MUST NOT copy')
+        self.put('internal/control/bundle.go', 'active shared MUST NOT copy')
+        self.put(f'{check.STORAGE}/queries/b05_fixture.sql', '-- own query')
+        target, _ = self.prepare()
+        self.assertEqual((target / 'controller/internal/releases/release.go').read_bytes(), b'committed sibling')
+        self.assertEqual((target / 'internal/control/bundle.go').read_bytes(), self.baseline['internal/control/bundle.go'])
+        self.assertFalse((target / 'agent/internal/runtime/deleted.go').exists())
+        self.assertFalse((target / check.STORAGE / 'queries/b05_deleted.sql').exists())
+        self.assertFalse((target / 'controller/web/package.json').exists())
+        self.assertFalse((target / 'controller/internal/webui/dist/full.js').exists())
+        for name, digest in check.STAGE2_MIGRATIONS.items():
+            self.assertEqual(check.hashlib.sha256((target / check.STORAGE / 'migrations' / name).read_bytes()).hexdigest(), digest)
+        self.assertIn('SELECT 1;', (target / check.STORAGE / 'migrations/006_scratch_placeholder.sql').read_text())
+        self.assertNotIn('SELECT 6;', (target / check.STORAGE / 'migrations/006_scratch_placeholder.sql').read_text())
+        manifest = json.loads((target / 'VALIDATION.json').read_text())
+        self.assertEqual(manifest['scratch_migrations'], ['006'])
+        self.assertEqual(manifest['status'], 'prepared_not_checked')
+        self.assertEqual(manifest['overlay_sha256']['agent/internal/runtime/runtime.go'], check.hashlib.sha256((target / 'agent/internal/runtime/runtime.go').read_bytes()).hexdigest())
+        target4, _ = self.prepare('B04')
+        self.assertEqual((target4 / check.STORAGE / 'migrations/006_b04.sql').read_text(), '-- fixture B04\nSELECT 6;')
+        self.assertFalse((target4 / check.STORAGE / 'migrations/007_b05.sql').exists())
+
+    def test_refuses_wrong_baseline(self):
+        self.baseline[f'{check.STORAGE}/migrations/003_b01.sql'] += b'-- changed history'
+        with self.assertRaisesRegex(SystemExit, 'exact frozen formal'):
+            self.prepare()
+
+    def test_refuses_symlinks_and_non_source(self):
+        self.put('agent/internal/runtime/private.db', 'must reject')
+        with self.assertRaisesRegex(SystemExit, 'non-source'):
+            self.prepare()
+        (self.root / 'agent/internal/runtime/private.db').unlink()
+        (self.root / 'agent/internal/runtime/escape.go').symlink_to('/tmp')
+        with self.assertRaisesRegex(SystemExit, 'symlink'):
+            self.prepare()
+
+    def test_refuses_unpinned_dependency(self):
+        self.put('documents/backend-delivery/B05.deps', 'example.invalid/dependency@latest')
+        with self.assertRaisesRegex(SystemExit, 'exact module'):
+            self.prepare()
+
+    def test_missing_contract_slot_and_parent_symlink(self):
+        saved = self.baseline.pop('internal/control/bundle.go')
+        with self.assertRaisesRegex(SystemExit, 'I02-P frozen'):
+            self.prepare()
+        self.baseline['internal/control/bundle.go'] = saved
+        self.baseline[f'{check.STORAGE}/migrations/006_unexpected.sql'] = b'SELECT 1;'
+        with self.assertRaisesRegex(SystemExit, 'exact frozen formal'):
+            self.prepare()
+        del self.baseline[f'{check.STORAGE}/migrations/006_unexpected.sql']
+        (self.root / check.STORAGE / 'proposals/B05.sql').unlink()
+        with self.assertRaisesRegex(SystemExit, 'explicit module SQL'):
+            self.prepare()
+        self.put(f'{check.STORAGE}/proposals/B05.sql', '-- no Controller changes\nSELECT 1;')
+        (self.root / 'agent').symlink_to('/tmp')
+        with self.assertRaisesRegex(SystemExit, 'symlink'):
+            self.prepare()
+        with patch.object(check, 'ROOT', self.root), self.assertRaisesRegex(SystemExit, 'outside workspace'):
+            check.safe_source(self.root / '../escaped.go')
+
+    def test_real_stage2_sqlc_test_vet_in_synthetic_snapshot(self):
+        # Real compiler/toolchain, synthetic modules ONLY in a temporary fixture.
+        # This proves orchestration, never claims B04/B05 business acceptance.
+        repo = Path(check.__file__).resolve().parents[1]
+        archive = check.subprocess.check_output(['git', 'archive', 'HEAD'], cwd=repo)
+        with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+            self.baseline = {entry.name: tar.extractfile(entry).read()
+                             for entry in tar.getmembers() if entry.isfile()}
+        for rel in ['internal/control/bundle.go', 'internal/control/bundle_test.go',
+                    'internal/control/state.go', 'internal/control/message.go',
+                    'controller/api/doc.go', 'controller/api/control.schema.json',
+                    'controller/api/bundle.schema.json', 'controller/api/contract_test.go']:
+            self.baseline[rel] = (repo / rel).read_bytes()
+        for module in ['B04', 'B05']:
+            for owned in check.OWNED[module]:
+                if owned in self.baseline:
+                    self.put(owned, self.baseline[owned].decode())
+            for package in check.PACKAGES[module]:
+                rel = package[2:-4]
+                self.put(f'{rel}/fixture.go', 'package fixture\nfunc FixtureMarker() string { return "tool fixture only" }\n')
+                self.put(f'{rel}/fixture_test.go', 'package fixture\nimport "testing"\nfunc TestToolFixture(t *testing.T) { if FixtureMarker() == "" { t.Fatal("missing overlay") } }\n')
+            original_run = check.run
+            def actual_run(command, cwd, env):
+                self.assertTrue(str(cwd).startswith(str(self.root / '.local/backend-check' / module)))
+                self.assertEqual(env['GOMAXPROCS'], '1')
+                self.assertEqual(env['CGO_ENABLED'], '0')
+                env = dict(env, GOCACHE=str(repo / '.local/cache/go'), GOTMPDIR=str(repo / '.local/cache/go-tmp'))
+                original_run(command, cwd, env)
+            with patch.object(check, 'run', side_effect=actual_run):
+                self.prepare(module, invoke_main=True)
+            latest = max((self.root / '.local/backend-check' / module).glob('run-*'), key=lambda p: p.stat().st_mtime_ns)
+            manifest = json.loads((latest / 'VALIDATION.json').read_text())
+            self.assertEqual(manifest['status'], 'passed_isolated_only')
+            self.assertEqual(len(manifest['checks']), 3)
+
+    def test_missing_empty_and_prepare_only_never_pass(self):
+        for content in [None, 'package runtime\n']:
+            if content is not None:
+                for name in ['runtime', 'checkpoint', 'authorization']:
+                    self.put(f'agent/internal/{name}/empty.go', content.replace('runtime', name))
+            with self.assertRaisesRegex(SystemExit, 'source incomplete/empty'), patch.object(check, 'run') as run:
+                self.prepare(invoke_main=True)
+                run.assert_not_called()
+            latest = max((self.root / '.local/backend-check/B05').glob('run-*'), key=lambda p: p.stat().st_mtime_ns)
+            self.assertEqual(json.loads((latest / 'VALIDATION.json').read_text())['status'], 'failed_NOT_PASSED')
+        with patch.object(check, 'run') as run:
+            self.prepare(invoke_main=True, prepare_only=True)
+            run.assert_not_called()
+        latest = max((self.root / '.local/backend-check/B05').glob('run-*'), key=lambda p: p.stat().st_mtime_ns)
+        self.assertEqual(json.loads((latest / 'VALIDATION.json').read_text())['status'], 'prepare_only_NOT_PASSED')
 
 
 if __name__ == '__main__':
