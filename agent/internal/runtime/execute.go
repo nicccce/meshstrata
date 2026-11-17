@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"reflect"
 	"time"
@@ -294,13 +295,16 @@ func (r *Runtime) rollbackFailure(ctx context.Context, c control.Command, before
 	if err == nil {
 		return r.finishFailure(c, attempted, "confirmed", domain.ErrorCode("AGENT_APPLY_FAILED"))
 	}
-	if r.lifetime.Err() != nil || errors.Is(context.Cause(local), errRestricted) {
+	if errors.Is(err, errRestricted) || r.lifetime.Err() != nil || errors.Is(context.Cause(local), errRestricted) {
 		stopErr := r.stopKernel()
 		r.signal()
 		if stopErr != nil {
 			return control.Result{}, errors.Join(errUncertain, stopErr)
 		}
 		return r.finishFailure(c, attempted, "pending", domain.ErrorCode("AGENT_APPLY_FAILED"))
+	}
+	if r.o.OnApplyFailure != nil {
+		r.o.OnApplyFailure(fmt.Errorf("Mihomo restore failed: %w", err))
 	}
 	return r.finishFailure(c, attempted, "failed", domain.ErrorCode("AGENT_APPLY_FAILED"))
 }

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -32,11 +33,14 @@ func (c *testClock) now() time.Time  { return time.Unix(0, c.unix.Load()).UTC() 
 func (c *testClock) set(t time.Time) { c.unix.Store(t.UnixNano()) }
 
 type fakeKernel struct {
-	running      atomic.Bool
-	stopCount    atomic.Int64
-	verifyCount  atomic.Int64
-	failed       atomic.Int64
-	noRevocation atomic.Bool
+	running            atomic.Bool
+	stopCount          atomic.Int64
+	verifyCount        atomic.Int64
+	failed             atomic.Int64
+	noRevocation       atomic.Bool
+	inspectBlockedPort atomic.Uint32
+	alsoBlockPort      atomic.Uint32
+	reloadHook         func(context.Context, mihomo.Candidate) error
 }
 
 func (*fakeKernel) Validate(_ context.Context, _ mihomo.Candidate) (mihomo.Validated, error) {
@@ -45,13 +49,22 @@ func (*fakeKernel) Validate(_ context.Context, _ mihomo.Candidate) (mihomo.Valid
 func (*fakeKernel) Startup(_ context.Context, _ mihomo.Candidate) (string, []string, error) {
 	return "fixed", nil, nil
 }
-func (*fakeKernel) Reload(_ context.Context, c mihomo.Candidate) (mihomo.Applied, error) {
+func (k *fakeKernel) Reload(ctx context.Context, c mihomo.Candidate) (mihomo.Applied, error) {
+	if k.reloadHook != nil {
+		if err := k.reloadHook(ctx, c); err != nil {
+			return mihomo.Applied{}, err
+		}
+	}
 	return mihomo.Applied{Digest: c.Digest, APIAccepted: true}, nil
 }
-func (*fakeKernel) Inspect(_ context.Context, c mihomo.Candidate, pid int) (mihomo.Evidence, error) {
+func (k *fakeKernel) Inspect(_ context.Context, c mihomo.Candidate, pid int) (mihomo.Evidence, error) {
 	o := mihomo.Evidence{Digest: c.Digest, PID: pid}
 	for _, e := range c.Expected {
-		o.Listeners = append(o.Listeners, mihomo.ListenerEvidence{Expected: e, Listening: check(mihomo.Succeeded)})
+		status := check(mihomo.Succeeded)
+		if uint32(e.Port) == k.inspectBlockedPort.Load() || uint32(e.Port) == k.alsoBlockPort.Load() {
+			status = mihomo.Check{Status: mihomo.Failed, Code: "OWNED_LISTENER_MISSING"}
+		}
+		o.Listeners = append(o.Listeners, mihomo.ListenerEvidence{Expected: e, Listening: status})
 	}
 	return o, nil
 }
@@ -578,5 +591,154 @@ func TestGrantMutationAndStaleEpochRejected(t *testing.T) {
 	s := f.state()
 	if s.Checkpoint.Verified.TaskID != c.TaskID || len(s.Grants) != 1 || s.Grants[0].Origin.TaskID != c.TaskID {
 		t.Fatal("rejected command changed effective grant")
+	}
+}
+
+func TestListenerFailureRestoresVerifiedStartup(t *testing.T) {
+	for _, oldUnavailable := range []bool{false, true} {
+		t.Run(fmt.Sprintf("old_unavailable=%v", oldUnavailable), func(t *testing.T) {
+			f := newFixture(t)
+			r := launch(t, f.opts)
+			old := listener(1, 12000, f.now.Add(time.Hour))
+			b1, b2 := bundle(1, 1, domain.Publish, old), bundle(2, 1, domain.Publish, old)
+			if execute(t, r, f.command(b1)).Verification != domain.Verified ||
+				execute(t, r, f.command(b2)).Verification != domain.Verified {
+				t.Fatal("fixture has no confirmed startup")
+			}
+			prior := f.state().Checkpoint
+			next := listener(2, 12001, f.now.Add(time.Hour))
+			f.kernel.inspectBlockedPort.Store(uint32(next.Port))
+			if oldUnavailable {
+				f.kernel.alsoBlockPort.Store(uint32(old.Port))
+			}
+			out := execute(t, r, f.command(bundle(3, 1, domain.Publish, old, next)))
+			cp := f.state().Checkpoint
+			if !out.Applied || out.Verification != domain.Failed || out.EffectiveDigest != "" ||
+				!reflect.DeepEqual(cp.Startup, prior.Startup) || !reflect.DeepEqual(cp.PreviousGood, prior.PreviousGood) {
+				t.Fatal("failed candidate replaced verified history")
+			}
+			if oldUnavailable {
+				if out.Rollback != "failed" || out.ConfirmedAt != nil || f.kernel.running.Load() ||
+					cp.Verified != nil || cp.Applied != nil || cp.Candidate != nil {
+					t.Fatal("unrestorable listener was confirmed or left active")
+				}
+			} else if out.Rollback != "confirmed" || out.ConfirmedAt == nil || !f.kernel.running.Load() ||
+				!reflect.DeepEqual(cp.Verified, prior.Startup) || !reflect.DeepEqual(cp.Applied, prior.Startup) ||
+				!reflect.DeepEqual(cp.Candidate, prior.Startup) {
+				t.Fatal("verified startup was not restored")
+			}
+		})
+	}
+}
+
+func TestFailedCandidateRestoresConfirmedEmptyStartup(t *testing.T) {
+	f := newFixture(t)
+	r := launch(t, f.opts)
+	old := listener(1, 12000, f.now.Add(time.Minute))
+	c := f.command(bundle(1, 1, domain.Publish, old))
+	if execute(t, r, c).Verification != domain.Verified {
+		t.Fatal("fixture has no confirmed startup")
+	}
+	f.clock.set(f.now.Add(time.Minute))
+	waitFor(t, 3*time.Second, func() bool {
+		s := f.state()
+		return s.Checkpoint.Verified != nil && len(s.Outbox) == 3 && s.Outbox[2].Cleanup == "confirmed"
+	})
+	empty := f.state().Checkpoint.Startup
+	cfg, err := r.checkedRender(context.Background(), empty)
+	if err != nil || len(cfg.Expected) != 0 {
+		t.Fatal("fixture has no confirmed empty startup", err)
+	}
+	f.kernel.failed.Store(1)
+	next := listener(2, 12001, f.clock.now().Add(time.Hour))
+	out := execute(t, r, f.command(bundle(2, 1, domain.Publish, next)))
+	cp := f.state().Checkpoint
+	if out.Verification != domain.Failed || out.Rollback != "confirmed" || out.ConfirmedAt == nil ||
+		!reflect.DeepEqual(cp.Verified, empty) || !reflect.DeepEqual(cp.Applied, empty) ||
+		!f.kernel.running.Load() || len(f.state().Tombstones) != 1 {
+		t.Fatalf("confirmed empty startup did not survive the failed candidate: %s", out.Rollback)
+	}
+}
+
+func TestExpiryPreemptsReloadWithDurableExplicitRevocation(t *testing.T) {
+	f := newFixture(t)
+	reload, canceled := make(chan struct{}), make(chan struct{})
+	f.kernel.reloadHook = func(ctx context.Context, c mihomo.Candidate) error {
+		// Only the first reload, the explicit revocation, is held.
+		select {
+		case <-reload:
+			return nil
+		default:
+			close(reload)
+		}
+		<-ctx.Done()
+		close(canceled)
+		return ctx.Err()
+	}
+	r := launch(t, f.opts)
+	expiring := listener(1, 12000, f.now.Add(time.Minute))
+	revoked := listener(2, 12001, f.now.Add(time.Hour))
+	retained := listener(3, 12002, f.now.Add(2*time.Hour))
+	first := f.command(bundle(1, 1, domain.Publish, expiring, revoked, retained))
+	if execute(t, r, first).Verification != domain.Verified {
+		t.Fatal("fixture failed")
+	}
+	b := bundle(2, 2, domain.Revoke, expiring, retained)
+	b.Tombstones = append(b.Tombstones, control.Tombstone{IdentityID: revoked.Authorization.IdentityID,
+		Generation: 1, Epoch: 2, At: f.now, Reason: "revoked"})
+	next := f.command(b)
+	results := make(chan control.Result, 1)
+	errs := make(chan error, 1)
+	go func() {
+		res, err := r.Execute(context.Background(), next)
+		results <- res
+		errs <- err
+	}()
+	select {
+	case <-reload:
+	case <-time.After(3 * time.Second):
+		t.Fatal("candidate did not reach reload")
+	}
+	initial := f.state()
+	if len(initial.Tombstones) != 1 || len(initial.Outbox) != 2 || initial.Outbox[1].Cleanup != "pending" ||
+		initial.Outbox[1].ConfirmedAt != nil || initial.Checkpoint.Candidate.TaskID != next.TaskID ||
+		initial.Checkpoint.Applied.TaskID != first.TaskID {
+		t.Fatal("revocation was not durable before the reload")
+	}
+	f.clock.set(f.now.Add(time.Minute))
+	select {
+	case <-canceled:
+	case <-time.After(3 * time.Second):
+		t.Fatal("reload blocked expiry")
+	}
+	select {
+	case out := <-results:
+		if err := <-errs; err != nil || out.Rollback != "pending" || out.Cleanup != "pending" || out.ConfirmedAt != nil {
+			t.Fatalf("interrupted command claimed confirmation: %s/%s, %v", out.Rollback, out.Cleanup, err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("candidate did not exit")
+	}
+	waitFor(t, 3*time.Second, func() bool {
+		s := f.state()
+		return len(s.Tombstones) == 2 && s.Checkpoint.Verified != nil
+	})
+	s := f.state()
+	newRender, err := r.checkedRender(context.Background(), s.Checkpoint.Verified)
+	if err != nil || len(newRender.bundle.Listeners) != 1 || !reflect.DeepEqual(newRender.bundle.Listeners[0], retained) {
+		t.Fatal("wrong identity removed or retained runtime changed", err)
+	}
+	history, err := f.store.RestrictionResults(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, l := range []control.BundleListener{expiring, revoked} {
+		event := history[l.Authorization.IdentityID]
+		if event.TaskID != first.TaskID || event.Cleanup != "confirmed" || event.ConfirmedAt == nil {
+			t.Fatal("missing confirmation for original grant")
+		}
+	}
+	if _, restricted := history[retained.Authorization.IdentityID]; restricted {
+		t.Fatal("untouched grant received restriction evidence")
 	}
 }

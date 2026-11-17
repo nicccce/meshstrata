@@ -745,3 +745,41 @@ func TestRollbackCannotResurrectConfirmedRevocation(t *testing.T) {
 		t.Fatal("rollback did not retain previous content pin")
 	}
 }
+
+func TestFailedRestoreRetainsLastConfirmedArtifactAndReservations(t *testing.T) {
+	f := fixtureFor(t)
+	node := f.node()
+	old := f.listener(node, 24060, "127.0.0.1")
+	next := f.listener(node, 24061, "127.0.0.1")
+	first := f.submit("verified-startup", f.plan(f.target(node, 1, old)))
+	c := f.dispatch()[0]
+	clear(f.artifact(c))
+	verified := f.result(c, 1, true)
+	verified.EffectiveDigest = strings.Repeat("a", 64)
+	f.record(verified)
+
+	second := f.submit("failed-candidate", f.plan(f.target(node, 2, old, next)))
+	failed := f.dispatch()[0]
+	clear(f.artifact(failed))
+	out := f.result(failed, 1, false)
+	out.Verification, out.Rollback = domain.Failed, "failed"
+	f.record(out)
+	if f.row(first).State != "succeeded" || f.row(second).State != "failed" {
+		t.Fatal("restore failure rewrote historical task evidence")
+	}
+
+	db := f.raw()
+	var reconciliation, artifact, effective string
+	must(t, db.QueryRow("SELECT reconciliation, artifact_digest, effective_digest FROM b04_node_state WHERE node_id=?", node).
+		Scan(&reconciliation, &artifact, &effective))
+	if reconciliation != "pending" || artifact != c.TargetDigest || effective != verified.EffectiveDigest {
+		t.Fatal("failed restore replaced the previous evidence or was treated as current confirmation")
+	}
+	for _, listener := range []control.BundleListener{old, next} {
+		var state string
+		must(t, db.QueryRow("SELECT state FROM b04_ports WHERE node_id=? AND port=?", node, listener.Port).Scan(&state))
+		if state == "released" {
+			t.Fatalf("released port %d despite failed restore and unconfirmed cleanup", listener.Port)
+		}
+	}
+}

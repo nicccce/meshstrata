@@ -6,6 +6,8 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"golang.org/x/sys/unix"
 	"io"
 	"net/netip"
 	"os"
@@ -33,7 +35,22 @@ type Endpoint struct {
 	Address   string `json:"address"`
 	Port      uint16 `json:"port"`
 	Transport string `json:"transport"`
+	// Nil if IPV6_V6ONLY was not observed on this socket.
+	IPv6Only *bool `json:"ipv6_only,omitempty"`
 }
+
+// Matches keeps the bind scope exact, apart from an IPv6 wildcard with
+// positive per-socket proof that it also binds the IPv4 wildcard.
+func (p Endpoint) Matches(address string, port uint16, transport string) bool {
+	got, err := netip.ParseAddr(p.Address)
+	want, wantErr := netip.ParseAddr(address)
+	if err != nil || wantErr != nil || got.Is4In6() || want.Is4In6() ||
+		got.Zone() != "" || want.Zone() != "" || p.Port != port || p.Transport != transport {
+		return false
+	}
+	return got == want || p.IPv6Only != nil && !*p.IPv6Only && got == netip.IPv6Unspecified() && want == netip.IPv4Unspecified()
+}
+
 type ListenerEvidence struct {
 	Expected          core.Expected `json:"expected"`
 	Listening         Check         `json:"listening"`
@@ -88,6 +105,11 @@ func (a *Adapter) Inspect(ctx context.Context, c Candidate, pid int) (Evidence, 
 	if err = a.policy(b, c.Expected); err != nil {
 		return out, err
 	}
+	pidfd, err := unix.PidfdOpen(pid, 0)
+	if err != nil {
+		return out, ErrInspection
+	}
+	defer unix.Close(pidfd)
 	base := filepath.Join("/proc", strconv.Itoa(pid))
 	exe, err := os.Readlink(filepath.Join(base, "exe"))
 	if err != nil || exe != a.o.Binary {
@@ -112,33 +134,76 @@ func (a *Adapter) Inspect(ctx context.Context, c Candidate, pid int) (Evidence, 
 		return out, err
 	}
 	out.ProcessStart = start
-	fds, err := os.ReadDir(filepath.Join(base, "fd"))
-	if err != nil {
+	out.OwnedSockets, err = inspectSockets(ctx, base, c.Expected)
+	end, endErr := procStart(pid)
+	if err != nil || endErr != nil || start != end || unix.PidfdSendSignal(pidfd, 0, nil, 0) != nil {
 		return out, ErrInspection
 	}
-	inodes := map[string]bool{}
-	for _, fd := range fds {
-		v, err := os.Readlink(filepath.Join(base, "fd", fd.Name()))
-		if err != nil {
-			continue
+	for _, e := range c.Expected {
+		check := Check{Status: Succeeded}
+		for _, transport := range []string{"tcp", "udp"} {
+			if (transport == "tcp" && !e.TCP) || (transport == "udp" && !e.UDP) {
+				continue
+			}
+			found, unknown := false, false
+			for _, p := range out.OwnedSockets {
+				found = found || p.Matches(e.Address, e.Port, transport)
+				unknown = unknown || e.Address == "0.0.0.0" && p.Address == "::" &&
+					p.IPv6Only == nil && p.Port == e.Port && p.Transport == transport
+			}
+			if !found {
+				if !unknown {
+					check = Check{Status: Failed, Code: "OWNED_LISTENER_MISSING"}
+					break
+				}
+				check = Check{Status: Unverified, Code: "OWNED_IPV4_COVERAGE_UNKNOWN"}
+			}
 		}
-		if strings.HasPrefix(v, "socket:[") {
-			inodes[strings.TrimSuffix(strings.TrimPrefix(v, "socket:["), "]")] = true
+		out.Listeners = append(out.Listeners, ListenerEvidence{e, check, Check{Status: Unverified}, Check{Status: Unverified}})
+	}
+	return out, nil
+}
+
+func inspectSockets(ctx context.Context, base string, expected []core.Expected) ([]Endpoint, error) {
+	fds, err := os.ReadDir(filepath.Join(base, "fd"))
+	if err != nil {
+		return nil, ErrInspection
+	}
+	inodes := map[string]string{}
+	for _, fd := range fds {
+		path := filepath.Join(base, "fd", fd.Name())
+		v, err := os.Readlink(path)
+		if errors.Is(err, os.ErrNotExist) {
+			continue // an FD closed between enumeration and readlink
+		}
+		if err != nil {
+			return nil, ErrInspection
+		}
+		if strings.HasPrefix(v, "socket:[") && strings.HasSuffix(v, "]") {
+			inodes[v[8:len(v)-1]] = path
 		}
 	}
+	type owned struct {
+		ep    Endpoint
+		inode string
+		table string
+	}
+	var sockets []owned
+	diag := map[string]map[diagSocket]diagFacts{}
 	for _, table := range []string{"tcp", "tcp6", "udp", "udp6"} {
 		if err = ctx.Err(); err != nil {
-			return out, err
+			return nil, err
 		}
 		f, err := os.Open(filepath.Join(base, "net", table))
 		if err != nil {
-			return out, ErrInspection
+			return nil, ErrInspection
 		}
-		s := bufio.NewScanner(io.LimitReader(f, 16<<20))
+		reader := &io.LimitedReader{R: f, N: 16 << 20}
+		s := bufio.NewScanner(reader)
 		s.Scan()
 		for s.Scan() {
 			fields := strings.Fields(s.Text())
-			if len(fields) < 10 || !inodes[fields[9]] {
+			if len(fields) < 10 || inodes[fields[9]] == "" {
 				continue
 			}
 			transport := "tcp"
@@ -148,40 +213,66 @@ func (a *Adapter) Inspect(ctx context.Context, c Candidate, pid int) (Evidence, 
 			if transport == "tcp" && fields[3] != "0A" {
 				continue
 			}
-			if transport == "udp" && fields[3] != "07" {
-				continue
+			if transport == "udp" {
+				remote, ok := parseEndpoint(fields[2], transport)
+				if !ok || fields[3] != "07" || remote.Port != 0 ||
+					(remote.Address != "::" && remote.Address != "0.0.0.0") {
+					continue
+				}
 			}
 			ep, ok := parseEndpoint(fields[1], transport)
-			if !ok {
+			if !ok || ep.Port == 0 {
 				f.Close()
-				return out, ErrInspection
+				return nil, ErrInspection
 			}
-			out.OwnedSockets = append(out.OwnedSockets, ep)
+			sockets = append(sockets, owned{ep, fields[9], table})
+			for _, want := range expected {
+				if want.Port != ep.Port || !(transport == "udp" && want.UDP ||
+					transport == "tcp" && want.TCP && ep.Address == "::" && want.Address == "0.0.0.0") {
+					continue
+				}
+				if key, ok := socketKey(ep, fields[9]); ok {
+					if diag[table] == nil {
+						diag[table] = map[diagSocket]diagFacts{}
+					}
+					diag[table][key] = diagFacts{}
+				}
+				break
+			}
 		}
 		err = s.Err()
 		f.Close()
-		if err != nil {
-			return out, ErrInspection
+		if err != nil || reader.N <= 0 {
+			return nil, ErrInspection
 		}
 	}
-	end, err := procStart(pid)
-	if err != nil || start != end {
-		return out, ErrInspection
-	}
-	for _, e := range c.Expected {
-		found := func(transport string) bool {
-			for _, p := range out.OwnedSockets {
-				if p.Address == e.Address && p.Port == e.Port && p.Transport == transport {
-					return true
-				}
+	sameNS := len(diag) > 0 && sameNetNS(base)
+	for table, wanted := range diag {
+		if !sameNS || socketFacts(ctx, table, wanted) != nil {
+			if strings.HasPrefix(table, "udp") {
+				return nil, ErrInspection
 			}
-			return false
+			// Unavailable or incomplete diagnostics keep IPv4 coverage unknown.
+			delete(diag, table)
 		}
-		st := Succeeded
-		if (e.TCP && !found("tcp")) || (e.UDP && !found("udp")) {
-			st = Failed
+	}
+	var out []Endpoint
+	for _, socket := range sockets {
+		ep := socket.ep
+		key, _ := socketKey(ep, socket.inode)
+		facts := diag[socket.table][key]
+		if ep.Transport == "udp" && !facts.found {
+			// Connected, auto-bound and unrelated UDP sockets cannot
+			// prove ownership of a configured fixed listener.
+			continue
 		}
-		out.Listeners = append(out.Listeners, ListenerEvidence{e, Check{Status: st}, Check{Status: Unverified}, Check{Status: Unverified}})
+		// Require the FD to still reference the same inode after both reads.
+		if link, err := os.Readlink(inodes[socket.inode]); err != nil || link != "socket:["+socket.inode+"]" {
+			// A partial inventory cannot prove there is no unexpected TCP listener.
+			return nil, ErrInspection
+		}
+		ep.IPv6Only = facts.v6only
+		out = append(out, ep)
 	}
 	return out, nil
 }
@@ -204,7 +295,7 @@ func parseEndpoint(raw, transport string) (Endpoint, bool) {
 	if !ok || err != nil {
 		return Endpoint{}, false
 	}
-	return Endpoint{addr.String(), uint16(p), transport}, true
+	return Endpoint{Address: addr.String(), Port: uint16(p), Transport: transport}, true
 }
 
 // Probe performs bounded, authenticated forwarding with a separately pinned

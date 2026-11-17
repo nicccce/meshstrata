@@ -124,3 +124,5 @@ B04/B05已具备从同一I02-P最终推送提交并行启动的公共契约和�
 B04/B05 已接入普通安全 Controller 和显式 Agent runtime，正式迁移 006/007、生成物、依赖与软件故障证据见 [I02](backend-delivery/I02.md)。采用受限离线 CLI 提交 format 1 发布/撤销/清理计划，任务读写走正式 Guard。Agent 默认保留原 `control_only` 模式，前端继续 demo。I02 独占本轮集成及 Git；T01/N01 历史失败保留，T01-N02 阶段一门槛仍成立。
 
 下一轮由主协调在用户继续后派发独立 [T02](backend-delivery/T02计划.md)，以 I02 最终产品预编译包做 Ubuntu/Alpine 双拓扑实际验收。T02 验收之后再按原阶段顺序安排 B06–B08。
+
+2026-11-17 更新：[T02](backend-delivery/T02.md) 部分完成并中断，[R02](backend-delivery/R02.md) 已做本地定点复核。B06–B08 的独立工作可以按各自契约启动；容量、线上完整分页和硬件断电覆盖可延期。默认绑定、到期及端口冲突回退等真机边界仍列入后续集成验证。

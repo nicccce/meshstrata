@@ -253,9 +253,13 @@ func (p *Supervisor) live(r launchRecord) (int, int, error) {
 		if ok {
 			return r.PID, fd, nil
 		}
-		// If the recorded process start still matches but its identity
-		// cannot be authenticated, do not assume the slot is vacant.
-		if start, err := processStart(r.PID); err == nil && start == r.Start {
+		// Only a known exit or a different start time proves the slot is
+		// vacant. An unreadable proc entry cannot confirm protective stop.
+		start, err := processStart(r.PID)
+		if errors.Is(err, os.ErrNotExist) || errors.Is(err, os.ErrProcessDone) {
+			return 0, -1, nil
+		}
+		if err != nil || r.Start == "" || start == r.Start {
 			return 0, -1, errProcess
 		}
 		return 0, -1, nil

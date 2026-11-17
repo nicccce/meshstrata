@@ -25,6 +25,10 @@ func (r *Runtime) apiOwned(ctx context.Context, pid int) error {
 	if _, production := r.o.Kernel.(*mihomo.Adapter); !production {
 		return nil
 	}
+	state, err := r.o.Process.Status(ctx)
+	if err != nil || !state.Running || state.PID != pid {
+		return ErrVerification
+	}
 	c, err := (&net.Dialer{}).DialContext(ctx, "unix", r.o.SocketPath)
 	if err != nil {
 		return ErrVerification
@@ -215,7 +219,7 @@ func (r *Runtime) verifyActive(ctx context.Context, next rendered, pid int) erro
 		return ErrVerification
 	}
 	ev, err := r.o.Kernel.Verify(ctx, next.Candidate, pid, probe)
-	if err == nil && ev.Verified && ev.Digest == next.Digest && ev.PID == pid {
+	if err == nil && ev.Verified && ev.Digest == next.Digest && ev.PID == pid && r.apiOwned(ctx, pid) == nil {
 		return nil
 	}
 	for _, listener := range ev.Listeners {
@@ -233,15 +237,29 @@ func (r *Runtime) waitInspection(ctx context.Context, c mihomo.Candidate, pid in
 	ctx, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
 	defer cancel()
 	for {
+		code := "OWNED_API_UNAVAILABLE"
 		if r.apiOwned(ctx, pid) == nil {
+			code = "OWNED_SOCKET_INSPECTION_FAILED"
 			ev, err := r.o.Kernel.Inspect(ctx, c, pid)
-			if err == nil && exactSockets(ev, c, pid) {
-				return nil
+			if err == nil {
+				if exactSockets(ev, c, pid) && r.apiOwned(ctx, pid) == nil {
+					return nil
+				}
+				code = "OWNED_SOCKET_SET_MISMATCH"
+				for _, listener := range ev.Listeners {
+					switch listener.Listening.Code {
+					case "OWNED_LISTENER_MISSING", "OWNED_IPV4_COVERAGE_UNKNOWN":
+						code = listener.Listening.Code
+					}
+					if code != "OWNED_SOCKET_SET_MISMATCH" {
+						break
+					}
+				}
 			}
 		}
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("%w: owned socket inspection", ErrVerification)
+			return fmt.Errorf("%w: %s", ErrVerification, code)
 		case <-time.After(30 * time.Millisecond):
 		}
 	}
@@ -259,7 +277,7 @@ func exactSockets(e mihomo.Evidence, c mihomo.Candidate, pid int) bool {
 	for _, socket := range e.OwnedSockets {
 		known := false
 		for _, l := range c.Expected {
-			if l.Address == socket.Address && l.Port == socket.Port && ((socket.Transport == "tcp" && l.TCP) || (socket.Transport == "udp" && l.UDP)) {
+			if l.TCP && socket.Matches(l.Address, l.Port, "tcp") || l.UDP && socket.Matches(l.Address, l.Port, "udp") {
 				known = true
 				break
 			}
@@ -395,8 +413,11 @@ func (r *Runtime) restore(ctx context.Context, start *control.Snapshot, boot, ro
 		}
 		return r.failedRestore(err)
 	}
-	if retained && len(next.Expected) == 0 {
-		// Reapplied and inspected a previously confirmed empty configuration.
+	if snap != nil && len(next.Expected) == 0 && startupRender.Digest == next.Digest {
+		// Startup is a previously confirmed snapshot even when an attempted
+		// candidate cleared Verified. An unchanged empty render has no
+		// forwarding probe; apply already inspected it and checked any pending
+		// revocations.
 		app.verified = true
 	}
 	if !app.verified && (rollback || len(next.Expected) > 0) {
