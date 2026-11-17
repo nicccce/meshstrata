@@ -1,0 +1,89 @@
+{
+  "product_commit": "e31787e9d75da298d73c6950852b497ea279d3f5",
+  "audit_session": "01a1e7d2-2c52-76c2-bd4a-09683a9a08a6",
+  "acceptance_status": "partial_interrupted",
+  "original_topologies": {
+    "topology-alpine.json": {
+      "sha256": "a43d1b4448872d38047c3458c2caed8d6723d52e66767088633912c0adb1cc2d",
+      "driver_reported_cleanup_errors": 0
+    },
+    "topology-alpine2.json": {
+      "sha256": "c3f62ac32e242522a06a5fba83e8d27780613c467e55ee49d5c83ab640123003",
+      "driver_reported_cleanup_errors": 0
+    },
+    "topology-alpine3.json": {
+      "sha256": "be1a7dccd9eb2dc49fa7d6b5089acdd9679312cfe5cf1d61323922cfceb8f3b0",
+      "driver_reported_cleanup_errors": 0
+    },
+    "topology-ubuntu.json": {
+      "sha256": "49487b924b1a241bc196d8dae84f9aff2900cc1bfdc7801d25749e3a27dc5d7e",
+      "driver_reported_cleanup_errors": 0
+    },
+    "topology-ubuntu2.json": {
+      "sha256": "0b96c3f57c910762ea49ab3823255873097e4492d6807ebab694cd911dbbb21e",
+      "driver_reported_cleanup_errors": 0
+    },
+    "topology-ubuntug.json": {
+      "sha256": "fde9875dc2e6cc113ae042d2d640cd90ef6639ad6ba167299fde6e755ce8d0a5",
+      "driver_reported_cleanup_errors": 0
+    }
+  },
+  "independent_read_only_audit": {
+    "hosts": {
+      "ubuntu": {
+        "at": "2026-11-17T04:47:55Z",
+        "identity_mode_ok": true,
+        "launch_records": 81,
+        "missing_exit_records": 0,
+        "record_pid_still_owned": 0,
+        "owned_processes": 0,
+        "active_test_unix_rows": 0,
+        "socket_files": 5,
+        "before_listeners": 14,
+        "after_listeners": 14,
+        "listener_added": 0,
+        "listener_missing": 0,
+        "listener_owner_changes": 0
+      },
+      "alpine": {
+        "at": "2026-11-17T04:47:54Z",
+        "identity_mode_ok": true,
+        "launch_records": 54,
+        "missing_exit_records": 0,
+        "record_pid_still_owned": 0,
+        "owned_processes": 0,
+        "active_test_unix_rows": 0,
+        "socket_files": 3,
+        "before_listeners": 2,
+        "after_listeners": 2,
+        "listener_added": 0,
+        "listener_missing": 0,
+        "listener_owner_changes": 0
+      }
+    },
+    "local_mux_socket_count": 0,
+    "local_mux_process_count": 0,
+    "signals_sent": 0,
+    "test_binaries_executed": 0
+  },
+  "sha256_identical_on_both_hosts": {
+    "COMMIT": "9ae06605b59d03cfe8dea7bea98e36c36eb1930bd7f86ac05d5703063aec787c",
+    "meshstrata-controller": "495c451efa93cdeaea05ef474e6a70e2408613fccdce5ea21a7048291c5177c4",
+    "meshstrata-agent": "1838ed3d989e8d14ef2239fa0b0db06338c7f69f4c2d3b07eb230e058b0672d8",
+    "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa",
+    "version-lock.json": "3e4441857413d457067861bcee9b76f4209464e1153c830077edc967cfae4cd7",
+    "controller-version.json": "35037d2183a56a126d29daff5a279ea002b994be1be66967d50adeaf2e32f490",
+    "agent-version.json": "dc157e9ce588a4cf1f3b2e2ffadf5966de89c9393cfcd634b48bb9e15be5db2f",
+    "test/stage2-inspect": "3cd08a621cf235dfec14a21114ecef59de56eac38062b855c79c2435c2098e26",
+    "test/stage2-peer": "680784d93825dab40dc41e3b3ae65c9b27d0fc1337edc45ecc60baaccf85e6f6",
+    "test/netprobe": "e2d9d4f23ae59c17fbb5aeaa27c129888316fae06c1ae7ff7169c93ef1f64e99",
+    "test/runtime.test": "a2cccbca81bc237cf3de150c4ea1aea51c89c80b7c230f88e6e9c6f376af9f48",
+    "test/hostprobe": "cc686c09b03e1c2e6d0589e2f8de3ec3566863b80bb9c9eaf4152355d72260ca",
+    "test/storage.test": "6ec841ca5483a87dc21dfc6673db4e13e6bd745a4075786d2de9a9ce5e1bd9ba"
+  },
+  "local_only_additional_helper": {
+    "name": "t02-artifact",
+    "sha256": "d9369e3799798c37e6cd2893a6ecf3905fddfa89de313c26a44167789dd7154c",
+    "present_on_either_host": false
+  }
+}
