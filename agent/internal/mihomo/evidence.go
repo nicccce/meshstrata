@@ -285,9 +285,10 @@ func (a *Adapter) Connections(ctx context.Context) ([]Connection, error) {
 	}
 	out := make([]Connection, 0, len(wire.Connections))
 	for _, c := range wire.Connections {
-		if safeConnectionID(c.ID) && c.Metadata.InboundName != "" {
-			out = append(out, Connection{c.ID, c.Metadata.InboundName})
+		if !safeConnectionID(c.ID) || c.Metadata.InboundName == "" {
+			return nil, ErrInspection
 		}
+		out = append(out, Connection{c.ID, c.Metadata.InboundName})
 	}
 	return out, nil
 }

@@ -39,6 +39,7 @@ type ArtifactResolver interface {
 	Resolve(context.Context, domain.ID, domain.ID) (protocol.ArtifactKey, error)
 }
 type Options struct {
+	RequireRuntime   bool
 	Authenticator    Authenticator
 	Results          ResultStore
 	Recovery         Recovery
@@ -57,12 +58,13 @@ type Server struct {
 	wg     sync.WaitGroup
 }
 type peer struct {
-	ready  atomic.Bool
-	conn   *websocket.Conn
-	cert   *x509.Certificate
-	ctx    context.Context
-	cancel context.CancelFunc
-	write  sync.Mutex
+	ready   atomic.Bool
+	runtime atomic.Bool
+	conn    *websocket.Conn
+	cert    *x509.Certificate
+	ctx     context.Context
+	cancel  context.CancelFunc
+	write   sync.Mutex
 }
 
 func New(o Options) (*Server, error) {
@@ -207,6 +209,13 @@ func (s *Server) upgrade(w http.ResponseWriter, r *http.Request) {
 			p.closeProtocol()
 			return
 		}
+		if first {
+			p.runtime.Store(m.Hello.Runtime)
+		}
+		if s.o.RequireRuntime && !p.acceptsRuntimeMessage(m) {
+			p.closeProtocol()
+			return
+		}
 		first = false
 		switch m.Type {
 		case "result":
@@ -231,6 +240,14 @@ func (s *Server) upgrade(w http.ResponseWriter, r *http.Request) {
 		p.ready.Store(true)
 	}
 }
+func (p *peer) acceptsRuntimeMessage(m protocol.Message) bool {
+	if h := m.Hello; h != nil {
+		return h.Runtime == p.runtime.Load() &&
+			(h.Runtime || (len(h.PendingResults) == 0 && h.AppliedRevision == 0 && h.RevocationEpoch == 1))
+	}
+	return p.runtime.Load()
+}
+
 func (p *peer) closeProtocol() {
 	_ = p.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "invalid control message"), time.Now().Add(time.Second))
 }
@@ -266,7 +283,7 @@ func (s *Server) Deliver(ctx context.Context, c protocol.Command) error {
 	s.mu.Lock()
 	p := s.peers[c.NodeID]
 	s.mu.Unlock()
-	if p == nil || !p.ready.Load() || s.o.Results == nil {
+	if p == nil || !p.ready.Load() || s.o.Results == nil || s.o.RequireRuntime && !p.runtime.Load() {
 		return ErrUnavailable
 	}
 	if _, e := s.o.Authenticator.Authenticate(ctx, p.cert); e != nil {
@@ -292,6 +309,13 @@ func (s *Server) Connected(id domain.ID) bool {
 	defer s.mu.Unlock()
 	return s.peers[id] != nil && s.peers[id].ready.Load()
 }
+func (s *Server) RuntimeConnected(id domain.ID) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	p := s.peers[id]
+	return p != nil && p.ready.Load() && p.runtime.Load()
+}
+
 func (s *Server) Close() error {
 	s.mu.Lock()
 	s.closed = true

@@ -15,6 +15,7 @@ import (
 	"github.com/nicccce/meshstrata/controller/internal/auth"
 	channel "github.com/nicccce/meshstrata/controller/internal/control"
 	"github.com/nicccce/meshstrata/controller/internal/enrollment"
+	"github.com/nicccce/meshstrata/controller/internal/releases"
 	"github.com/nicccce/meshstrata/controller/internal/secrets"
 	"github.com/nicccce/meshstrata/controller/internal/storage"
 	"github.com/nicccce/meshstrata/internal/config"
@@ -29,6 +30,7 @@ type secureServices struct {
 	webTLS     *tls.Config
 	nodeTLS    *tls.Config
 	channel    *channel.Server
+	releases   *releases.Service
 	enrollment *enrollment.Service
 }
 type bootstrapMaterial struct {
@@ -103,7 +105,23 @@ func composeSecure(ctx context.Context, cfg config.ControllerSecure, store *stor
 	if e != nil {
 		return nil, e
 	}
-	ch, e = channel.New(channel.Options{Authenticator: nodes, Recovery: pristineRecovery{}})
+	publication, e := releases.New(releases.NewRepository(store), cipher, guard, releases.Options{
+		Now: time.Now, NewID: domain.NewID, RemovalIntent: nodes.RemovalIntent,
+		Deliver: func(ctx context.Context, cmd protocol.Command) error {
+			if ch == nil {
+				return channel.ErrUnavailable
+			}
+			return ch.Deliver(ctx, cmd)
+		},
+		Connected: func(id domain.ID) bool { return ch != nil && ch.RuntimeConnected(id) },
+	})
+	if e != nil {
+		return nil, e
+	}
+	ch, e = channel.New(channel.Options{
+		Authenticator: nodes, Results: publication, Recovery: publication,
+		Artifacts: publication, ArtifactResolver: publication, RequireRuntime: true,
+	})
 	if e != nil {
 		return nil, e
 	}
@@ -111,17 +129,8 @@ func composeSecure(ctx context.Context, cfg config.ControllerSecure, store *stor
 	mux.Handle("/api/v1/auth/", guard.Handler())
 	mux.Handle("/api/v1/nodes", nodes.ManagementHandler())
 	mux.Handle("/api/v1/nodes/", nodes.ManagementHandler())
+	mux.Handle("/api/v1/tasks", publication.ManagementHandler())
+	mux.Handle("/api/v1/tasks/", publication.ManagementHandler())
 	mux.Handle("/", base)
-	return &secureServices{admin: mux, node: nodes.NodeHandler(ch.Handler()), webTLS: &tls.Config{MinVersion: tls.VersionTLS13, Certificates: []tls.Certificate{pair}, NextProtos: []string{"http/1.1"}}, nodeTLS: nodes.TLSConfig(), channel: ch, enrollment: nodes}, nil
-}
-
-// Stage 1 has no business recovery/result consumer. Reject pre-existing business
-// state instead of treating it as an empty node or acknowledging a fake result.
-type pristineRecovery struct{}
-
-func (pristineRecovery) Hello(_ context.Context, id domain.ID, h protocol.Hello) error {
-	if h.NodeID != id || h.AppliedRevision != 0 || h.AppliedDigest != "" || h.RevocationEpoch != 1 || len(h.PendingResults) != 0 {
-		return channel.ErrUnavailable
-	}
-	return nil
+	return &secureServices{admin: mux, node: nodes.NodeHandler(ch.Handler()), webTLS: &tls.Config{MinVersion: tls.VersionTLS13, Certificates: []tls.Certificate{pair}, NextProtos: []string{"http/1.1"}}, nodeTLS: nodes.TLSConfig(), channel: ch, releases: publication, enrollment: nodes}, nil
 }

@@ -24,11 +24,12 @@ type Configuration interface {
 // Component keeps shared CLI behavior independent of either runtime. In
 // particular, Agent must not link Controller's SQLite driver or web assets.
 type Component[C Configuration] struct {
-	Name        string
-	Load        func(string) (C, error)
-	Run         func(context.Context, C, *slog.Logger) error
-	Healthcheck func(context.Context, C) (any, error)
-	Actions     map[string]func(context.Context, C, io.Reader) error
+	Name          string
+	Load          func(string) (C, error)
+	Run           func(context.Context, C, *slog.Logger) error
+	Healthcheck   func(context.Context, C) (any, error)
+	Actions       map[string]func(context.Context, C, io.Reader) error
+	ResultActions map[string]func(context.Context, C, io.Reader) (any, error)
 }
 
 func Execute[C Configuration](app Component[C], args []string, stdout, stderr io.Writer) int {
@@ -44,6 +45,9 @@ func Execute[C Configuration](app Component[C], args []string, stdout, stderr io
 	flags.Usage = func() {
 		fmt.Fprintf(stderr, "Usage: meshstrata-%s [run|check-config|version", component)
 		for name := range app.Actions {
+			fmt.Fprintf(stderr, "|%s", name)
+		}
+		for name := range app.ResultActions {
 			fmt.Fprintf(stderr, "|%s", name)
 		}
 		if app.Healthcheck != nil {
@@ -65,7 +69,7 @@ func Execute[C Configuration](app Component[C], args []string, stdout, stderr io
 	if cmd == "version" {
 		return encode(stdout, stderr, buildinfo.Current(component))
 	}
-	if cmd != "run" && cmd != "check-config" && !(app.Healthcheck != nil && cmd == "healthcheck") && app.Actions[cmd] == nil {
+	if cmd != "run" && cmd != "check-config" && !(app.Healthcheck != nil && cmd == "healthcheck") && app.Actions[cmd] == nil && app.ResultActions[cmd] == nil {
 		logger.Error("Unknown command", "command", cmd)
 		return 2
 	}
@@ -82,6 +86,14 @@ func Execute[C Configuration](app Component[C], args []string, stdout, stderr io
 			return 1
 		}
 		return encode(stdout, stderr, map[string]string{"status": "complete", "action": cmd})
+	}
+	if action := app.ResultActions[cmd]; action != nil {
+		out, err := action(ctx, cfg, os.Stdin)
+		if err != nil {
+			logger.Error("Local action failed", "error", err)
+			return 1
+		}
+		return encode(stdout, stderr, out)
 	}
 	if cmd == "check-config" {
 		return encode(stdout, stderr, map[string]string{"status": "valid", "component": component})

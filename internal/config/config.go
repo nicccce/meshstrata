@@ -11,6 +11,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/nicccce/meshstrata/internal/control"
+	"github.com/nicccce/meshstrata/internal/domain"
 )
 
 type Common struct {
@@ -27,6 +30,7 @@ type Controller struct {
 type Agent struct {
 	Common
 	Control *AgentControl `json:"control,omitempty"`
+	Runtime *AgentRuntime `json:"runtime,omitempty"`
 }
 type ControllerSecure struct {
 	TLSCertFile          string            `json:"tls_cert_file"`
@@ -40,6 +44,11 @@ type ControllerSecure struct {
 	ControllerURL        string            `json:"controller_url"`
 	ServerNames          []string          `json:"server_names"`
 }
+type AgentRuntime struct {
+	MihomoBinary string                  `json:"mihomo_binary"`
+	Materials    []control.LocalMaterial `json:"materials,omitempty"`
+}
+
 type AgentControl struct {
 	Mode          string `json:"mode"`
 	ControllerURL string `json:"controller_url"`
@@ -93,15 +102,31 @@ func LoadAgent(path string) (Agent, error) {
 	}
 	if cfg.Control != nil {
 		c := cfg.Control
-		if c.Mode != "control_only" || c.ControllerURL == "" || c.CAFile == "" || c.NodeID == "" {
-			return cfg, errors.New("stage 1 control requires mode control_only, controller_url, ca_file and node_id")
+		if c.Mode == "" {
+			c.Mode = "control_only"
 		}
+		if (c.Mode != "control_only" && c.Mode != "runtime") ||
+			c.ControllerURL == "" || c.CAFile == "" || !domain.ID(c.NodeID).Valid() {
+			return cfg, errors.New("control requires mode control_only or runtime, controller_url, ca_file and valid node_id")
+		}
+	}
+	runtimeEnabled := cfg.Control != nil && cfg.Control.Mode == "runtime"
+	if runtimeEnabled != (cfg.Runtime != nil) {
+		return cfg, errors.New("runtime configuration requires explicit runtime mode")
+	}
+	if runtimeEnabled && (!filepath.IsAbs(cfg.Runtime.MihomoBinary) ||
+		filepath.Clean(cfg.Runtime.MihomoBinary) != cfg.Runtime.MihomoBinary || len(cfg.RuntimeSocketPath()) > 100) {
+		return cfg, errors.New("runtime requires an absolute Mihomo path and a short state_dir")
 	}
 	// Leave enough room for the Unix socket path on Linux (108 bytes including NUL).
 	if len(cfg.SocketPath()) > 107 {
 		return cfg, errors.New("state_dir is too long for the Agent health socket")
 	}
 	return cfg, nil
+}
+
+func (cfg Agent) RuntimeSocketPath() string {
+	return filepath.Join(cfg.StateDir, "runtime", "api", "m.sock")
 }
 
 func (cfg Agent) SocketPath() string {

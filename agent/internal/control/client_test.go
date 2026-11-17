@@ -312,7 +312,7 @@ func TestAgentRejectsDirectionIdentityOversizeAndMissingRuntime(t *testing.T) {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
-			if e = client.runOnce(ctx); e == nil {
+			if e = client.runOnce(ctx, func() {}); e == nil {
 				t.Fatal("invalid accepted")
 			}
 			if r.executed.Load() != 0 || r.acked.Load() != 0 {

@@ -110,12 +110,12 @@ func (c *Client) Run(parent context.Context) error {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		start := time.Now()
-		_ = c.runOnce(ctx)
+		established := false
+		_ = c.runOnce(ctx, func() { established = true })
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		if time.Since(start) > c.o.PongTimeout {
+		if established {
 			delay = c.o.MinBackoff
 		}
 		jitter, e := rand.Int(rand.Reader, big.NewInt(int64(delay/2)+1))
@@ -137,7 +137,7 @@ func (c *Client) Run(parent context.Context) error {
 		}
 	}
 }
-func (c *Client) runOnce(ctx context.Context) error {
+func (c *Client) runOnce(ctx context.Context, markEstablished func()) error {
 	if c.o.BeforeConnect != nil {
 		if e := c.o.BeforeConnect(ctx); e != nil {
 			return e
@@ -188,7 +188,10 @@ func (c *Client) runOnce(ctx context.Context) error {
 	}()
 	conn.SetReadLimit(protocol.MaxMessageBytes)
 	_ = conn.SetReadDeadline(time.Now().Add(c.o.PongTimeout))
-	conn.SetPongHandler(func(string) error { return conn.SetReadDeadline(time.Now().Add(c.o.PongTimeout)) })
+	conn.SetPongHandler(func(string) error {
+		markEstablished()
+		return conn.SetReadDeadline(time.Now().Add(c.o.PongTimeout))
+	})
 	local, cancel := context.WithCancel(ctx)
 	defer cancel()
 	done := make(chan struct{})
@@ -254,6 +257,11 @@ func (c *Client) runOnce(ctx context.Context) error {
 			return send(protocol.Message{Type: "hello", Hello: &hello})
 		}
 		if sendHello() != nil {
+			return
+		}
+		// A Pong after the first Hello distinguishes an accepted short
+		// session from an upgraded connection whose Hello was rejected.
+		if conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(c.o.WriteTimeout)) != nil {
 			return
 		}
 		for {
@@ -328,6 +336,7 @@ func (c *Client) runOnce(ctx context.Context) error {
 		if m.Type != "command" && m.Type != "receipt" {
 			return ErrUnavailable
 		}
+		markEstablished()
 		select {
 		case jobs <- m:
 		case <-local.Done():

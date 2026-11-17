@@ -269,8 +269,8 @@ is insufficient. Agent renews valid certificates and reconnects independently.
 no applied config or pending result). Unknown/business state fails closed. Commands
 and receipts are rejected with no success result. Health confirms only local process;
 node `control=online` confirms control presence; proxy `verification=not_checked`
-remains separate. Removal disconnects/revokes management identity but leaves actual
-proxy cleanup pending for B04/B05. Neither program starts/stops Mihomo or frp.
+remains separate. Removal disconnects/revokes management identity. Proxy cleanup
+requires separate confirmation from an authorized peer or the local runtime.
 
 Reproduce local integration after building with `python3 scripts/integration/stage1.py`.
 It uses ordinary binaries, temporary trusted CAs, real auth/cipher/single database,
@@ -279,3 +279,32 @@ stays in `.local/i01-*/private`. Run the pinned kernel suite with
 `python3 scripts/compat/mihomo/run.py --workspace "$PWD" --integrated`.
 `scripts/integration/build-stage1.sh` prepares CGO=0 binaries and the opt-in test
 executable for servers without Go/Node. See the [T01 plan](documents/backend-delivery/T01计划.md).
+
+
+### Stage-two runtime
+
+After enrollment, set `control.mode` to `runtime` and set
+`runtime.mihomo_binary` to the absolute path of the pinned Linux amd64 Mihomo
+v1.19.33 executable. Use a short private Agent state path so its management Unix
+socket fits. Prepare the independent keys and checkpoint before first startup.
+
+```sh
+meshstrata-agent prepare-runtime -config agent.json
+meshstrata-agent run -config agent.json
+```
+
+Restore an initialized Agent with the same state and keys. Normal foreground Agent
+exit leaves its supervised Mihomo running. To stop that instance explicitly after
+the Agent exits, run `meshstrata-agent stop-runtime -config agent.json`.
+
+The secure Controller exposes task listing, details, cancel, retry, and rollback.
+To submit a trusted format-1 plan, stop the Controller, submit the private JSON
+on stdin, then restart the Controller and query the returned task ID.
+
+```sh
+meshstrata-controller submit-release -config controller.json < private-plan.json
+```
+
+The plan format, local material registration, pinned build and test commands are
+documented in the [I02 integration report](documents/backend-delivery/I02.md) and
+[T02 plan](documents/backend-delivery/T02计划.md).

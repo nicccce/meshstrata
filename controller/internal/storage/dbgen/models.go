@@ -84,6 +84,127 @@ type B02Token struct {
 	Certificate []byte
 }
 
+type B04Action struct {
+	Scope         string
+	Key           string
+	RequestDigest string
+	TaskID        string
+}
+
+type B04Artifact struct {
+	ID             string
+	TaskID         string
+	NodeID         string
+	TargetRevision int64
+	TargetDigest   string
+	KeyID          string
+	Ciphertext     []byte
+}
+
+type B04Grant struct {
+	IdentityID   string
+	EntryID      string
+	ListenerID   string
+	NodeID       string
+	Generation   int64
+	ExpiresAt    string
+	GrantDigest  string
+	OriginTaskID sql.NullString
+	RestrictedAt sql.NullString
+	ConfirmedAt  sql.NullString
+}
+
+type B04NodeState struct {
+	NodeID           string
+	AppliedRevision  int64
+	ArtifactDigest   string
+	EffectiveDigest  string
+	Epoch            int64
+	EvidenceAt       string
+	EvidenceTaskID   string
+	EvidenceSequence int64
+	Reconciliation   string
+}
+
+type B04Port struct {
+	ID          string
+	NodeID      string
+	ListenerID  string
+	IdentityID  string
+	Address     string
+	Port        int64
+	Transport   string
+	State       string
+	ConfirmedAt sql.NullString
+}
+
+type B04Reference struct {
+	ID               string
+	TaskID           string
+	NodeID           string
+	Kind             string
+	ResourceID       string
+	ResourceRevision int64
+	IdentityID       sql.NullString
+	ReleasedAt       sql.NullString
+}
+
+type B04ReferenceRelease struct {
+	ReferenceID string
+	OperationID string
+	ReleasedAt  string
+}
+
+type B04RemovalLink struct {
+	RemovalTaskID string
+	NodeID        string
+	ListenerID    string
+	CleanupTaskID sql.NullString
+}
+
+type B04Restriction struct {
+	TaskID          string
+	NodeID          string
+	Sequence        int64
+	IdentityID      string
+	ListenerID      string
+	Generation      int64
+	Reason          string
+	ObservedAt      string
+	Epoch           int64
+	EffectiveDigest string
+}
+
+type B04Result struct {
+	TaskID        string
+	NodeID        string
+	Sequence      int64
+	PayloadDigest string
+	Payload       []byte
+	ReceivedAt    string
+	Applied       int64
+	Verification  string
+	RollbackState string
+	CleanupState  string
+	ErrorCode     sql.NullString
+	ConfirmedAt   sql.NullString
+}
+
+type B04Target struct {
+	TaskID      string
+	NodeID      string
+	Phase       string
+	NextAttempt int64
+	Fetched     int64
+}
+
+type B04TargetGrant struct {
+	TaskID     string
+	NodeID     string
+	IdentityID string
+	Action     string
+}
+
 type Credential struct {
 	ID         string
 	Purpose    string

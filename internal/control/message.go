@@ -32,8 +32,9 @@ type Command struct {
 type Result struct {
 	TaskID domain.ID `json:"task_id"`
 	domain.NodeResult
-	Sequence     int64         `json:"sequence"`               // monotonic per (task,node), durable before send
-	Restrictions []Restriction `json:"restrictions,omitempty"` // local evidence, tied to original grant task
+	EffectiveDigest string        `json:"effective_digest,omitempty"` // verified activation bytes
+	Sequence        int64         `json:"sequence"`                   // monotonic per (task,node), durable before send
+	Restrictions    []Restriction `json:"restrictions,omitempty"`     // local evidence, tied to original grant task
 }
 type Receipt struct {
 	TaskID   domain.ID `json:"task_id"`
@@ -41,6 +42,7 @@ type Receipt struct {
 	Sequence int64     `json:"sequence"` // Controller persisted result; Agent may retire outbox item
 }
 type Hello struct {
+	Runtime         bool            `json:"runtime,omitempty"` // recovered execution capability
 	NodeID          domain.ID       `json:"node_id"`
 	AppliedRevision domain.Revision `json:"applied_revision"` // zero before first apply
 	AppliedDigest   string          `json:"applied_digest"`   // empty only at revision zero
@@ -82,6 +84,9 @@ func validTarget(rev domain.Revision, digest string) bool {
 func (r Result) validate(node domain.ID) error {
 	if !r.TaskID.Valid() || r.NodeID != node || !validTarget(r.TargetRevision, r.TargetDigest) || r.Sequence < 1 || r.Sequence > int64(domain.MaxRevision) {
 		return fmt.Errorf("invalid task result identity or target")
+	}
+	if r.EffectiveDigest != "" && (r.Verification != domain.Verified || !digestPattern.MatchString(r.EffectiveDigest)) {
+		return fmt.Errorf("effective digest requires verified application")
 	}
 	if len(r.Restrictions) > 32 {
 		return ErrAuthorization

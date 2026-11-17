@@ -5,10 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	channel "github.com/nicccce/meshstrata/agent/internal/control"
-	"github.com/nicccce/meshstrata/agent/internal/enrollment"
-	"github.com/nicccce/meshstrata/internal/domain"
-	"github.com/nicccce/meshstrata/internal/privatefile"
 	"io"
 	"log/slog"
 	"net"
@@ -17,12 +13,17 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
+	channel "github.com/nicccce/meshstrata/agent/internal/control"
+	"github.com/nicccce/meshstrata/agent/internal/enrollment"
 	"github.com/nicccce/meshstrata/internal/buildinfo"
 	"github.com/nicccce/meshstrata/internal/config"
+	"github.com/nicccce/meshstrata/internal/domain"
 	"github.com/nicccce/meshstrata/internal/httpx"
 	"github.com/nicccce/meshstrata/internal/localstate"
+	"github.com/nicccce/meshstrata/internal/privatefile"
 )
 
 type Health struct {
@@ -43,35 +44,72 @@ func Run(ctx context.Context, cfg config.Agent, logger *slog.Logger) error {
 	defer unlock()
 	local, cancel := context.WithCancel(ctx)
 	defer cancel()
+	if cfg.Runtime == nil {
+		for _, name := range []string{"runtime", runtimeModeFile} {
+			if _, e := os.Lstat(filepath.Join(cfg.StateDir, name)); !errors.Is(e, os.ErrNotExist) {
+				return errors.New("runtime state requires runtime mode")
+			}
+		}
+	}
+	runtimeExit := make(chan error, 1)
 	var client *channel.Client
+	var runtimeClient atomic.Pointer[channel.Client]
 	var jobs sync.WaitGroup
 	if cfg.Control != nil {
 		identity, enrollmentClient, e := openEnrollment(cfg)
 		if e != nil {
-			return e
+			return stopOnStartupFailure(cfg, e)
+		}
+		options := channel.Options{
+			URL:    "wss" + strings.TrimSuffix(strings.TrimPrefix(cfg.Control.ControllerURL, "https"), "/") + "/control/v1",
+			NodeID: domain.ID(cfg.Control.NodeID), TLSConfig: enrollmentClient.TLSConfig,
+			BeforeConnect: func(ctx context.Context) error { _, e := enrollmentClient.RenewIfNeeded(ctx, 7*24*time.Hour); return e },
+			OnRejected:    func() { logger.Warn("Control command rejected") },
+		}
+		if identity.NodeID() != options.NodeID {
+			return stopOnStartupFailure(cfg, errors.New("enrolled node identity mismatch"))
 		}
 		if _, e = identity.Certificate(time.Now()); e != nil {
-			return e
+			return stopOnStartupFailure(cfg, e)
 		}
-		pristine, e := channel.OpenControlOnly(cfg.StateDir, domain.ID(cfg.Control.NodeID))
+		if cfg.Runtime != nil {
+			engine, closeRuntime, err := composeRuntime(local, cfg, &runtimeClient, logger)
+			if err != nil {
+				return err
+			}
+			defer closeRuntime()
+			options.Runtime = engine
+			go func() {
+				runtimeExit <- engine.Run(local)
+				cancel()
+			}()
+			select {
+			case <-engine.Ready():
+				if local.Err() != nil {
+					return <-runtimeExit
+				}
+			case err := <-runtimeExit:
+				return err
+			}
+		} else {
+			options.ControlOnly, e = channel.OpenControlOnly(cfg.StateDir, options.NodeID)
+			if e != nil {
+				return e
+			}
+		}
+		client, e = channel.New(options)
 		if e != nil {
 			return e
 		}
-		client, e = channel.New(channel.Options{URL: "wss" + strings.TrimSuffix(strings.TrimPrefix(cfg.Control.ControllerURL, "https"), "/") + "/control/v1", NodeID: domain.ID(cfg.Control.NodeID), TLSConfig: enrollmentClient.TLSConfig, ControlOnly: pristine,
-			BeforeConnect: func(ctx context.Context) error { _, e := enrollmentClient.RenewIfNeeded(ctx, 7*24*time.Hour); return e },
-			OnRejected:    func() { logger.Warn("Control command rejected: business execution unavailable") },
-		})
-		if e != nil {
-			return e
-		}
-		defer func() { cancel(); client.Close(); jobs.Wait() }()
+		runtimeClient.Store(client)
+		defer func() { runtimeClient.Store(nil); cancel(); client.Close(); jobs.Wait() }()
 		jobs.Add(2)
 		go func() { defer jobs.Done(); _ = client.Run(local) }()
 		go func() {
 			defer jobs.Done()
 			_ = enrollmentClient.Maintain(local, time.Hour, 7*24*time.Hour, client.Reconnect, func(error) { logger.Warn("Management certificate renewal unavailable") })
 		}()
-		logger.Info("Control client ready; business publication execution is not enabled")
+		logger.Info("Control client ready", "mode", controlMode(cfg))
 	}
 	// The process lock makes stale socket recovery safe. Never replace files
 	// or symlinks accidentally left at the configured socket path.
@@ -94,16 +132,23 @@ func Run(ctx context.Context, cfg config.Agent, logger *slog.Logger) error {
 	if err := os.Chmod(path, 0o600); err != nil {
 		return fmt.Errorf("restrict health socket permissions: %w", err)
 	}
+	execution := "disabled"
+	if cfg.Runtime != nil {
+		execution = "enabled"
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", httpx.Endpoint(func(w http.ResponseWriter, r *http.Request) {
-		httpx.JSON(w, http.StatusOK, Health{Status: "ok", Info: buildinfo.Current("agent"), ControlMode: controlMode(cfg), BusinessExecution: "disabled"})
+		httpx.JSON(w, http.StatusOK, Health{Status: "ok", Info: buildinfo.Current("agent"), ControlMode: controlMode(cfg), BusinessExecution: execution})
 	}))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Error(w, http.StatusNotFound, "NOT_FOUND")
 	})
 	logger.Info("Agent started", "health_socket", path)
-	if err := httpx.Serve(ctx, listener, mux, logger); err != nil {
+	if err := httpx.Serve(local, listener, mux, logger); err != nil {
 		return err
+	}
+	if cfg.Runtime != nil {
+		return <-runtimeExit
 	}
 	logger.Info("Agent stopped")
 	return nil

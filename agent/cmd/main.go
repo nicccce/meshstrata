@@ -12,9 +12,17 @@ import (
 
 func main() {
 	app := command.Component[config.Agent]{
-		Actions: map[string]func(context.Context, config.Agent, io.Reader) error{"enroll": agent.Enroll},
-		Name:    "agent", Load: config.LoadAgent, Run: agent.Run,
-		Healthcheck: func(ctx context.Context, cfg config.Agent) (any, error) { return agent.CheckHealth(ctx, cfg) },
+		Name: "agent",
+		Load: config.LoadAgent,
+		Run:  agent.Run,
+		Actions: map[string]func(context.Context, config.Agent, io.Reader) error{
+			"enroll":          agent.Enroll,
+			"prepare-runtime": agent.PrepareRuntime,
+			"stop-runtime":    agent.StopRuntime,
+		},
+		Healthcheck: func(ctx context.Context, cfg config.Agent) (any, error) {
+			return agent.CheckHealth(ctx, cfg)
+		},
 	}
 	os.Exit(command.Execute(app, os.Args[1:], os.Stdout, os.Stderr))
 }

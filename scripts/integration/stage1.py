@@ -125,8 +125,11 @@ def main():
         save(node_key,"-----BEGIN PRIVATE KEY-----\n"+"\n".join(key_text[i:i+64] for i in range(0,len(key_text),64))+"\n-----END PRIVATE KEY-----\n")
         node_trust=ssl.create_default_context(cafile=str(ca));node_trust.load_cert_chain(node_cert,node_key)
         node_client=urllib.request.build_opener(urllib.request.HTTPSHandler(context=node_trust))
-        try:node_client.open(material["controller_url"]+"/control/v1/tasks/task_"+"1"*32+"/bundle",timeout=5)
-        except urllib.error.HTTPError as e:assert e.code==501
+        try:
+            with node_client.open(material["controller_url"]+"/control/v1/tasks/task_"+"1"*32+"/bundle",timeout=5):
+                raise AssertionError("unenumerated artifact unexpectedly returned")
+        except urllib.error.HTTPError as e:
+            assert e.code == 403
         renew=urllib.request.Request(material["controller_url"]+"/enroll/v1/renew",data=json.dumps({"csr_pem":base64.b64decode(identity_data["csr_pem"]).decode()}).encode(),headers={"Content-Type":"application/json"})
         assert json.load(node_client.open(renew,timeout=5))["node_id"]==node
         a=start(ab,ap,"agent")

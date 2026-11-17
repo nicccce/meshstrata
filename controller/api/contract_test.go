@@ -103,7 +103,10 @@ func TestContractReferencesAndGoFields(t *testing.T) {
 		"post /api/v1/auth/initialize": true, "post /api/v1/auth/login": true, "get /api/v1/auth/session": true, "post /api/v1/auth/logout": true, "post /api/v1/auth/password": true,
 		"get /api/v1/nodes": true, "post /api/v1/nodes": true, "get /api/v1/nodes/{node_id}": true, "patch /api/v1/nodes/{node_id}": true,
 		"get /api/v1/nodes/{node_id}/enrollment": true, "post /api/v1/nodes/{node_id}/enrollment": true, "post /api/v1/nodes/{node_id}/remove": true, "post /api/v1/nodes/{node_id}/certificates/revoke": true,
-		"post /enroll/v1": true, "post /enroll/v1/renew": true, "get /control/v1": true,
+		"get /api/v1/tasks": true, "get /api/v1/tasks/{task_id}": true,
+		"post /api/v1/tasks/{task_id}/cancel": true, "post /api/v1/tasks/{task_id}/retry": true, "post /api/v1/tasks/{task_id}/rollback": true,
+		"get /control/v1/tasks/{task_id}/bundle": true,
+		"post /enroll/v1":                        true, "post /enroll/v1/renew": true, "get /control/v1": true,
 	}
 	// Reserved business writes must explicitly require both administrator session and CSRF.
 	for path, item := range open["paths"].(map[string]any) {

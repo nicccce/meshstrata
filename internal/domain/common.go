@@ -38,16 +38,17 @@ func (r Revision) Valid() bool { return r > 0 && r <= MaxRevision }
 type ErrorCode string
 
 const (
-	InvalidArgument     ErrorCode = "INVALID_ARGUMENT"
-	Unauthenticated     ErrorCode = "UNAUTHENTICATED"
-	Forbidden           ErrorCode = "FORBIDDEN"
-	NotFound            ErrorCode = "NOT_FOUND"
-	RevisionConflict    ErrorCode = "REVISION_CONFLICT"
-	IdempotencyConflict ErrorCode = "IDEMPOTENCY_CONFLICT"
-	PortInUse           ErrorCode = "PORT_IN_USE"
-	DependencyInUse     ErrorCode = "DEPENDENCY_IN_USE"
-	NotImplemented      ErrorCode = "NOT_IMPLEMENTED"
-	TaskExpired         ErrorCode = "TASK_EXPIRED"
+	InvalidArgument      ErrorCode = "INVALID_ARGUMENT"
+	Unauthenticated      ErrorCode = "UNAUTHENTICATED"
+	Forbidden            ErrorCode = "FORBIDDEN"
+	NotFound             ErrorCode = "NOT_FOUND"
+	RevisionConflict     ErrorCode = "REVISION_CONFLICT"
+	IdempotencyConflict  ErrorCode = "IDEMPOTENCY_CONFLICT"
+	PortInUse            ErrorCode = "PORT_IN_USE"
+	GrantOriginUncertain ErrorCode = "GRANT_ORIGIN_UNCERTAIN"
+	DependencyInUse      ErrorCode = "DEPENDENCY_IN_USE"
+	NotImplemented       ErrorCode = "NOT_IMPLEMENTED"
+	TaskExpired          ErrorCode = "TASK_EXPIRED"
 )
 
 type FieldError struct {

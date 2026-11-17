@@ -321,6 +321,11 @@
             "$ref": "#/$defs/Restriction"
           },
           "maxItems": 32
+        },
+        "effective_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of verified active render bytes. Artifact target_digest remains unchanged."
         }
       },
       "required": [
@@ -444,6 +449,10 @@
             "$ref": "#/$defs/Result"
           },
           "maxItems": 100
+        },
+        "runtime": {
+          "type": "boolean",
+          "description": "Execution capability from a recovered Runtime. Absent for control-only clients."
         }
       },
       "required": [

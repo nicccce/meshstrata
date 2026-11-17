@@ -375,3 +375,10 @@ Agent 退出期间，到期调度会暂停；systemd/OpenRC 自动恢复和启�
 扩展隔离检查支持B04→006、B05→007，正式001–005摘要冻结；B05的缺006仅副本scratch no-op。11项工具回归通过，含临时fixture真实sqlc/test/vet及隔离/缺源码/prepare-only等负向检查；这不是B04/B05业务通过。最终完整make check、check-pages、公共协议/API/storage/B02/control_only针对性test/vet及schema检查通过。首次沙箱socket限制失败保留，批准后完整原命令通过。详见[报告](backend-delivery/I02-P.md)和[阶段2交接](backend-delivery/阶段2交接.md)。
 
 B04/B05已具备同一I02-P最终提交并行启动条件；006/007、依赖/dbgen、入口/CLI/生命周期共享接线仍由I02在两模块完成后统一处理，T02另行独立验收。当前Agent仍control_only、缺产物认证后501、前端demo，未称完整发布或上线。最终提交hash/推送状态由本轮最终回复提供，本批完成即停，等用户在主协调会话再次“继续”。
+
+
+## 2026-11-17｜I02 阶段二统一集成
+
+会话 `01a1e530-9ab0-7d21-9101-4b50f8d45f1a`。B04/B05 接入普通安全 Controller 与显式 Agent runtime，安装 006/007、冻结 001–005，使用现有 x/sys 版本锁。任务管理 API 已接通，可信本地发布 CLI 使用现有单写者锁。节点独立密钥、Mihomo 私有重载目录、artifact/effective 摘要分开、终态原授权的逐身份清理证据和保守首次下载恢复路径已集成。
+
+本机测试检查真实 TLS 和独立代理进程，包括双节点 DAG、外部端口冲突及回退、离线到期旧连接和保留身份、进程故障及重放、部分 cleanup 与端口复用。验证范围、首次失败与后续计划见 [I02](backend-delivery/I02.md) 和 [T02计划](backend-delivery/T02计划.md)。本轮没有远程部署，前端继续 demo，后续由主协调独立派发 T02。

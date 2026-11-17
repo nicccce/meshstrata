@@ -103,7 +103,7 @@ func TestControlOnlyRejectsCommandAndUnmatchedReceiptWithoutResult(t *testing.T)
 			if e != nil {
 				t.Fatal(e)
 			}
-			if e = c.runOnce(context.Background()); e == nil {
+			if e = c.runOnce(context.Background(), func() {}); e == nil {
 				t.Fatal("unexpected message accepted")
 			}
 			select {

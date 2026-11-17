@@ -11,6 +11,17 @@ import (
 )
 
 func main() {
-	app := command.Component[config.Controller]{Name: "controller", Load: config.LoadController, Run: controller.Run, Actions: map[string]func(context.Context, config.Controller, io.Reader) error{"prepare-local": controller.PrepareLocal, "initialize-admin": controller.InitializeAdmin}}
+	app := command.Component[config.Controller]{
+		Name: "controller",
+		Load: config.LoadController,
+		Run:  controller.Run,
+		Actions: map[string]func(context.Context, config.Controller, io.Reader) error{
+			"prepare-local":    controller.PrepareLocal,
+			"initialize-admin": controller.InitializeAdmin,
+		},
+		ResultActions: map[string]func(context.Context, config.Controller, io.Reader) (any, error){
+			"submit-release": controller.SubmitRelease,
+		},
+	}
 	os.Exit(command.Execute(app, os.Args[1:], os.Stdout, os.Stderr))
 }

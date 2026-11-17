@@ -68,6 +68,7 @@ func runSecure(ctx context.Context, cfg config.Controller, store *storage.Store,
 		return e
 	}
 	defer services.channel.Close()
+	defer services.releases.Close()
 	web, e := net.Listen("tcp", cfg.ListenAddress)
 	if e != nil {
 		return fmt.Errorf("listen for HTTPS: %w", e)
@@ -80,16 +81,18 @@ func runSecure(ctx context.Context, cfg config.Controller, store *storage.Store,
 	defer node.Close()
 	local, cancel := context.WithCancel(ctx)
 	defer cancel()
-	done := make(chan error, 2)
+	done := make(chan error, 3)
+	go func() { done <- services.releases.Run(local) }()
 	go func() { done <- httpx.Serve(local, tls.NewListener(web, services.webTLS), services.admin, logger) }()
 	go func() { done <- httpx.Serve(local, tls.NewListener(node, services.nodeTLS), services.node, logger) }()
-	logger.Info("Controller HTTPS and node control ready", "listen_address", web.Addr().String(), "control_address", node.Addr().String(), "business_execution", "disabled")
+	logger.Info("Controller HTTPS and node control ready", "listen_address", web.Addr().String(), "control_address", node.Addr().String())
 	err := <-done
 	cancel()
 	services.channel.Close() // HTTP Shutdown cannot close hijacked WebSockets.
-	other := <-done
-	if err == nil {
-		err = other
+	for range 2 {
+		if other := <-done; err == nil {
+			err = other
+		}
 	}
 	return err
 }

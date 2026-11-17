@@ -1,6 +1,6 @@
 # 公共契约（v1，I00复核，2026-11-12）
 
-本目录是 HTTP/控制协议的代码旁契约。I01 显式安全模式已注册真实认证/节点管理及9443入网/控制，详见文末；`x-implemented: false` 仍为预留404，产物 transport 缺B04时为约定501。新增认证及业务行为必须经过对应阶段，不能以空数组/空任务的 200 代替未实现。健康检查沿用 README。
+本目录是 HTTP/控制协议的代码旁契约。正式安全模式已注册认证、节点管理、入网控制、产物传输及任务管理，`x-implemented: false` 表示预留。历史阶段行为见文末对应阶段说明。新增认证及业务行为必须经过对应阶段，不能以空数组/空任务的 200 代替未实现。健康检查沿用 README。
 
 ## 版本、ID、列表、错误与任务
 
@@ -26,7 +26,7 @@
 `internal/control`、`control.schema.json` 定义 version=1 的 command/result/receipt/hello。Go `Decode` 限 1MiB、拒绝未知字段/多余 JSON/未知版本/多 payload，校验 mTLS 节点与内外层身份一致。WebSocket ping/pong 仅保活；无 CPU/用量/日志的持续上报。传输实现必须先限制帧大小再解码；不支持的版本关闭并报告错误，不能静默降级。
 
 - Command 含任务 ID、节点 ID、动作、目标修订/内容 SHA-256、截止时间、幂等 key、依赖节点及撤销 epoch。`depends_on` 是本任务内先完成运行确认的节点集合，Controller 校验无环并持久化。普通多跳先末端/后续节点再入口；反向线路按远端 Listener→Relay 授权/映射→映射认证转发→入口→完整线路确认。B00 账本验证 DAG，不执行调度。
-- `ArtifactKey` 以 task/node/目标修订/摘要定位不可变私有配置包；B04 实现 `ArtifactSource`，B02 通过 mTLS 只向账本指定节点传输，B05 在落候选前校验大小与 SHA-256。预留 `GET /control/v1/tasks/{task_id}/bundle`，不含 secret 查询参数。包格式/能力协商由 B04/B05 在 T02 前联合冻结，必须固定 Listener、规则、Target DNS、出口及授权修订向量，不允许从“最新”对象拼接。本阶段只实现该边界，未实现包编译/传输。
+- `ArtifactKey` 以 task/node/目标修订/摘要定位不可变私有配置包；B04 实现 `ArtifactSource`，B02 通过 mTLS 只向账本指定节点传输，B05 在落候选前校验大小与 SHA-256。`GET /control/v1/tasks/{task_id}/bundle` 在安全模式启用，无 secret 查询参数。包固定 Listener、规则、Target DNS、出口及授权修订向量。
 - Controller SQLite `tasks/task_nodes/task_dependencies` 是任务意图与逐节点证据账本。`EnqueueTask` 在一个事务写入完整目标/DAG，同 scope+key+规范化内容回原任务，不同内容报 `IDEMPOTENCY_CONFLICT`。规范化排序不改调用方切片；重放已超时同内容任务可读取旧 ID，新任务已过期拒绝。scope 必须由服务器认证上下文生成，不能信任浏览器提交。B04 负责同节点操作串行、阶段/截止时间、依赖确认和最终发布决定。
 - Result 含独立 Applied/Verification/Rollback/Cleanup、目标修订/摘要、确认时间、单调 sequence 和稳定错误码。`RecordResult` 在事务内拒绝错目标、同序号不同内容，忽略较旧序号；只写证据，不推进发布状态。迟到结果可留作恢复证据，B04 不得因此推进已失败/取消任务。receipt 只在数据库提交后发出；重连后对相同结果重复发 receipt，不能重复减少引用。
 - Agent 的 `LocalState` 接口由 B05 实现：候选、已应用、已验证、启动、上一可用摘要独立保存；检查点、授权墓碑与待确认结果 outbox 原子持久。授权墓碑以不可变identity_id为键；稳定entry_id可在合法续期时关联新身份代次，但旧身份永不重新授权。先持久再确认执行，先处理到期再启动/重载。接 receipt 才移除相应 outbox；hello 携最近应用摘要/撤销 epoch 和最多 100 个未确认结果，分批恢复，不能上传全量指标。证书续期不重置节点检查点。
@@ -88,3 +88,10 @@ Controller/Agent 关闭分别取消 HTTP、续期与重连，并显式关闭 hij
 - Result新增可选`restrictions`（最多32）携带identity/listener/generation/reason/observed_at/epoch/effective_digest。它绑定**最初真实授权任务**的task/node/target，sequence仍按(task,node)持久递增；不能伪造任务、复用sequence更改结果或把到期表示为原授权重新Applied/Verified。B05永久保留Grant.Origin，在checkpoint+墓碑+证据outbox同事务落盘。B04持久存完整证据并验证原任务授权，再receipt；终态任务也可追加证据，不能覆盖原发布历史或新修订状态。现有stage1 Store对扩展结果明确NOT_IMPLEMENTED，避免丢弃证据后receipt。
 - Hello仍最多100条PendingResults，且整个消息<=1MiB；B05按条数及实际编码字节分页，不截断/删除outbox；B02已有receipt耗尽后继续Hello机制。只收精确(task,node,sequence)receipt后清除对应项，重复/乱序receipt不删除其他项。本地限制失败同样持久证据，cleanup=pending且不宣称确认；失败关闭本平台相关入口并保持重试，不能继续过期授权。
 - 兼容性：消息版本/WS subprotocol仍v1；新增字段可选，旧消息及control_only字节形状不变。旧严格v1对扩展结果会拒绝，因此I02启用业务runtime必须成对升级Controller/Agent，不能滚动混用旧Controller。当前未启用runtime，不向旧端主动发送扩展字段。LocalState/Checkpoint是无现存实现的内部准备接口，本轮将其细化为可持久化中间阶段的CAS DurableState，无外部ABI迁移。
+
+
+## I02 正式阶段二接线
+
+`GET /api/v1/tasks` 与 `GET /api/v1/tasks/{task_id}` 使用 Guard.Read。cancel/retry/rollback 写操作使用 Guard.Write，body 是原有 Mutation，`expected_revision` 指源任务账本修订。取消只限未 armed 且无清理意图的 queued publish/rollback。retry 和 rollback 创建新任务、新目标和五分钟截止时间；rollback 以成功历史配置为输入，经当前撤销/到期过滤。未确认的首次 Open 来源拒绝换 task 重试并返回 `GRANT_ORIGIN_UNCERTAIN`。受限的 format 1 计划通过独占状态锁的本地 CLI 提交，普通 HTTP 只接任务 DTO 和 Mutation。
+
+Agent 的可选 Hello `runtime:true` 表示已经恢复的执行能力。旧 `control_only` 保留原 pristine Hello，可安全上线。控制上线不构成代理业务证据。Hello `applied_digest` 对应所报已验证修订的 Controller artifact；新可选 Result `effective_digest` 与 Restriction 的同名字段记录已核对的本机渲染字节。结果和离线清理证据持久化后才发 receipt。命令 cleanup 确认覆盖其全部待清理身份，精确的原授权 Restriction 可单独确认子集。格式 1 业务运行需要同代 Controller 和 Agent；旧 strict v1 Controller 不解析新增字段。细节见 [I02 集成报告](../../documents/backend-delivery/I02.md)。

@@ -1264,13 +1264,13 @@
       "get": {
         "operationId": "get__control_v1_tasks_task_id_bundle",
         "x-owner": "B04",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "NodeMTLS": []
           }
         ],
-        "description": "Registered transport with mTLS; currently returns 501 NOT_IMPLEMENTED for authenticated nodes because B04 artifact resolver/source are absent.",
+        "description": "Downloads the immutable private format-1 artifact for an authenticated node and its armed task target.",
         "responses": {
           "200": {
             "description": "Result",
@@ -1284,16 +1284,6 @@
             }
           },
           "default": {
-            "description": "Stable code and non-sensitive field errors",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "501": {
             "description": "Stable code and non-sensitive field errors",
             "content": {
               "application/json": {
@@ -1321,7 +1311,7 @@
       "get": {
         "operationId": "get__api_v1_tasks",
         "x-owner": "B04",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "AdminSession": []
@@ -1376,7 +1366,7 @@
       "get": {
         "operationId": "get__api_v1_tasks_task_id",
         "x-owner": "B04",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "AdminSession": []
@@ -1422,14 +1412,14 @@
       "post": {
         "operationId": "post__api_v1_tasks_task_id_cancel",
         "x-owner": "B04",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "AdminSession": [],
             "CSRF": []
           }
         ],
-        "description": "B04 validates phase eligibility. Cancel only before apply; rollback is a separate task. Retry never repeats reference decrement.",
+        "description": "Cancel an eligible unarmed queued publish or rollback task without restriction intents.",
         "responses": {
           "202": {
             "description": "Result",
@@ -1479,14 +1469,14 @@
       "post": {
         "operationId": "post__api_v1_tasks_task_id_retry",
         "x-owner": "B04",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "AdminSession": [],
             "CSRF": []
           }
         ],
-        "description": "B04 validates phase eligibility. Cancel only before apply; rollback is a separate task. Retry never repeats reference decrement.",
+        "description": "Recompile the latest eligible failed, timed-out or cancelled target as a new task with a five-minute deadline. Ambiguous grant origins return GRANT_ORIGIN_UNCERTAIN.",
         "responses": {
           "202": {
             "description": "Result",
@@ -1536,14 +1526,14 @@
       "post": {
         "operationId": "post__api_v1_tasks_task_id_rollback",
         "x-owner": "B04",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "AdminSession": [],
             "CSRF": []
           }
         ],
-        "description": "B04 validates phase eligibility. Cancel only before apply; rollback is a separate task. Retry never repeats reference decrement.",
+        "description": "Recompile a successful historical template with current target revisions and revocation epochs. Restricted identities remain excluded.",
         "responses": {
           "202": {
             "description": "Result",

@@ -1,0 +1,2 @@
+# Uses the existing golang.org/x/sys v0.49.0 lock.
+golang.org/x/sys@v0.49.0
