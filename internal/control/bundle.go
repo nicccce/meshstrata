@@ -224,48 +224,8 @@ func (b Bundle) Validate() error {
 			return ErrBundle
 		}
 		ids[a.IdentityID] = true
-		for _, s := range l.ServerNames {
-			if !utf8.ValidString(s) || len(s) > 253 || s == "" || strings.ContainsAny(s, " /\\\r\n,#") {
-				return ErrBundle
-			}
-		}
-		tcp, udp := l.Protocol != domain.Hysteria2, l.Protocol == domain.Hysteria2 || l.Protocol == domain.SS2022 && l.BusinessUDP
-		transport := "tcp"
-		if !tcp {
-			transport = "udp"
-		} else if udp {
-			transport = "tcp_udp"
-		}
-		if l.Transport != transport {
-			return ErrBundle
-		}
-		entry := core.Entry{NodeID: string(l.NodeID), ListenerID: string(l.ListenerID), IdentityID: string(a.IdentityID), Protocol: core.Protocol(l.Protocol), Address: l.Address, Port: l.Port, BusinessUDP: l.BusinessUDP, Cipher: l.Cipher, Password: l.Credential.Password, UUID: l.Credential.UUID, RealityDestination: l.RealityDestination, ServerNames: l.ServerNames, ShortIDs: l.ShortIDs}
-		// Validate protocol credentials with the frozen B03 builder; local key values
-		// are resolved/validated only by B05. These placeholders never leave validation.
-		switch l.Protocol {
-		case domain.SS2022:
-			if l.Credential.UUID != "" || l.Certificate != nil || l.PrivateKey != nil || l.RealityKey != nil {
-				return ErrBundle
-			}
-		case domain.Trojan, domain.Hysteria2:
-			if l.Credential.UUID != "" || l.Cipher != "" || !material(l.Certificate, "tls_certificate") || !material(l.PrivateKey, "tls_private_key") || l.RealityKey != nil {
-				return ErrBundle
-			}
-			entry.Certificate = "local"
-			entry.PrivateKey = "local"
-		case domain.VLESS:
-			if l.Credential.Password != "" || l.Cipher != "" || l.Certificate != nil || l.PrivateKey != nil || !material(l.RealityKey, "reality_private_key") {
-				return ErrBundle
-			}
-			entry.RealityPrivateKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-		default:
-			return ErrBundle
-		}
-		if l.Protocol != domain.VLESS && (l.RealityDestination != "" || len(l.ServerNames) != 0 || len(l.ShortIDs) != 0) {
-			return ErrBundle
-		}
-		if _, e = core.BuildListener(entry); e != nil {
-			return ErrBundle
+		if err := validateListenerProtocol(l, a.IdentityID); err != nil {
+			return err
 		}
 		for _, prev := range b.Listeners[:i] {
 			if prev.Port == l.Port && transportsOverlap(prev.Transport, l.Transport) && addressesOverlap(prev.Address, l.Address) {
@@ -277,6 +237,55 @@ func (b Bundle) Validate() error {
 		if !r.ID.Valid() || !r.Revision.Valid() || (i > 0 && b.Resources[i-1].ID >= r.ID) || (r.Kind != "listener" && r.Kind != "identity" && r.Kind != "certificate") {
 			return ErrBundle
 		}
+	}
+	return nil
+}
+
+// validateListenerProtocol is shared with the offline format-2 codec.
+// principal is the real entry identity or the real internal link identity.
+func validateListenerProtocol(l BundleListener, principal domain.ID) error {
+	for _, s := range l.ServerNames {
+		if !utf8.ValidString(s) || len(s) > 253 || s == "" || strings.ContainsAny(s, " /\\\r\n,#") {
+			return ErrBundle
+		}
+	}
+	tcp, udp := l.Protocol != domain.Hysteria2, l.Protocol == domain.Hysteria2 || l.Protocol == domain.SS2022 && l.BusinessUDP
+	transport := "tcp"
+	if !tcp {
+		transport = "udp"
+	} else if udp {
+		transport = "tcp_udp"
+	}
+	if l.Transport != transport {
+		return ErrBundle
+	}
+	entry := core.Entry{NodeID: string(l.NodeID), ListenerID: string(l.ListenerID), IdentityID: string(principal), Protocol: core.Protocol(l.Protocol), Address: l.Address, Port: l.Port, BusinessUDP: l.BusinessUDP, Cipher: l.Cipher, Password: l.Credential.Password, UUID: l.Credential.UUID, RealityDestination: l.RealityDestination, ServerNames: l.ServerNames, ShortIDs: l.ShortIDs}
+	// Validate protocol credentials with the frozen B03 builder; local key values
+	// are resolved/validated only by B05. These placeholders never leave validation.
+	switch l.Protocol {
+	case domain.SS2022:
+		if l.Credential.UUID != "" || l.Certificate != nil || l.PrivateKey != nil || l.RealityKey != nil {
+			return ErrBundle
+		}
+	case domain.Trojan, domain.Hysteria2:
+		if l.Credential.UUID != "" || l.Cipher != "" || !material(l.Certificate, "tls_certificate") || !material(l.PrivateKey, "tls_private_key") || l.RealityKey != nil {
+			return ErrBundle
+		}
+		entry.Certificate = "local"
+		entry.PrivateKey = "local"
+	case domain.VLESS:
+		if l.Credential.Password != "" || l.Cipher != "" || l.Certificate != nil || l.PrivateKey != nil || !material(l.RealityKey, "reality_private_key") {
+			return ErrBundle
+		}
+		entry.RealityPrivateKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+	default:
+		return ErrBundle
+	}
+	if l.Protocol != domain.VLESS && (l.RealityDestination != "" || len(l.ServerNames) != 0 || len(l.ShortIDs) != 0) {
+		return ErrBundle
+	}
+	if _, e := core.BuildListener(entry); e != nil {
+		return ErrBundle
 	}
 	return nil
 }

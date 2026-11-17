@@ -17,10 +17,10 @@
 | `internal/domain/*`、`internal/control/**`、`internal/platform/service.go`、`internal/{secretstore,adminauth}/*` | 每批独立集成会话 | 模块提出具体字段/接口变更及兼容性，集成审后统一落地；禁止并行改定义 |
 | `controller/api/*`、`controller/web/FRONTEND_CONTRACT.md`、`src/data/{contracts,live,demo}.ts`、旧`src/api.ts` | 集成 | 模块可新增其私有API DTO/adapter，不能自行切换全局模式/删除demo |
 | `controller/internal/controller/{app,http}.go`、`agent/internal/agent/app.go`、`internal/config/*`、各cmd入口 | 集成 | 各模块交付构造函数/Handler/接口及接线提案，由集成串行注册；先安装安全中间件再开放写路由 |
-| `controller/internal/storage/{storage,database}.go`、`queries.sql`、`migrations/*`、`dbgen/*`、`sqlc.yaml` | 集成 | 已应用迁移不可改写，当前001–005冻结；sqlc输出只生成，不手改 |
+| `controller/internal/storage/{storage,database}.go`、`queries.sql`、`migrations/*`、`dbgen/*`、`sqlc.yaml` | 集成 | 已应用迁移不可改写，当前001–007冻结；sqlc输出只生成，不手改 |
 | `Makefile`、`go.mod/go.sum`、前端package/lock、构建脚本、公共i18n/router/domain/components | 集成 | 依赖精确锁定；不削弱既有检查，新增门禁先实跑 |
 | README、产品/交互/开发日志、本任务书、会话登记 | 集成 | 业务会话仅写各自`backend-delivery/Bxx.md`和精确依赖提案`Bxx.deps`；测试写`Txx.md`，集成汇总实际状态 |
-| Git与发布产物 | 集成/准备（本轮I02-P独占） | 保护用户修改，检查通过后提交并推送当前分支；失败保留本地提交并报告真实原因 |
+| Git与发布产物 | 集成/准备（本轮I03-P独占） | 保护用户修改，检查通过后提交并推送当前分支；失败保留本地提交并报告真实原因 |
 
 后续迁移槽位固定为 **B01→003、B02→004、B03→005、B04→006、B05→007、B06→008、B07→009、B08→010、B09→011、B10→012、B11→013、B12→014、B13→015、B14→016、B15→017、B16→018、B17→019、B18→020**。每项只写 `controller/internal/storage/proposals/Bxx.sql` 提案（不被embed/sqlc扫描），集成按槽位顺序审阅安装为 `NNN_bxx.sql`，无变更写带原因的 `SELECT 1;`。保证迁移连续，不能提前提交带缺口的高编号；跨模块约束先联合审阅，不把整个Workspace塞成JSON。002交付前可修，交付后不可重写。额外迁移只能由集成更新登记并在020之后分配，禁止抢用其他槽位。
 
@@ -123,6 +123,10 @@ B04/B05已具备从同一I02-P最终推送提交并行启动的公共契约和�
 
 B04/B05 已接入普通安全 Controller 和显式 Agent runtime，正式迁移 006/007、生成物、依赖与软件故障证据见 [I02](backend-delivery/I02.md)。采用受限离线 CLI 提交 format 1 发布/撤销/清理计划，任务读写走正式 Guard。Agent 默认保留原 `control_only` 模式，前端继续 demo。I02 独占本轮集成及 Git；T01/N01 历史失败保留，T01-N02 阶段一门槛仍成立。
 
-下一轮由主协调在用户继续后派发独立 [T02](backend-delivery/T02计划.md)，以 I02 最终产品预编译包做 Ubuntu/Alpine 双拓扑实际验收。T02 验收之后再按原阶段顺序安排 B06–B08。
+下一轮由主协调在用户继续后派发独立 [T02](backend-delivery/T02计划.md)，以 I02 最终产品预编译包做 Ubuntu/Alpine 双拓扑实际验收。此为当时的安排；下一段更新独立开发门槛。
 
 2026-11-17 更新：[T02](backend-delivery/T02.md) 部分完成并中断，[R02](backend-delivery/R02.md) 已做本地定点复核。B06–B08 的独立工作可以按各自契约启动；容量、线上完整分页和硬件断电覆盖可延期。默认绑定、到期及端口冲突回退等真机边界仍列入后续集成验证。
+
+## I03-P 阶段三准备（2026-11-17）
+
+[阶段3交接](backend-delivery/阶段3交接.md)冻结 B06/B07/B08 的构造接口、调用方向、固定发布/入口/下载快照、独占目录、008/009/010 和隔离实跑命令；用同一个 I03-P 最终提交 hash 派发。格式 2 仅供独立编译与离线校验，生产仍用格式 1。T02 保持 partial，R02 的本地证据不作真机通过，并按上段安排后续验证；两者不挡三个模块的独立实现。I03 等三者停止后统一安装迁移、生成、接线并决定验证派发；T03、阶段四前端 live 与后续阶段均未启动。检查记录见 [I03-P](backend-delivery/I03-P.md)。

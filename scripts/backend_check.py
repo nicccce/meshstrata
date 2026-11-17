@@ -37,6 +37,15 @@ PACKAGES = {
     "B04": ["./controller/internal/releases/...", "./controller/internal/ports/..."],
     "B05": ["./agent/internal/runtime/...", "./agent/internal/checkpoint/...", "./agent/internal/authorization/..."],
 }
+STAGE3 = {
+    "B06": (8, ["routes", "egress"]),
+    "B07": (9, ["rules", "clientconfig"]),
+    "B08": (10, ["subscriptions"]),
+}
+for module, (_, names) in STAGE3.items():
+    OWNED[module] = [f"controller/internal/{name}" for name in names]
+    PACKAGES[module] = [f"./{rel}/..." for rel in OWNED[module]]
+
 SOURCE_SUFFIXES = {".go", ".sql", ".sh", ".py", ".md", ".json", ".yaml", ".yml", ".txt"}
 
 
@@ -46,6 +55,11 @@ STAGE2_MIGRATIONS = {'001_initial.sql': '549eebb41b63decb04ab49cfd4e9ab905be8187
  '003_b01.sql': '19c53ecbd6668d3eab58e7a043ba191e750ce9590bb027fb106ea39ea62a8d78',
  '004_b02.sql': 'c80a1ab72d1d5c349855c392626ff6c5e8dde64cceb3c3b2a54c4c9b038a4a74',
  '005_b03.sql': '981210aadaf3a298f6ed797ce86de7dd248135ac96173a30819e861f737ff82d'}
+
+STAGE3_MIGRATIONS = {**STAGE2_MIGRATIONS,
+    "006_b04.sql": "997497ef80bcf930acef0861a16e8595bf00dcc4e412b5c863f2f8d8775035cb",
+    "007_b05.sql": "33b5fc2ec1688460f4db10d7b6038125a1cf32d58a700a4819338bb191bc4ed9",
+}
 
 def run(args, cwd, env=None):
     subprocess.run(args, cwd=cwd, env=env, check=True)
@@ -75,8 +89,10 @@ def overlay_file(source, target):
 
 
 def prepare(module, base):
-    if module in {"B04", "B05"} and not re.fullmatch(r"[0-9a-f]{40}", base):
-        raise SystemExit("stage-2 requires the assigned full commit hash")
+    stage2 = module in {"B04", "B05"}
+    stage3 = module in STAGE3
+    if (stage2 or stage3) and not re.fullmatch(r"[0-9a-f]{40}", base):
+        raise SystemExit("requires the assigned full commit hash")
     revision = subprocess.check_output(
         ["git", "rev-parse", "--verify", f"{base}^{{commit}}"], cwd=ROOT, text=True).strip()
     parent = ROOT / ".local/backend-check" / module
@@ -89,6 +105,11 @@ def prepare(module, base):
             path = Path(entry.name)
             if path.is_absolute() or ".." in path.parts or entry.issym() or entry.islnk() or not (entry.isfile() or entry.isdir()):
                 raise SystemExit("unsafe baseline archive entry")
+            if stage3 and (path.parts[0] in {".local", ".aws", ".codex", "bin"} or
+                    any(p in {"node_modules", "__pycache__"} for p in path.parts) or
+                    any(path.is_relative_to(p) for p in ("agent/integration/t02-artifact",
+                        "scripts/integration/t02", f"{STORAGE}/proposals"))):
+                continue
             if entry.name.startswith("controller/web/") or entry.name.startswith("controller/internal/webui/dist/") and path.name != ".gitkeep":
                 continue
             snapshot.extract(entry, target, filter="data")
@@ -97,10 +118,15 @@ def prepare(module, base):
         if not (target / rel).is_file():
             raise SystemExit("baseline must contain the frozen I00 interfaces")
     versions = sorted(p.name[:3] for p in (target / STORAGE / "migrations").glob("*.sql"))
-    stage2 = module in {"B04", "B05"}
     baseline_hashes = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                        for p in (target / STORAGE / "migrations").glob("*.sql")}
-    if stage2:
+    if stage3:
+        if baseline_hashes != STAGE3_MIGRATIONS:
+            raise SystemExit("stage-3 baseline requires exact frozen formal 001-007 migrations")
+        for rel in ["internal/control/bundle_v2.go", "controller/internal/stage3/contract.go"]:
+            if not (target / rel).is_file():
+                raise SystemExit("stage-3 baseline missing I03-P frozen contract")
+    elif stage2:
         if baseline_hashes != STAGE2_MIGRATIONS:
             raise SystemExit("stage-2 baseline requires exact frozen formal 001-005 migrations")
         for rel in ["internal/control/bundle.go", "internal/control/state.go"]:
@@ -126,13 +152,19 @@ def prepare(module, base):
             dest.unlink()
         if source.is_symlink():
             raise SystemExit(f"symlink not allowed: {rel}")
+        if stage3 and source.exists() and not source.is_dir():
+            raise SystemExit(f"expected a module directory: {rel}")
         if source.is_dir():
             for path in sorted(source.rglob("*")):
                 if any(part in {"node_modules", ".local", ".git", "__pycache__"}
                        for part in path.relative_to(source).parts):
+                    if stage3:
+                        raise SystemExit(f"non-source path in module overlay: {path.relative_to(ROOT)}")
                     continue
                 if path.is_symlink():
                     raise SystemExit(f"symlink not allowed: {path.relative_to(ROOT)}")
+                if stage3 and not path.is_dir() and (not path.is_file() or path.suffix != ".go"):
+                    raise SystemExit(f"non-source file in module overlay: {path.relative_to(ROOT)}")
                 if path.is_file():
                     overlay_file(path, target / path.relative_to(ROOT))
                     copied.append(str(path.relative_to(ROOT)))
@@ -143,14 +175,15 @@ def prepare(module, base):
     for source in sorted((ROOT / STORAGE / "queries").glob(f"{module.lower()}_*.sql")):
         overlay_file(source, target / source.relative_to(ROOT))
         copied.append(str(source.relative_to(ROOT)))
-    if module in {"B02", "B04"}:
+    if module in {"B02", "B04"} or stage3:
         for source in sorted((ROOT / STORAGE).glob(f"{module.lower()}_*_test.go")):
             overlay_file(source, target / source.relative_to(ROOT))
             copied.append(str(source.relative_to(ROOT)))
     migrations = target / STORAGE / "migrations"
-    slot = {"B01": 3, "B02": 4, "B03": 5, "B04": 6, "B05": 7}[module]
-    # Earlier stage-1 slots are scratch-only no-ops, never sibling proposals.
-    for n in range(6 if stage2 else 3, slot):
+    slot = STAGE3[module][0] if stage3 else {"B01": 3, "B02": 4, "B03": 5, "B04": 6, "B05": 7}[module]
+    # Missing earlier slots are scratch-only no-ops, never sibling proposals.
+    scratch = range(8 if stage3 else 6 if stage2 else 3, slot)
+    for n in scratch:
         (migrations / f"{n:03}_scratch_placeholder.sql").write_text(
             "-- Isolated validation only: sibling migration intentionally absent.\nSELECT 1;\n")
     proposal = safe_source(ROOT / STORAGE / "proposals" / f"{module}.sql")
@@ -159,37 +192,71 @@ def prepare(module, base):
         overlay_file(proposal, dest)
         copied.append(str(proposal.relative_to(ROOT)))
     else:
-        if stage2:
-            raise SystemExit("stage-2 requires explicit module SQL proposal (reasoned SELECT 1 if no Controller migration)")
+        if stage2 or stage3:
+            raise SystemExit("requires explicit module SQL proposal (reasoned SELECT 1 if no Controller migration)")
         dest.write_text("-- This module has no migration proposal yet.\nSELECT 1;\n")
     depfile = safe_source(ROOT / "documents/backend-delivery" / f"{module}.deps")
     deps = []
+    dependency_sha256 = None
     if depfile.exists():
-        if depfile.is_symlink():
+        if not depfile.is_file():
             raise SystemExit("dependency proposal must be a regular file")
-        for line in depfile.read_text().splitlines():
+        raw_deps = depfile.read_bytes()
+        dependency_sha256 = hashlib.sha256(raw_deps).hexdigest()
+        for line in raw_deps.decode().splitlines():
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
             if not re.fullmatch(r"[A-Za-z0-9._~/-]+@v[0-9]+\.[0-9]+\.[0-9]+[A-Za-z0-9.+-]*", line):
                 raise SystemExit("dependency proposal requires exact module@vX.Y.Z versions")
+            if stage3 and line.split("@")[0] in {d.split("@")[0] for d in deps}:
+                raise SystemExit("duplicate dependency proposal")
             deps.append(line)
+    if stage3:
+        report = safe_source(ROOT / "documents/backend-delivery" / f"{module}.md")
+        if report.exists():
+            overlay_file(report, target / report.relative_to(ROOT))
+            copied.append(str(report.relative_to(ROOT)))
     manifest = {"module": module, "base": revision, "overlay": copied, "dependencies": deps,
                 "status": "prepared_not_checked", "checks": [],
                 "deleted": sorted(removed - set(copied)),
                 "baseline_migrations": baseline_hashes,
                 "overlay_sha256": {rel: hashlib.sha256((dest if rel == str(proposal.relative_to(ROOT)) else target / rel).read_bytes()).hexdigest() for rel in copied},
-                "scratch_migrations": [f"{n:03}" for n in range(6 if stage2 else 3, slot)],
+                "scratch_migrations": [f"{n:03}" for n in scratch],
+                "dependency_proposal_sha256": dependency_sha256,
                 "note": "isolated module validation, NOT integrated validation"}
     (target / "VALIDATION.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(f"Isolated {module} snapshot: {target}\nBaseline: {revision}", flush=True)
     return target, deps
 
 
+STAGE3_CONSTRUCTORS = {
+    "B06": [("routes", "NewService", "Service", "RoutesOptions", "Routes"),
+            ("egress", "NewService", "Service", "EgressOptions", "Egress")],
+    "B07": [("rules", "NewService", "Service", "RulesOptions", "Rules"),
+            ("clientconfig", "NewBuilder", "Builder", "ClientOptions", "ClientBuilder")],
+    "B08": [("subscriptions", "NewService", "Service", "SubscriptionsOptions", "Subscriptions")],
+}
+
+
+def stage3_contract_test(target, module):
+    prefix = "github.com/nicccce/meshstrata/controller/internal/"
+    own = STAGE3_CONSTRUCTORS[module]
+    imports = [f'    "{prefix}stage3"'] + [f'    "{prefix}{d}"' for d, *_ in own]
+    checks = []
+    for pkg, ctor, impl, opts, boundary in own:
+        checks.append(f"var _ func(stage3.{opts}) (*{pkg}.{impl}, error) = {pkg}.{ctor}")
+        checks.append(f"var _ stage3.{boundary} = (*{pkg}.{impl})(nil)")
+    path = target / "controller/internal/stage3/isolated_contract_test.go"
+    path.write_text("package stage3_test\nimport (\n" + "\n".join(imports) + "\n)\n" +
+                    "\n".join(checks) + "\n")
+    return {"path": str(path.relative_to(target)), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("module", choices=OWNED)
-    parser.add_argument("--base", required=True, help="fixed I00 (stage 1) or I02-P (stage 2) commit assigned by coordinator")
+    parser.add_argument("--base", required=True, help="fixed I00, I02-P or I03-P commit assigned by coordinator")
     parser.add_argument("--prepare-only", action="store_true")
     args = parser.parse_args()
     # Preparation and compilation both share one cross-process lock. Never run
@@ -215,33 +282,51 @@ def main():
         env = dict(os.environ, GOMAXPROCS="1", CGO_ENABLED="0", GOFLAGS="-p=1",
                    GOCACHE=str(cache / "go"), GOTMPDIR=str(cache / "go-tmp"))
         Path(env["GOTMPDIR"]).mkdir(parents=True, exist_ok=True)
+        def checked(command):
+            try:
+                run(command, target, env)
+            except subprocess.CalledProcessError as error:
+                manifest["checks"].append({"command": command, "exit_code": error.returncode})
+                raise
+            except OSError:
+                manifest["checks"].append({"command": command, "exit_code": None})
+                raise
+            manifest["checks"].append({"command": command, "exit_code": 0})
+            status("checking")
+
         try:
             packages = PACKAGES[args.module].copy()
             missing = []
             for package in packages:
-                files = list((target / package[2:-4]).rglob("*.go"))
+                path = target / package[2:-4]
+                files = list(path.glob("*.go") if args.module in STAGE3 else path.rglob("*.go"))
                 # A directory containing just `package name` or tests is no implementation.
                 if not any(not p.name.endswith("_test.go") and re.search(
                         r"(?m)^\s*func\s", p.read_text()) for p in files):
                     missing.append(package)
             if missing:
                 raise SystemExit("module source incomplete/empty; not a validation pass: " + ", ".join(missing))
+            stage3 = args.module in STAGE3
+            if stage3:
+                packages.append("./controller/internal/stage3")
+                env.update(GOFLAGS="-mod=readonly -p=1", GOWORK="off", GOENV="off", GOTOOLCHAIN="local")
+                manifest["contract_check"] = stage3_contract_test(target, args.module)
+                status("checking")
             for dep in deps:
                 module, version = dep.rsplit("@", 1)
-                run(["go", "mod", "edit", f"-require={module}@{version}"], target, env)
+                checked(["go", "mod", "edit", f"-require={module}@{version}"])
             if deps:
-                run(["go", "mod", "tidy"], target, env)
-            commands = [["sqlc", "generate"],
-                        ["go", "test", "-p", "1", *packages, "./internal/control", "./controller/internal/storage", "./controller/api"],
-                        ["go", "vet", "-p", "1", *packages, "./internal/control", "./controller/internal/storage", "./controller/api"]]
-            for command in commands:
-                try:
-                    run(command, target, env)
-                except subprocess.CalledProcessError as error:
-                    manifest["checks"].append({"command": command, "exit_code": error.returncode})
-                    raise
-                manifest["checks"].append({"command": command, "exit_code": 0})
-                status("checking")
+                if stage3:
+                    # No tidy-based discovery of unproposed modules. Test/vet
+                    # with -mod=readonly rejects missing or drifting requirements.
+                    for dep in deps:
+                        checked(["go", "mod", "download", dep])
+                else:
+                    checked(["go", "mod", "tidy"])
+            packages += ["./internal/control", "./controller/internal/storage", "./controller/api"]
+            for command in [["sqlc", "generate"], ["go", "test", "-p", "1", *packages],
+                            ["go", "vet", "-p", "1", *packages]]:
+                checked(command)
         except BaseException:
             status("failed_NOT_PASSED")
             raise

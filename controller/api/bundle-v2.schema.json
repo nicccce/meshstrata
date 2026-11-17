@@ -1,0 +1,799 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meshstrata.invalid/contracts/bundle/v2",
+  "title": "Private configuration bundle format 2 (offline only)",
+  "description": "Active wire/runtime remains format 1. Go EncodeBundleV2/DecodeBundleV2 are normative for byte limits, exact encoding, pins and cross-field invariants. No arbitrary YAML, paths or management DTO.",
+  "x-max-bytes": 1048576,
+  "x-runtime-supported": false,
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": 2
+    },
+    "kind": {
+      "enum": [
+        "publish",
+        "rollback",
+        "revoke",
+        "cleanup"
+      ]
+    },
+    "task_id": {
+      "$ref": "#/$defs/ID"
+    },
+    "node_id": {
+      "$ref": "#/$defs/ID"
+    },
+    "target_revision": {
+      "$ref": "#/$defs/Revision"
+    },
+    "revocation_epoch": {
+      "$ref": "#/$defs/Revision"
+    },
+    "dns": {
+      "$ref": "#/$defs/DNSInput"
+    },
+    "listeners": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ListenerV2"
+      },
+      "minItems": 0,
+      "maxItems": 128
+    },
+    "terminal": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/TerminalV2"
+      },
+      "minItems": 0,
+      "maxItems": 32
+    },
+    "tombstones": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Tombstone"
+      },
+      "minItems": 0,
+      "maxItems": 512
+    },
+    "retired_links": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/InternalRetirement"
+      },
+      "minItems": 0,
+      "maxItems": 512
+    }
+  },
+  "required": [
+    "format",
+    "kind",
+    "task_id",
+    "node_id",
+    "target_revision",
+    "revocation_epoch",
+    "dns",
+    "listeners",
+    "terminal",
+    "tombstones",
+    "retired_links"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "ID": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+    },
+    "Revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "Digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "Pin": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ID"
+        },
+        "revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "digest"
+      ],
+      "additionalProperties": false
+    },
+    "DNSInput": {
+      "type": "object",
+      "properties": {
+        "pin": {
+          "$ref": "#/$defs/Pin"
+        },
+        "bootstrap": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "maxItems": 8,
+          "minItems": 1
+        },
+        "resolvers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "maxItems": 8,
+          "minItems": 1
+        },
+        "ipv6": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pin",
+        "bootstrap",
+        "resolvers",
+        "ipv6"
+      ],
+      "additionalProperties": false
+    },
+    "LocalMaterial": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ID"
+        },
+        "purpose": {
+          "enum": [
+            "tls_certificate",
+            "tls_private_key",
+            "reality_private_key"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "purpose"
+      ],
+      "additionalProperties": false
+    },
+    "PrivateCredential": {
+      "type": "object",
+      "properties": {
+        "ref": {
+          "$ref": "#/$defs/ID"
+        },
+        "audience": {
+          "$ref": "#/$defs/ID"
+        },
+        "password": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "uuid": {
+          "type": "string",
+          "maxLength": 36
+        }
+      },
+      "required": [
+        "ref",
+        "audience",
+        "password",
+        "uuid"
+      ],
+      "additionalProperties": false
+    },
+    "BundleAuthorization": {
+      "type": "object",
+      "properties": {
+        "entry_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "identity_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "generation": {
+          "$ref": "#/$defs/Revision"
+        },
+        "expires_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "revoked_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "entry_id",
+        "identity_id",
+        "generation",
+        "expires_at",
+        "revoked_at"
+      ],
+      "additionalProperties": false
+    },
+    "Tombstone": {
+      "type": "object",
+      "properties": {
+        "identity_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "generation": {
+          "$ref": "#/$defs/Revision"
+        },
+        "epoch": {
+          "$ref": "#/$defs/Revision"
+        },
+        "at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "reason": {
+          "enum": [
+            "expired",
+            "revoked"
+          ]
+        }
+      },
+      "required": [
+        "identity_id",
+        "generation",
+        "epoch",
+        "at",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "ProxyEndpoint": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string",
+          "maxLength": 253
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "protocol": {
+          "enum": [
+            "ss2022",
+            "trojan",
+            "vless",
+            "hysteria2"
+          ]
+        },
+        "cipher": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "server_name": {
+          "type": "string",
+          "maxLength": 253
+        },
+        "reality_public_key": {
+          "type": "string",
+          "maxLength": 43
+        },
+        "short_id": {
+          "type": "string",
+          "maxLength": 16
+        }
+      },
+      "required": [
+        "host",
+        "port",
+        "protocol",
+        "cipher",
+        "server_name",
+        "reality_public_key",
+        "short_id"
+      ],
+      "additionalProperties": false
+    },
+    "HopSpec": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_config": {
+          "$ref": "#/$defs/Pin"
+        },
+        "dns": {
+          "$ref": "#/$defs/Pin"
+        },
+        "endpoint": {
+          "$ref": "#/$defs/ProxyEndpoint"
+        },
+        "dial_ip": {
+          "type": "string",
+          "maxLength": 45
+        }
+      },
+      "required": [
+        "node_id",
+        "node_config",
+        "dns",
+        "endpoint",
+        "dial_ip"
+      ],
+      "additionalProperties": false
+    },
+    "RouteTail": {
+      "type": "object",
+      "properties": {
+        "hops": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/HopSpec"
+          },
+          "minItems": 1,
+          "maxItems": 8
+        },
+        "egress": {
+          "$ref": "#/$defs/Pin"
+        },
+        "business_udp": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "hops",
+        "egress",
+        "business_udp"
+      ],
+      "additionalProperties": false
+    },
+    "EgressTarget": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "type": {
+          "enum": [
+            "node_default",
+            "interface",
+            "http",
+            "socks5"
+          ]
+        },
+        "interface": {
+          "type": "string",
+          "maxLength": 15
+        },
+        "host": {
+          "type": "string",
+          "maxLength": 253
+        },
+        "dial_ip": {
+          "type": "string",
+          "maxLength": 45
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "credential_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ID"
+            },
+            {
+              "const": ""
+            }
+          ]
+        }
+      },
+      "required": [
+        "node_id",
+        "type",
+        "interface",
+        "host",
+        "dial_ip",
+        "port",
+        "credential_ref"
+      ],
+      "additionalProperties": false
+    },
+    "PinnedEgressTarget": {
+      "type": "object",
+      "properties": {
+        "pin": {
+          "$ref": "#/$defs/Pin"
+        },
+        "spec": {
+          "$ref": "#/$defs/EgressTarget"
+        }
+      },
+      "required": [
+        "pin",
+        "spec"
+      ],
+      "additionalProperties": false
+    },
+    "EgressRule": {
+      "type": "object",
+      "properties": {
+        "destination": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "target": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Pin"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "no_resolve": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "destination",
+        "target",
+        "no_resolve"
+      ],
+      "additionalProperties": false
+    },
+    "EgressSpec": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "dns": {
+          "$ref": "#/$defs/Pin"
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PinnedEgressTarget"
+          },
+          "minItems": 0,
+          "maxItems": 32
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EgressRule"
+          },
+          "minItems": 1,
+          "maxItems": 128
+        }
+      },
+      "required": [
+        "node_id",
+        "dns",
+        "targets",
+        "rules"
+      ],
+      "additionalProperties": false
+    },
+    "EgressAuth": {
+      "type": "object",
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/Pin"
+        },
+        "ref": {
+          "$ref": "#/$defs/ID"
+        },
+        "audience": {
+          "$ref": "#/$defs/ID"
+        },
+        "username": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "password": {
+          "type": "string",
+          "maxLength": 255
+        }
+      },
+      "required": [
+        "target",
+        "ref",
+        "audience",
+        "username",
+        "password"
+      ],
+      "additionalProperties": false
+    },
+    "TerminalV2": {
+      "type": "object",
+      "properties": {
+        "pin": {
+          "$ref": "#/$defs/Pin"
+        },
+        "spec": {
+          "$ref": "#/$defs/EgressSpec"
+        },
+        "auth": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EgressAuth"
+          },
+          "minItems": 0,
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "pin",
+        "spec",
+        "auth"
+      ],
+      "additionalProperties": false
+    },
+    "SocketV2": {
+      "type": "object",
+      "properties": {
+        "listener_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "address": {
+          "type": "string",
+          "maxLength": 45
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "transport": {
+          "enum": [
+            "tcp",
+            "udp",
+            "tcp_udp"
+          ]
+        },
+        "credential": {
+          "$ref": "#/$defs/PrivateCredential"
+        },
+        "certificate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalMaterial"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "private_key": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalMaterial"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reality_key": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalMaterial"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reality_destination": {
+          "type": "string",
+          "maxLength": 320
+        },
+        "server_names": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 253
+          },
+          "minItems": 0,
+          "maxItems": 8
+        },
+        "short_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 16
+          },
+          "minItems": 0,
+          "maxItems": 8
+        }
+      },
+      "required": [
+        "listener_id",
+        "address",
+        "port",
+        "transport",
+        "credential",
+        "certificate",
+        "private_key",
+        "reality_key",
+        "reality_destination",
+        "server_names",
+        "short_ids"
+      ],
+      "additionalProperties": false
+    },
+    "NextHop": {
+      "type": "object",
+      "properties": {
+        "link": {
+          "$ref": "#/$defs/Pin"
+        },
+        "credential": {
+          "$ref": "#/$defs/PrivateCredential"
+        }
+      },
+      "required": [
+        "link",
+        "credential"
+      ],
+      "additionalProperties": false
+    },
+    "InternalRetirement": {
+      "type": "object",
+      "properties": {
+        "link": {
+          "$ref": "#/$defs/Pin"
+        },
+        "epoch": {
+          "$ref": "#/$defs/Revision"
+        }
+      },
+      "required": [
+        "link",
+        "epoch"
+      ],
+      "additionalProperties": false
+    },
+    "NodeRuleV2": {
+      "type": "object",
+      "properties": {
+        "next": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NextHop"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "terminal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Pin"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "next",
+        "terminal"
+      ],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "properties": {
+            "next": {
+              "type": "null"
+            },
+            "terminal": {
+              "type": "object"
+            }
+          }
+        },
+        {
+          "properties": {
+            "terminal": {
+              "type": "null"
+            },
+            "next": {
+              "type": "object"
+            }
+          }
+        }
+      ]
+    },
+    "ListenerV2": {
+      "type": "object",
+      "properties": {
+        "socket": {
+          "$ref": "#/$defs/SocketV2"
+        },
+        "tail": {
+          "$ref": "#/$defs/RouteTail"
+        },
+        "entry": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BundleAuthorization"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "internal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Pin"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "forward": {
+          "$ref": "#/$defs/NodeRuleV2"
+        }
+      },
+      "required": [
+        "socket",
+        "tail",
+        "entry",
+        "internal",
+        "forward"
+      ],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "properties": {
+            "entry": {
+              "type": "null"
+            },
+            "internal": {
+              "type": "object"
+            }
+          }
+        },
+        {
+          "properties": {
+            "internal": {
+              "type": "null"
+            },
+            "entry": {
+              "type": "object"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -2,6 +2,8 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://meshstrata.invalid/contracts/control/v1",
   "title": "meshstrata.control.v1",
+  "x-runtime-bundle-formats": [1],
+  "x-offline-bundle-format": "bundle-v2.schema.json",
   "oneOf": [
     {
       "type": "object",

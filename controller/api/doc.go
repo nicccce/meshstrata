@@ -13,3 +13,6 @@ var ControlSchema []byte
 
 //go:embed bundle.schema.json
 var BundleSchema []byte
+
+//go:embed bundle-v2.schema.json
+var OfflineBundleV2Schema []byte

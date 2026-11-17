@@ -12,15 +12,18 @@ import (
 type Purpose string
 
 // These values match migration 002 credentials.purpose. Extending this set needs
-// an incremental migration; subscription_download is reserved for B08/010.
+// an incremental migration. SubscriptionDownload is reserved for B08/010
+// and cannot be persisted by the deployed stage-2 credential schema.
 const (
-	ProxyEntry    Purpose = "proxy_entry"
-	InternalProxy Purpose = "internal_proxy"
-	DNSAPI        Purpose = "dns_api"
-	LocationAPI   Purpose = "location_api"
-	ManagementCA  Purpose = "management_ca"
-	Tunnel        Purpose = "tunnel"
-	Certificate   Purpose = "certificate"
+	ProxyEntry           Purpose = "proxy_entry"
+	InternalProxy        Purpose = "internal_proxy"
+	DNSAPI               Purpose = "dns_api"
+	LocationAPI          Purpose = "location_api"
+	ManagementCA         Purpose = "management_ca"
+	Tunnel               Purpose = "tunnel"
+	Certificate          Purpose = "certificate"
+	SubscriptionDownload Purpose = "subscription_download"
+	EgressProxy          Purpose = "egress_proxy" // B06/008 must use its own purpose-bound ciphertext store
 )
 
 var (

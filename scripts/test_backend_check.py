@@ -182,15 +182,10 @@ class Stage2Isolation(SnapshotIsolation):
         # Real compiler/toolchain, synthetic modules ONLY in a temporary fixture.
         # This proves orchestration, never claims B04/B05 business acceptance.
         repo = Path(check.__file__).resolve().parents[1]
-        archive = check.subprocess.check_output(['git', 'archive', 'HEAD'], cwd=repo)
+        archive = check.subprocess.check_output(['git', 'archive', '2d3c360'], cwd=repo)
         with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
             self.baseline = {entry.name: tar.extractfile(entry).read()
                              for entry in tar.getmembers() if entry.isfile()}
-        for rel in ['internal/control/bundle.go', 'internal/control/bundle_test.go',
-                    'internal/control/state.go', 'internal/control/message.go',
-                    'controller/api/doc.go', 'controller/api/control.schema.json',
-                    'controller/api/bundle.schema.json', 'controller/api/contract_test.go']:
-            self.baseline[rel] = (repo / rel).read_bytes()
         for module in ['B04', 'B05']:
             for owned in check.OWNED[module]:
                 if owned in self.baseline:
@@ -228,6 +223,109 @@ class Stage2Isolation(SnapshotIsolation):
             run.assert_not_called()
         latest = max((self.root / '.local/backend-check/B05').glob('run-*'), key=lambda p: p.stat().st_mtime_ns)
         self.assertEqual(json.loads((latest / 'VALIDATION.json').read_text())['status'], 'prepare_only_NOT_PASSED')
+
+
+class Stage3Isolation(unittest.TestCase):
+    put = SnapshotIsolation.put
+    prepare = SnapshotIsolation.prepare
+
+    @classmethod
+    def setUpClass(cls):
+        cls.repo = Path(check.__file__).resolve().parents[1]
+        archive = check.subprocess.check_output(['git', 'archive', '94ec907874b5a5d0c7d80e05a4efbf6c0a631535'], cwd=cls.repo)
+        with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+            cls.base = {entry.name: tar.extractfile(entry).read()
+                        for entry in tar.getmembers() if entry.isfile()}
+        # Curated pending shared contract, never sibling code or T02 work.
+        for rel in ['internal/control/bundle.go', 'internal/control/bundle_v2.go',
+                    'internal/control/bundle_v2_test.go', 'internal/secretstore/secretstore.go',
+                    'controller/api/bundle-v2.schema.json', 'controller/api/doc.go',
+                    'controller/api/contract_test.go', 'controller/internal/stage3/contract.go',
+                    'controller/internal/stage3/pins.go', 'controller/internal/stage3/pins_test.go',
+                    'controller/api/control.schema.json', 'controller/api/openapi.json']:
+            cls.base[rel] = (cls.repo / rel).read_bytes()
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        self.baseline = self.base.copy()
+        for module, (slot, _) in check.STAGE3.items():
+            self.put(f'{check.STORAGE}/proposals/{module}.sql',
+                     f'CREATE TABLE fixture_{slot} (id INTEGER PRIMARY KEY);')
+            self.put(f'{check.STORAGE}/queries/{module.lower()}_fixture.sql',
+                     f'-- name: Fixture{slot} :many\nSELECT id FROM fixture_{slot};')
+
+    def latest(self, module):
+        directory = self.root / '.local/backend-check' / module
+        run = max(directory.glob('run-*'), key=lambda path: path.stat().st_mtime_ns)
+        return run, json.loads((run / 'VALIDATION.json').read_text())
+
+    def test_three_real_toolchains_and_sibling_isolation(self):
+        self.put('internal/control/bundle_v2.go', 'ACTIVE SHARED MUST NOT COPY')
+        self.put('agent/integration/t02-artifact/draft.go', 'ACTIVE T02 MUST NOT COPY')
+        self.put('scripts/integration/t02/draft.py', 'ACTIVE T02 MUST NOT COPY')
+        self.put(f'{check.STORAGE}/migrations/007_b05.sql', 'ACTIVE FORMAL MUST NOT COPY')
+        for shapes in check.STAGE3_CONSTRUCTORS.values():
+            for name, ctor, impl, opts, iface in shapes:
+                self.put(f'controller/internal/{name}/fixture.go',
+                         f'package {name}\nimport "github.com/nicccce/meshstrata/controller/internal/stage3"\n'
+                         f'type {impl} struct {{ stage3.{iface} }}\n'
+                         f'func {ctor}(stage3.{opts}) (*{impl}, error) {{ return &{impl}{{}}, nil }}\n')
+        original_run = check.run
+        for module, (slot, names) in check.STAGE3.items():
+            with self.subTest(module=module):
+                def actual_run(command, cwd, env):
+                    self.assertTrue(cwd.is_relative_to(self.root / '.local/backend-check' / module))
+                    self.assertEqual(env['GOMAXPROCS'],'1')
+                    self.assertEqual(env['CGO_ENABLED'],'0')
+                    self.assertIn('-mod=readonly',env['GOFLAGS'])
+                    cached = dict(env,GOCACHE=str(self.repo / '.local/cache/go'),GOTMPDIR=str(self.repo / '.local/cache/go-tmp'))
+                    Path(cached['GOTMPDIR']).mkdir(parents=True,exist_ok=True)
+                    original_run(command,cwd,cached)
+                with patch.object(check,'run',side_effect=actual_run):
+                    self.prepare(module,invoke_main=True)
+                target, manifest = self.latest(module)
+                self.assertEqual(manifest['status'],'passed_isolated_only')
+                self.assertTrue((target / manifest['contract_check']['path']).exists())
+                self.assertEqual([c['exit_code'] for c in manifest['checks']], [0,0,0])
+                self.assertEqual(manifest['baseline_migrations'],check.STAGE3_MIGRATIONS)
+                self.assertEqual(manifest['scratch_migrations'],[f'{n:03}' for n in range(8,slot)])
+                for sibling, (_, dirs) in check.STAGE3.items():
+                    self.assertFalse((target / check.STORAGE / 'proposals' / f'{sibling}.sql').exists())
+                    for name in dirs:
+                        self.assertEqual((target / 'controller/internal' / name).exists(),name in names)
+                self.assertEqual((target / 'internal/control/bundle_v2.go').read_bytes(),
+                                 self.base['internal/control/bundle_v2.go'])
+                self.assertFalse((target / 'agent/integration/t02-artifact').exists())
+                self.assertFalse((target / 'scripts/integration/t02').exists())
+                self.assertFalse((target / 'controller/web/node_modules').exists())
+
+    def test_rejects_missing_implementation_proposal_history_and_non_source(self):
+        with patch.object(check,'run') as run:
+            self.prepare('B06',invoke_main=True,prepare_only=True)
+            self.assertEqual(self.latest('B06')[1]['status'],'prepare_only_NOT_PASSED')
+            self.put('controller/internal/subscriptions/empty.go','package subscriptions')
+            with self.assertRaisesRegex(SystemExit,'source incomplete'):
+                self.prepare('B08',invoke_main=True)
+            self.assertEqual(self.latest('B08')[1]['status'],'failed_NOT_PASSED')
+            run.assert_not_called()
+        (self.root / check.STORAGE / 'proposals/B06.sql').unlink()
+        with self.assertRaisesRegex(SystemExit,'explicit module SQL proposal'):
+            self.prepare('B06')
+        self.put('controller/internal/clientconfig/real.key','not source')
+        with self.assertRaisesRegex(SystemExit,'non-source'):
+            self.prepare('B07')
+        (self.root / 'controller/internal/clientconfig/real.key').unlink()
+        self.put('documents/backend-delivery/B07.deps','example.invalid/dependency@latest')
+        with self.assertRaisesRegex(SystemExit,'exact module'):
+            self.prepare('B07')
+        (self.root / 'controller/internal/clientconfig/escape.go').symlink_to('/tmp')
+        with self.assertRaisesRegex(SystemExit,'symlink'):
+            self.prepare('B07')
+        self.baseline[f'{check.STORAGE}/migrations/007_b05.sql'] += b'-- rewrite forbidden'
+        with self.assertRaisesRegex(SystemExit,'exact frozen formal'):
+            self.prepare('B07')
 
 
 if __name__ == '__main__':

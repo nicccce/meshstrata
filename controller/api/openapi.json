@@ -1909,6 +1909,7 @@
           "reset_required_after_refresh": false,
           "migration": "010",
           "credential_purpose": "subscription_download",
+          "credential_table": "subscription_download_credentials",
           "subscription_field": "download_token_credential_ref",
           "atomic_with": [
             "download_token_hash",

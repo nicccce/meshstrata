@@ -46,7 +46,7 @@ func fields(t reflect.Type) map[string]bool {
 func TestContractReferencesAndGoFields(t *testing.T) {
 	open := parse(t, OpenAPI)
 	ws := parse(t, ControlSchema)
-	for _, root := range []map[string]any{open, ws, parse(t, BundleSchema)} {
+	for _, root := range []map[string]any{open, ws, parse(t, BundleSchema), parse(t, OfflineBundleV2Schema)} {
 		var walk func(any)
 		walk = func(v any) {
 			switch n := v.(type) {
@@ -155,7 +155,7 @@ func TestSubscriptionCapabilityLinkContract(t *testing.T) {
 		t.Fatal("explicit link retrieval must require admin+CSRF and remain reserved")
 	}
 	recovery := link["x-token-recovery"].(map[string]any)
-	if recovery["reset_required_after_refresh"] != false || recovery["verification"] != "hash" || recovery["migration"] != "010" || recovery["credential_purpose"] != "subscription_download" || recovery["subscription_field"] != "download_token_credential_ref" {
+	if recovery["reset_required_after_refresh"] != false || recovery["verification"] != "hash" || recovery["migration"] != "010" || recovery["credential_purpose"] != "subscription_download" || recovery["subscription_field"] != "download_token_credential_ref" || recovery["credential_table"] != "subscription_download_credentials" {
 		t.Fatal("Copy URL after refresh requires recoverable current token, not forced reset")
 	}
 	for _, operation := range []map[string]any{op, link, schema(t, open, "paths", "/subscriptions/v1/config", "get")} {
@@ -223,5 +223,40 @@ func TestPrivateBundleSchemaFields(t *testing.T) {
 	}
 	if int(root["x-max-bytes"].(float64)) != control.MaxBundleBytes {
 		t.Fatal("bundle length mismatch")
+	}
+}
+
+func TestOfflineBundleV2Contract(t *testing.T) {
+	root := parse(t, OfflineBundleV2Schema)
+	wire := parse(t, ControlSchema)["x-runtime-bundle-formats"].([]any)
+	if len(wire) != 1 || wire[0] != float64(control.BundleVersion) {
+		t.Fatal("wire still advertises only the active format")
+	}
+	if root["x-runtime-supported"] != false || schema(t, root, "properties", "format")["const"] != float64(control.BundleVersion2) ||
+		control.BundleVersion != 1 || root["x-max-bytes"] != float64(control.MaxBundleBytes) {
+		t.Fatal("offline codec must not advertise runtime support")
+	}
+	models := map[string]any{
+		"BundleV2": control.BundleV2{}, "ListenerV2": control.ListenerV2{}, "TerminalV2": control.TerminalV2{},
+		"SocketV2": control.SocketV2{}, "NodeRuleV2": control.NodeRuleV2{}, "NextHop": control.NextHop{},
+		"InternalRetirement": control.InternalRetirement{}, "RouteTail": control.RouteTail{}, "HopSpec": control.HopSpec{},
+		"ProxyEndpoint": control.ProxyEndpoint{}, "EgressSpec": control.EgressSpec{}, "EgressAuth": control.EgressAuth{},
+		"PinnedEgressTarget": control.PinnedEgressTarget{}, "EgressTarget": control.EgressTarget{}, "EgressRule": control.EgressRule{},
+	}
+	for name, value := range models {
+		spec := root
+		if name != "BundleV2" {
+			spec = schema(t, root, "$defs", name)
+		}
+		props := spec["properties"].(map[string]any)
+		want := fields(reflect.TypeOf(value))
+		if len(want) != len(props) || spec["additionalProperties"] != false || len(spec["required"].([]any)) != len(want) {
+			t.Fatalf("%s shape mismatch", name)
+		}
+		for field := range want {
+			if props[field] == nil {
+				t.Fatalf("%s.%s missing", name, field)
+			}
+		}
 	}
 }

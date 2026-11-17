@@ -53,7 +53,7 @@
 
 专用随机download-only token至少256位熵、URL-safe，只授权单订阅下载。它可位于HTTPS资源路径，OpenAPI使用普通path参数和`x-authentication`，不能虚构`in:path`的apiKey。管理员密码、会话cookie、入网token、节点私钥、DNS凭据、代理认证和本地Mihomo secret仍不得进入普通URL/前端路由/日志/草稿。订阅业务接口继续`x-implemented:false`并返回404，B08才注册真实下载。
 
-刷新后显式Copy URL通过管理员会话、Origin和CSRF保护的`POST /api/v1/subscriptions/{subscription_id}/download-link`取回当前链接，响应仅`{download_url}`；普通列表/详情DTO不含token/URL。B08必须同时使用hash验证及B01 Cipher保存可恢复的密文/引用；不是刷新即重置。迁移010增加`subscription_download` purpose和`subscriptions.download_token_credential_ref REFERENCES credentials(id)`（不得改001/002）；约束该引用唯一且purpose正确，绑定credential ID+purpose，订阅映射及token_version在短事务中校验。新token先加密，再原子更新hash/version/ref并撤销旧credential；删除同样撤销hash与引用；失败不留半次重置，不换仍有效的代理身份。B01基础允许purpose扩展，但010落地前不能持久该新增用途。
+刷新后显式Copy URL通过管理员会话、Origin和CSRF保护的`POST /api/v1/subscriptions/{subscription_id}/download-link`取回当前链接，响应仅`{download_url}`；普通列表/详情DTO不含token/URL。B08必须同时使用hash验证及B01 Cipher保存可恢复的密文/引用；不是刷新即重置。迁移010增加`subscription_download` purpose和`subscriptions.download_token_credential_ref`。I03-P 将引用目标冻结为专用 `subscription_download_credentials(id)`，保留旧 credentials/CA/FK；约束引用唯一、purpose 固定正确、订阅映射及 token_version 在短事务中校验。新token先加密，再原子更新hash/version/ref并撤销旧credential；删除同样撤销hash与引用；失败不留半次重置，不换仍有效的代理身份。B01基础允许purpose扩展，但010落地前不能持久该新增用途。
 
 每次下载验证订阅expires_at/revoked_at及当前token hash/version，旧链接重置/删除及时失效；错误不得反射URL/token。链接获取和下载的所有响应（含错误）`Cache-Control: no-store`、`Referrer-Policy: no-referrer`、`X-Content-Type-Options: nosniff`；禁止重定向、第三方资源及分析。能力链接只可在显式复制/导入或下载操作中短时使用，不进入普通导出、访问日志（反向代理也须按路径模板脱敏）、错误、Referer、任务证据和分析，前端路由/草稿/持久存储同禁。B08/T03用脱敏证据测试标准URL导入、刷新再次复制、单订阅范围、到期/撤销/重置/删除和无泄漏。Header入口仅兼容选择，不是放行前提。
 
@@ -95,3 +95,9 @@ Controller/Agent 关闭分别取消 HTTP、续期与重连，并显式关闭 hij
 `GET /api/v1/tasks` 与 `GET /api/v1/tasks/{task_id}` 使用 Guard.Read。cancel/retry/rollback 写操作使用 Guard.Write，body 是原有 Mutation，`expected_revision` 指源任务账本修订。取消只限未 armed 且无清理意图的 queued publish/rollback。retry 和 rollback 创建新任务、新目标和五分钟截止时间；rollback 以成功历史配置为输入，经当前撤销/到期过滤。未确认的首次 Open 来源拒绝换 task 重试并返回 `GRANT_ORIGIN_UNCERTAIN`。受限的 format 1 计划通过独占状态锁的本地 CLI 提交，普通 HTTP 只接任务 DTO 和 Mutation。
 
 Agent 的可选 Hello `runtime:true` 表示已经恢复的执行能力。旧 `control_only` 保留原 pristine Hello，可安全上线。控制上线不构成代理业务证据。Hello `applied_digest` 对应所报已验证修订的 Controller artifact；新可选 Result `effective_digest` 与 Restriction 的同名字段记录已核对的本机渲染字节。结果和离线清理证据持久化后才发 receipt。命令 cleanup 确认覆盖其全部待清理身份，精确的原授权 Restriction 可单独确认子集。格式 1 业务运行需要同代 Controller 和 Agent；旧 strict v1 Controller 不解析新增字段。细节见 [I02 集成报告](../../documents/backend-delivery/I02.md)。
+
+## I03-P 阶段三离线边界
+
+[bundle-v2.schema.json](bundle-v2.schema.json) 和 `control.EncodeBundleV2/DecodeBundleV2` 冻结新产物的私有强类型格式：逐 Listener 绑定确定下游或固定末端策略；入口有不可变授权，内部 link 有独立身份和永久 retirement；末端只表达有限的 CIDR/MATCH/目标/DNS。Go 验证为规范，包括固定字节 SHA256、数量和绑定；没有任意 YAML、脚本、宿主路径。schema 的 `x-runtime-supported` 为 false，`control.schema.json` 仍只声明运行格式 1，旧解码器拒绝格式 2。线协议、旧 Grant/恢复、API 注册与前端模式均未改变。I03 的格式协商、双格式账本、真实渲染及验证边界见 [阶段3交接](../../documents/backend-delivery/阶段3交接.md)。
+
+B06–B08 使用同一 Controller 进程内契约。管理员读模型只看安全视图，下载才能读取本订阅的凭据；完整客户端配置与 proxy-provider 为不同输出。B08/010 使用 `subscription_download` 的独立密文 envelope、验证 hash 和当前版本引用，保留 002 既有 credentials/CA。标准 HTTPS 能力路径、受管理员 + Origin/CSRF 保护的专用 Copy URL POST、no-store/no-referrer 和无重定向约定不变。
