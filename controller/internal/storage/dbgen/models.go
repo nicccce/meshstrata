@@ -99,6 +99,7 @@ type B04Artifact struct {
 	TargetDigest   string
 	KeyID          string
 	Ciphertext     []byte
+	Format         int64
 }
 
 type B04Grant struct {
@@ -205,6 +206,285 @@ type B04TargetGrant struct {
 	Action     string
 }
 
+type B06EgressCredential struct {
+	ID             string
+	TargetID       string
+	OriginRevision int64
+	KeyID          string
+	Ciphertext     []byte
+}
+
+type B06EgressEvidence struct {
+	NodeID       string
+	NodeRevision int64
+	TargetDigest string
+	DnsDigest    string
+	ExpiresAt    string
+	BusinessUdp  int64
+}
+
+type B06EgressObject struct {
+	ID       string
+	NodeID   string
+	Kind     string
+	Name     string
+	Revision int64
+}
+
+type B06EgressVersion struct {
+	ID       string
+	Revision int64
+	Digest   string
+	Spec     []byte
+}
+
+type B06EntryLinkReference struct {
+	IdentityID string
+	LinkID     string
+	ReleasedAt sql.NullString
+}
+
+type B06EntryPlan struct {
+	RecoveryGeneration int64
+	OperationID        string
+	OriginOperationID  string
+	Kind               string
+	IdemKey            string
+	RequestDigest      string
+	SecretRef          string
+	KeyID              string
+	Ciphertext         []byte
+	TaskID             sql.NullString
+}
+
+type B06Ingress struct {
+	OperationID   string
+	RequestDigest string
+	Reservation   []byte
+	Lease         []byte
+	ListenerID    sql.NullString
+	CredentialRef string
+	IdentityID    string
+	RouteID       string
+	Revision      int64
+}
+
+type B06InternalLink struct {
+	ID            string
+	Revision      int64
+	SuffixDigest  string
+	Tail          []byte
+	NodeID        string
+	ListenerID    string
+	CredentialRef string
+	State         string
+	CleanupTaskID sql.NullString
+}
+
+type B06LinkCandidate struct {
+	OperationID   string
+	PublicationID string
+	Position      int64
+	SuffixDigest  string
+	ProposedLink  string
+	CredentialRef string
+	KeyID         string
+	Ciphertext    []byte
+}
+
+type B06LinkReference struct {
+	OperationID   string
+	PublicationID string
+	Position      int64
+	LinkID        string
+	ReservationID string
+	RequestDigest string
+	ReleasedAt    sql.NullString
+}
+
+type B06Mutation struct {
+	Operation     string
+	IdemKey       string
+	RequestDigest string
+	Result        []byte
+}
+
+type B06PolicyTarget struct {
+	PolicyID       string
+	PolicyRevision int64
+	TargetID       string
+	TargetRevision int64
+}
+
+type B06Publication struct {
+	ID       string
+	RouteID  string
+	Revision int64
+	IdemKey  string
+	Deadline string
+	TaskID   sql.NullString
+	Failure  []byte
+	State    string
+}
+
+type B06PublicationNode struct {
+	PublicationID  string
+	Position       int64
+	NodeID         string
+	TargetRevision int64
+	SecretRef      string
+	KeyID          string
+	Ciphertext     []byte
+}
+
+type B06PublishedHop struct {
+	RouteID  string
+	Revision int64
+	Position int64
+	Port     int64
+}
+
+type B06PublishedVersion struct {
+	RouteID       string
+	Revision      int64
+	PublicationID string
+	RouteDigest   string
+	Confirmed     int64
+}
+
+type B06RouteHead struct {
+	RouteID  string
+	Revision int64
+}
+
+type B06RouteHop struct {
+	RouteID    string
+	Revision   int64
+	Position   int64
+	NodeID     string
+	NodeConfig []byte
+	Dns        []byte
+	Endpoint   []byte
+	DialIp     string
+}
+
+type B06RouteVersion struct {
+	RouteID        string
+	Revision       int64
+	Name           string
+	DraftDigest    string
+	EgressID       string
+	EgressRevision int64
+	EgressDigest   string
+	NodeDefault    int64
+	BusinessUdp    int64
+}
+
+type B07DomainPin struct {
+	DomainSetID string
+	Revision    int64
+	Digest      string
+}
+
+type B07Mutation struct {
+	Scope          string
+	Operation      string
+	IdempotencyKey string
+	RequestDigest  string
+	ResultID       string
+	ResultRevision int64
+	ResultDigest   string
+}
+
+type B07ProfilePin struct {
+	ProfileID   string
+	Revision    int64
+	Digest      string
+	MatchLine   int64
+	MatchColumn int64
+}
+
+type B07ProfileSetPin struct {
+	ProfileID         string
+	ProfileRevision   int64
+	DomainSetID       string
+	DomainSetRevision int64
+	Digest            string
+	Position          int64
+}
+
+type B08Clock struct {
+	Singleton int64
+	Floor     string
+}
+
+type B08Head struct {
+	SubscriptionID    string
+	DesiredRevision   int64
+	ConfirmedRevision sql.NullInt64
+}
+
+type B08Intent struct {
+	ID                string
+	SubscriptionID    string
+	SubjectRevision   int64
+	EntryKey          string
+	IdentityKey       string
+	Generation        int64
+	LegacyPosition    int64
+	RouteID           string
+	RouteRevision     int64
+	RouteDigest       string
+	RouteJson         string
+	CredentialRef     string
+	ExpiresAt         string
+	Deadline          string
+	ReserveStarted    int64
+	ReservationID     sql.NullString
+	ListenerID        sql.NullString
+	EndpointJson      sql.NullString
+	EntryID           sql.NullString
+	IdentityID        sql.NullString
+	DispatchEpoch     sql.NullInt64
+	TaskID            sql.NullString
+	State             string
+	RevokedAt         sql.NullString
+	CleanupID         string
+	CleanupEpoch      sql.NullInt64
+	CleanupDeadline   sql.NullString
+	CleanupTaskID     sql.NullString
+	CleanupState      string
+	CleanupGeneration int64
+}
+
+type B08Request struct {
+	Scope          string
+	Operation      string
+	IdempotencyKey string
+	Digest         string
+	ResultJson     string
+}
+
+type B08Revision struct {
+	SubscriptionID  string
+	Revision        int64
+	Digest          string
+	Name            string
+	ExpiresAt       string
+	ProfileID       string
+	ProfileRevision int64
+	ProfileDigest   string
+	PreferencesJson string
+}
+
+type B08RevisionEntry struct {
+	SubscriptionID string
+	Revision       int64
+	Position       int64
+	RouteID        string
+	IntentID       string
+}
+
 type Credential struct {
 	ID         string
 	Purpose    string
@@ -226,6 +506,7 @@ type DomainSetMember struct {
 	DomainSetID string
 	Revision    int64
 	Domain      string
+	Position    sql.NullInt64
 }
 
 type DomainSetRevision struct {
@@ -298,6 +579,110 @@ type Event struct {
 	TaskID     sql.NullString
 	ErrorCode  sql.NullString
 	OccurredAt string
+}
+
+type I03CleanupAttempt struct {
+	OperationID string
+	Generation  int64
+	TaskID      string
+	PriorTaskID sql.NullString
+}
+
+type I03EgressObservation struct {
+	NodeID        string
+	NodeRevision  int64
+	TargetDigest  string
+	DnsDigest     string
+	ObservedAt    string
+	ExpiresAt     string
+	InterfaceName string
+	SourceIp      string
+	ProbeIp       string
+	ProbePort     int64
+}
+
+type I03IngressLease struct {
+	OperationID    string
+	RequestDigest  string
+	ReservationID  string
+	ListenerID     string
+	ConfigID       string
+	ConfigRevision int64
+	ConfigDigest   string
+	PreferredPort  int64
+	ActualPort     int64
+	BlockedAt      sql.NullString
+	ReleasedAt     sql.NullString
+}
+
+type I03InternalOrigin struct {
+	LinkID string
+	TaskID string
+	NodeID string
+}
+
+type I03LinkFence struct {
+	TaskID         string
+	NodeID         string
+	ReceiverID     string
+	LinkID         string
+	TargetRevision int64
+	ArtifactDigest string
+	Epoch          int64
+}
+
+type I03NodeInterface struct {
+	NodeID  string
+	Name    string
+	Address string
+	Up      int64
+}
+
+type I03NodeInventory struct {
+	NodeID       string
+	NodeRevision int64
+	DnsDigest    string
+	Dns          []byte
+	Loops        []byte
+	ObservedAt   string
+	ExpiresAt    string
+}
+
+type I03NodeSocket struct {
+	NodeID         string
+	ConfigID       string
+	ConfigRevision int64
+	ConfigDigest   string
+	Spec           []byte
+	Protocol       string
+	BusinessUdp    string
+	PoolFirst      int64
+	PoolLast       int64
+}
+
+type I03OperationFence struct {
+	OperationID string
+	BlockedAt   string
+}
+
+type I03TargetLink struct {
+	TaskID string
+	NodeID string
+	LinkID string
+	Action string
+}
+
+type I03V2Action struct {
+	TaskID         string
+	SourceTaskID   string
+	SourceRevision int64
+	Action         string
+}
+
+type I03V2Task struct {
+	TaskID           string
+	SubjectDigest    string
+	EntryOperationID string
 }
 
 type Listener struct {
@@ -472,13 +857,15 @@ type RuleDomainSet struct {
 }
 
 type RuleLine struct {
-	ProfileID string
-	Revision  int64
-	Position  int64
-	Type      string
-	Value     string
-	Target    string
-	Options   string
+	ProfileID    string
+	Revision     int64
+	Position     int64
+	Type         string
+	Value        string
+	Target       string
+	Options      string
+	SourceLine   sql.NullInt64
+	SourceColumn sql.NullInt64
 }
 
 type RuleProfile struct {
@@ -515,19 +902,30 @@ type Setting struct {
 }
 
 type Subscription struct {
-	ID                string
-	Name              string
-	Revision          int64
-	ProfileID         string
-	ProfileRevision   int64
-	ExpiresAt         string
-	RevokedAt         sql.NullString
-	DownloadTokenHash []byte
-	TokenVersion      int64
-	AllRoutesGroup    int64
-	GroupByExit       int64
-	ClientMode        string
-	UpdatedAt         string
+	ID                         string
+	Name                       string
+	Revision                   int64
+	ProfileID                  string
+	ProfileRevision            int64
+	ExpiresAt                  string
+	RevokedAt                  sql.NullString
+	DownloadTokenHash          []byte
+	TokenVersion               int64
+	AllRoutesGroup             int64
+	GroupByExit                int64
+	ClientMode                 string
+	UpdatedAt                  string
+	DownloadTokenCredentialRef sql.NullString
+}
+
+type SubscriptionDownloadCredential struct {
+	ID             string
+	SubscriptionID string
+	TokenVersion   int64
+	Purpose        string
+	KeyID          string
+	Ciphertext     []byte
+	RevokedAt      sql.NullString
 }
 
 type SubscriptionEntry struct {

@@ -30,7 +30,17 @@ func (p Pin) Valid() bool {
 
 // ProxyEndpoint contains only public transport parameters. A literal IP or an
 // ASCII DNS name is allowed. ServerName is the authenticated TLS/REALITY name.
+// TLSLeafSHA256 is a lowercase SHA-256 of a business TLS leaf certificate.
+// Empty uses the normal trusted chain and server name.
+type TLSLeafSHA256 string
+
+func (p TLSLeafSHA256) Valid() bool {
+	b, err := hex.DecodeString(string(p))
+	return len(p) == 64 && err == nil && len(b) == 32 && strings.ToLower(string(p)) == string(p)
+}
+
 type ProxyEndpoint struct {
+	TLSLeafSHA256    TLSLeafSHA256   `json:"tls_leaf_sha256,omitempty"`
 	Host             string          `json:"host"`
 	Port             uint16          `json:"port"`
 	Protocol         domain.Protocol `json:"protocol"`
@@ -68,7 +78,7 @@ func dialIP(s string) (netip.Addr, bool) {
 
 func (p ProxyEndpoint) Valid() bool {
 	_, literal := dialIP(p.Host)
-	if (!literal && !DomainName(p.Host)) || p.Port == 0 {
+	if (!literal && !DomainName(p.Host)) || p.Port == 0 || p.TLSLeafSHA256 != "" && (!p.TLSLeafSHA256.Valid() || p.Protocol != domain.Trojan && p.Protocol != domain.Hysteria2) {
 		return false
 	}
 	switch p.Protocol {
@@ -264,6 +274,9 @@ func (t RouteTail) Key() (string, error) {
 
 // SocketV2 is the common listener shape with no entry authorization.
 type SocketV2 struct {
+	// ConfigPort preserves the reviewed preferred port independently of this entry lease.
+	ConfigPort         uint16            `json:"config_port,omitempty"`
+	TLSLeafSHA256      TLSLeafSHA256     `json:"tls_leaf_sha256,omitempty"`
 	ListenerID         domain.ID         `json:"listener_id"`
 	Address            string            `json:"address"`
 	Port               uint16            `json:"port"`
@@ -320,6 +333,7 @@ type BundleV2 struct {
 // SocketSpec excludes per-entry allocation and private material. The port intent
 // (0 means pool selection) belongs to the fixed node config, not the entry.
 type SocketSpec struct {
+	TLSLeafSHA256      TLSLeafSHA256  `json:"tls_leaf_sha256,omitempty"`
 	Address            string         `json:"address"`
 	RequestedPort      uint16         `json:"requested_port"`
 	Transport          string         `json:"transport"`
@@ -466,8 +480,15 @@ func (b BundleV2) Validate() error {
 			s.ServerNames == nil || s.ShortIDs == nil || len(s.ServerNames) > 8 || len(s.ShortIDs) > 8 || !safeText(s.RealityDestination, 320) {
 			return ErrBundle
 		}
-		socketSpec := SocketSpec{s.Address, 0, s.Transport, s.Certificate, s.PrivateKey, s.RealityKey, s.RealityDestination, s.ServerNames, s.ShortIDs}
+		socketSpec := SocketSpec{Address: s.Address, RequestedPort: s.ConfigPort, Transport: s.Transport, Certificate: s.Certificate, PrivateKey: s.PrivateKey, RealityKey: s.RealityKey, RealityDestination: s.RealityDestination, ServerNames: s.ServerNames, ShortIDs: s.ShortIDs, TLSLeafSHA256: s.TLSLeafSHA256}
+		if s.TLSLeafSHA256 != h.Endpoint.TLSLeafSHA256 || s.ConfigPort != 0 && l.Internal != nil && s.ConfigPort != s.Port {
+			return ErrBundle
+		}
 		if !pinValid(h.NodeConfig, socketSpec) {
+			// Compatibility for offline templates prepared before ConfigPort.
+			if s.ConfigPort != 0 {
+				return ErrBundle
+			}
 			socketSpec.RequestedPort = s.Port
 			if !pinValid(h.NodeConfig, socketSpec) {
 				return ErrBundle
@@ -571,40 +592,53 @@ type LoopInventory struct {
 	ProtectedInterfaces []string
 }
 
-func (b BundleV2) CheckEgressLoops(inv LoopInventory) error {
-	if b.Validate() != nil || len(inv.LocalAddresses) == 0 || inv.ProtectedEndpoints == nil ||
-		inv.ProtectedNetworks == nil || inv.ProtectedInterfaces == nil {
+// CheckEgressTargetLoops validates a pinned target against trusted topology.
+// It is also used before admitting restricted probe evidence, without creating
+// a bundle or placeholder authentication material.
+func CheckEgressTargetLoops(s EgressTarget, inv LoopInventory, sockets []SocketV2) error {
+	if !s.Valid() || len(inv.LocalAddresses) == 0 || inv.ProtectedEndpoints == nil || inv.ProtectedNetworks == nil || inv.ProtectedInterfaces == nil {
 		return ErrBundle
 	}
-	for _, t := range b.Terminal {
-		for _, target := range t.Spec.Targets {
-			s := target.Spec
-			if s.Type == "interface" && contains(inv.ProtectedInterfaces, s.Interface) {
+	if s.Type == "interface" && contains(inv.ProtectedInterfaces, s.Interface) {
+		return ErrBundle
+	}
+	ip, proxy := dialIP(s.DialIP)
+	if !proxy {
+		return nil
+	}
+	for _, p := range inv.ProtectedNetworks {
+		if p.Contains(ip) {
+			return ErrBundle
+		}
+	}
+	for _, ep := range inv.ProtectedEndpoints {
+		if ep.Port() == s.Port && ep.Addr().Unmap() == ip {
+			return ErrBundle
+		}
+	}
+	local := ip.IsLoopback()
+	for _, addr := range inv.LocalAddresses {
+		local = local || addr.Unmap() == ip
+	}
+	for _, l := range sockets {
+		if l.Port == s.Port && l.Transport != "udp" && (l.Address == ip.String() || local && addressesOverlap(l.Address, ip.String())) {
+			return ErrBundle
+		}
+	}
+	return nil
+}
+func (b BundleV2) CheckEgressLoops(inv LoopInventory) error {
+	if b.Validate() != nil || len(inv.LocalAddresses) == 0 || inv.ProtectedEndpoints == nil || inv.ProtectedNetworks == nil || inv.ProtectedInterfaces == nil {
+		return ErrBundle
+	}
+	sockets := make([]SocketV2, 0, len(b.Listeners))
+	for _, l := range b.Listeners {
+		sockets = append(sockets, l.Socket)
+	}
+	for _, p := range b.Terminal {
+		for _, t := range p.Spec.Targets {
+			if CheckEgressTargetLoops(t.Spec, inv, sockets) != nil {
 				return ErrBundle
-			}
-			ip, proxy := dialIP(s.DialIP)
-			if !proxy {
-				continue
-			}
-			for _, prefix := range inv.ProtectedNetworks {
-				if prefix.Contains(ip) {
-					return ErrBundle
-				}
-			}
-			for _, ep := range inv.ProtectedEndpoints {
-				if ep.Port() == s.Port && ep.Addr().Unmap() == ip {
-					return ErrBundle
-				}
-			}
-			local := ip.IsLoopback()
-			for _, addr := range inv.LocalAddresses {
-				local = local || addr.Unmap() == ip
-			}
-			for _, l := range b.Listeners {
-				if l.Socket.Port == s.Port && l.Socket.Transport != "udp" &&
-					(l.Socket.Address == ip.String() || local && addressesOverlap(l.Socket.Address, ip.String())) {
-					return ErrBundle
-				}
 			}
 		}
 	}

@@ -17,7 +17,7 @@
 | `internal/domain/*`、`internal/control/**`、`internal/platform/service.go`、`internal/{secretstore,adminauth}/*` | 每批独立集成会话 | 模块提出具体字段/接口变更及兼容性，集成审后统一落地；禁止并行改定义 |
 | `controller/api/*`、`controller/web/FRONTEND_CONTRACT.md`、`src/data/{contracts,live,demo}.ts`、旧`src/api.ts` | 集成 | 模块可新增其私有API DTO/adapter，不能自行切换全局模式/删除demo |
 | `controller/internal/controller/{app,http}.go`、`agent/internal/agent/app.go`、`internal/config/*`、各cmd入口 | 集成 | 各模块交付构造函数/Handler/接口及接线提案，由集成串行注册；先安装安全中间件再开放写路由 |
-| `controller/internal/storage/{storage,database}.go`、`queries.sql`、`migrations/*`、`dbgen/*`、`sqlc.yaml` | 集成 | 已应用迁移不可改写，当前001–007冻结；sqlc输出只生成，不手改 |
+| `controller/internal/storage/{storage,database}.go`、`queries.sql`、`migrations/*`、`dbgen/*`、`sqlc.yaml` | 集成 | 已应用迁移不可改写，当前001–010冻结；sqlc输出只生成，不手改 |
 | `Makefile`、`go.mod/go.sum`、前端package/lock、构建脚本、公共i18n/router/domain/components | 集成 | 依赖精确锁定；不削弱既有检查，新增门禁先实跑 |
 | README、产品/交互/开发日志、本任务书、会话登记 | 集成 | 业务会话仅写各自`backend-delivery/Bxx.md`和精确依赖提案`Bxx.deps`；测试写`Txx.md`，集成汇总实际状态 |
 | Git与发布产物 | 集成/准备（本轮I03-P独占） | 保护用户修改，检查通过后提交并推送当前分支；失败保留本地提交并报告真实原因 |
@@ -130,3 +130,10 @@ B04/B05 已接入普通安全 Controller 和显式 Agent runtime，正式迁移 
 ## I03-P 阶段三准备（2026-11-17）
 
 [阶段3交接](backend-delivery/阶段3交接.md)冻结 B06/B07/B08 的构造接口、调用方向、固定发布/入口/下载快照、独占目录、008/009/010 和隔离实跑命令；用同一个 I03-P 最终提交 hash 派发。格式 2 仅供独立编译与离线校验，生产仍用格式 1。T02 保持 partial，R02 的本地证据不作真机通过，并按上段安排后续验证；两者不挡三个模块的独立实现。I03 等三者停止后统一安装迁移、生成、接线并决定验证派发；T03、阶段四前端 live 与后续阶段均未启动。检查记录见 [I03-P](backend-delivery/I03-P.md)。
+
+
+## I03-A 数据库与 Controller 网关（2026-11-18）
+
+B06/B07/B08 已交付并在固定 c46a256 基线复现隔离检查。A 正式安装 008–010、锁定 B07 依赖、生成 sqlc，并以真实 SQLite/B01/B04 联合验证 Infrastructure/Publisher、独立入口租约、共享内部链路、订阅撤销与清理恢复、稳定客户端代理标识和 TLS pin。001–007 未变，本次后 001–010 全部冻结；原业务 SQL 提案与报告保留历史，正式差异和最终门禁见 [I03-A](backend-delivery/I03-A.md)。
+
+I03 后续拆分：B 完成认证 V2 协商、Agent 双格式执行/恢复、受限渲染、真实库存/出口观察及 V2 removal；C 完成安全 composition/业务 HTTP；T03 独立双平台多机验收。现有生产仍 V1，V2 会话提供者为空，业务 HTTP、前端 live 未启用。A 本批提交推送后停止，不创建/派发 B/C/T03，不重跑 T02。原 T02/R02 待证与容量/分页/断电延期没有改成通过。

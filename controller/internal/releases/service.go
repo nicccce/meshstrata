@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"net/netip"
 	"reflect"
 	"sync"
 	"time"
@@ -24,6 +25,10 @@ type Repository struct{ db storage.Database }
 func NewRepository(db storage.Database) *Repository { return &Repository{db: db} }
 
 type Options struct {
+	EgressProbes []netip.AddrPort // explicit restricted numeric probe allowlist
+	// Nil in production until I03-B installs authenticated V2 negotiation.
+	V2Session     func(domain.ID) V2Session
+	V2Deliver     func(context.Context, control.Command) error
 	Now           func() time.Time
 	NewID         func(string) (domain.ID, error)
 	Deliver       func(context.Context, control.Command) error

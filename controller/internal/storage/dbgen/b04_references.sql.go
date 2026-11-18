@@ -201,7 +201,7 @@ func (q *Queries) B04InsertTargetGrant(ctx context.Context, arg B04InsertTargetG
 }
 
 const b04LatestVerifiedArtifact = `-- name: B04LatestVerifiedArtifact :one
-SELECT a.id, a.task_id, a.node_id, a.target_revision, a.target_digest, a.key_id, a.ciphertext FROM b04_artifacts a JOIN b04_targets b ON b.task_id=a.task_id AND b.node_id=a.node_id JOIN task_nodes tn ON tn.task_id=a.task_id AND tn.node_id=a.node_id
+SELECT a.id, a.task_id, a.node_id, a.target_revision, a.target_digest, a.key_id, a.ciphertext, a.format FROM b04_artifacts a JOIN b04_targets b ON b.task_id=a.task_id AND b.node_id=a.node_id JOIN task_nodes tn ON tn.task_id=a.task_id AND tn.node_id=a.node_id
 WHERE a.node_id=? AND b.phase='confirmed' AND tn.verification='verified'
 ORDER BY a.target_revision DESC LIMIT 1
 `
@@ -217,6 +217,7 @@ func (q *Queries) B04LatestVerifiedArtifact(ctx context.Context, nodeID string) 
 		&i.TargetDigest,
 		&i.KeyID,
 		&i.Ciphertext,
+		&i.Format,
 	)
 	return i, err
 }

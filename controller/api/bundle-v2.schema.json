@@ -301,6 +301,10 @@
         "short_id": {
           "type": "string",
           "maxLength": 16
+        },
+        "tls_leaf_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
         }
       },
       "required": [
@@ -630,6 +634,15 @@
           },
           "minItems": 0,
           "maxItems": 8
+        },
+        "tls_leaf_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "config_port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
         }
       },
       "required": [

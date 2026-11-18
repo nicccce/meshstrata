@@ -250,8 +250,20 @@ func TestOfflineBundleV2Contract(t *testing.T) {
 		}
 		props := spec["properties"].(map[string]any)
 		want := fields(reflect.TypeOf(value))
-		if len(want) != len(props) || spec["additionalProperties"] != false || len(spec["required"].([]any)) != len(want) {
+		if len(want) != len(props) || spec["additionalProperties"] != false {
 			t.Fatalf("%s shape mismatch", name)
+		}
+		required := map[string]bool{}
+		for _, name := range spec["required"].([]any) {
+			required[name.(string)] = true
+		}
+		typ := reflect.TypeOf(value)
+		for i := 0; i < typ.NumField(); i++ {
+			tag := typ.Field(i).Tag.Get("json")
+			name := strings.Split(tag, ",")[0]
+			if required[name] == strings.Contains(tag, ",omitempty") {
+				t.Fatalf("%s.%s optionality mismatch", name, tag)
+			}
 		}
 		for field := range want {
 			if props[field] == nil {

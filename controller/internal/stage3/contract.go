@@ -124,23 +124,32 @@ type IngressLease struct {
 	Endpoint      control.ProxyEndpoint // actual client-facing port, public only
 }
 type EntryChange struct {
-	Kind     domain.TaskKind // publish / revoke / cleanup
-	Mutation domain.Mutation
-	Subject  control.Pin // B08 reviewed subscription revision
-	Entry    EntryReservation
-	Lease    IngressLease
-	Epoch    domain.Revision
+	RecoveryGeneration int64           // persistent cleanup recovery generation, zero for publish
+	Kind               domain.TaskKind // publish / revoke / cleanup
+	Mutation           domain.Mutation
+	Subject            control.Pin // B08 reviewed subscription revision
+	Entry              EntryReservation
+	Lease              IngressLease
+	Epoch              domain.Revision
 	// Revoke/cleanup use the real previously applied identity, never a fresh one.
 }
 
 // PublishPlan is B06's trusted compiler output to the B04 gateway. The task ID
 // is filled by B04; each template is the COMPLETE intended node config.
+type TaskAction struct {
+	IdempotencyKey string
+	SourceTaskID   domain.ID
+	SourceRevision domain.Revision
+	Kind           string
+}
 type PublishPlan struct {
-	Kind             domain.TaskKind
-	Subject          control.Pin
-	Deadline         time.Time
-	Nodes            []NodePlan
-	EntryOperationID domain.ID // set only for B08 intent; checked before commit/arm
+	Action             *TaskAction // only the trusted task-action gateway supplies this
+	InternalRetirement bool        // only the trusted internal cleanup gateway supplies this
+	Kind               domain.TaskKind
+	Subject            control.Pin
+	Deadline           time.Time
+	Nodes              []NodePlan
+	EntryOperationID   domain.ID // set only for B08 intent; checked before commit/arm
 }
 type NodePlan struct {
 	NodeID           domain.ID
@@ -185,17 +194,23 @@ type LinkLease struct {
 	CredentialRef domain.ID
 }
 type PinnedSocketSpec struct {
+	Protocol  domain.Protocol
 	Pin       control.Pin
 	Spec      control.SocketSpec
 	PoolFirst uint16
 	PoolLast  uint16
 }
 type NodeSnapshot struct {
-	Revision     domain.Revision
-	DNS          control.DNSInput
-	Capabilities []ProtocolCapability
-	Sockets      []PinnedSocketSpec
-	Loops        control.LoopInventory
+	PendingTombstones []control.Tombstone // current authorization decisions, separate from the immutable confirmed artifact
+	BaseState         string              // unconfirmed_empty or confirmed; never synthesizes evidence
+	Artifact          control.ArtifactKey
+	EffectiveDigest   string
+	EvidenceAt        time.Time
+	Revision          domain.Revision
+	DNS               control.DNSInput
+	Capabilities      []ProtocolCapability
+	Sockets           []PinnedSocketSpec
+	Loops             control.LoopInventory
 	// Complete desired state, including grants for unrelated publications.
 	// Exactly one base format selected; I03 converts explicitly, never relabels.
 	Legacy   *control.Bundle
@@ -321,9 +336,15 @@ type ClientBuilder interface {
 	BuildFull(GenerationInput) (FullConfig, error)
 	BuildProvider(GenerationInput) (ProxyProvider, error)
 }
+type ProxyLabel struct {
+	Name        string
+	DisplayName string
+	EntryID     domain.ID
+}
 type Preview struct {
-	Groups []GroupChoice
-	Issues []Issue
+	ProxyLabels []ProxyLabel // stable generated name to original display label
+	Groups      []GroupChoice
+	Issues      []Issue
 	// No YAML containing usable credentials. A preview has no download authority.
 }
 type RulesOptions struct{ Runtime }

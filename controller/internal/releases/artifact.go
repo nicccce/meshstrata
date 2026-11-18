@@ -26,6 +26,9 @@ func (s *Service) Resolve(ctx context.Context, node, task domain.ID) (control.Ar
 	err := s.repo.db.Read(ctx, func(q *dbgen.Queries) error {
 		artifact, e := authorizedArtifact(ctx, q, node, task, s.options.Now())
 		key = artifactKey(artifact)
+		if e == nil {
+			e = s.checkV2Target(ctx, q, string(task), string(node), s.options.Now())
+		}
 		return e
 	})
 	return key, err
@@ -39,6 +42,9 @@ func (s *Service) Open(ctx context.Context, node domain.ID, key control.Artifact
 	err := s.repo.db.Read(ctx, func(q *dbgen.Queries) error {
 		var err error
 		a, err = authorizedArtifact(ctx, q, node, key.TaskID, s.options.Now())
+		if err == nil {
+			err = s.checkV2Target(ctx, q, string(key.TaskID), string(node), s.options.Now())
+		}
 		if err == nil && artifactKey(a) != key {
 			return problem(domain.RevisionConflict)
 		}
@@ -58,6 +64,14 @@ func (s *Service) Open(ctx context.Context, node domain.ID, key control.Artifact
 		}
 		if artifactKey(current) != key || current.ID != a.ID {
 			return problem(domain.RevisionConflict)
+		}
+		if err = s.checkV2Target(ctx, q, a.TaskID, a.NodeID, s.options.Now()); err != nil {
+			return err
+		}
+		if a.Format == 2 {
+			if err = q.I03PinOrigins(ctx, dbgen.I03PinOriginsParams{TaskID: a.TaskID, NodeID: a.NodeID}); err != nil {
+				return err
+			}
 		}
 		params := dbgen.B04PinGrantOriginsParams{TaskID: nullable(a.TaskID), NodeID: a.NodeID}
 		if err := q.B04PinGrantOrigins(ctx, params); err != nil {
@@ -167,6 +181,9 @@ func (s *Service) openBytes(ctx context.Context, a dbgen.B04Artifact) ([]byte, e
 }
 
 func (s *Service) openTemplate(ctx context.Context, a dbgen.B04Artifact) (control.Bundle, error) {
+	if a.Format != 1 {
+		return control.Bundle{}, problem(domain.NotImplemented)
+	}
 	data, err := s.openBytes(ctx, a)
 	if err != nil {
 		return control.Bundle{}, err

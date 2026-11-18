@@ -25,6 +25,7 @@ func (s *Service) action(ctx context.Context, id domain.ID, name string, m domai
 	}
 	var source dbgen.Task
 	var inputs []templateInput
+	var version2 bool
 	now := s.options.Now().UTC()
 	err = s.repo.db.Read(ctx, func(q *dbgen.Queries) error {
 		replay, err := previousAction(ctx, q, scope, m.IdempotencyKey, hash)
@@ -42,11 +43,22 @@ func (s *Service) action(ctx context.Context, id domain.ID, name string, m domai
 		if name == "cancel" {
 			return nil
 		}
+		meta, e := q.I03Task(ctx, source.ID)
+		if e == nil && meta.TaskID != "" {
+			version2 = true
+			return nil
+		}
+		if e != nil && !legitimatelyAbsent(e) {
+			return e
+		}
 		inputs, err = loadSource(ctx, q, source, name)
 		return err
 	})
 	if err != nil || out.TaskID != "" {
 		return out, err
+	}
+	if version2 {
+		return s.actionV2(ctx, source, name, m)
 	}
 	var prepared preparedPlan
 	if name != "cancel" {

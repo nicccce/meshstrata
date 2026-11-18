@@ -86,6 +86,16 @@ func (s *Service) record(ctx context.Context, q *dbgen.Queries, r control.Result
 	if !legitimatelyAbsent(err) {
 		return false, err
 	}
+	a, err := q.B04GetArtifact(ctx, dbgen.B04GetArtifactParams{TaskID: id, NodeID: node.ID})
+	if err != nil {
+		return false, err
+	}
+	if a.Format != 1 && a.Format != 2 {
+		return false, problem(domain.NotImplemented)
+	}
+	if a.Format == 2 && s.v2Session(domain.ID(node.ID)) == "" {
+		return false, problem(domain.NotImplemented)
+	}
 	if target.Phase == "queued" || target.Fetched == 0 && (r.Applied || r.Cleanup == "confirmed" || len(r.Restrictions) > 0) {
 		return false, problem(domain.RevisionConflict)
 	}
@@ -161,6 +171,9 @@ func (s *Service) record(ctx context.Context, q *dbgen.Queries, r control.Result
 		}
 	}
 	cleanup := task.Kind == string(domain.Cleanup) || task.Kind == string(domain.Revoke) || task.Kind == string(domain.Rollback)
+	if a.Format == 2 && removed > 0 {
+		cleanup = true
+	}
 	verified := r.Verification == domain.Verified && r.Applied
 	if r.Cleanup == "confirmed" && cleanup && (r.Rollback == "none" || explicitRollback) && (included == 0 || verified) {
 		for _, g := range grants {
@@ -172,6 +185,17 @@ func (s *Service) record(ctx context.Context, q *dbgen.Queries, r control.Result
 			}
 		}
 		removed = 0
+	}
+	if a.Format == 2 {
+		links, e := q.I03TargetLinks(ctx, dbgen.I03TargetLinksParams{TaskID: id, NodeID: node.ID})
+		if e != nil {
+			return false, e
+		}
+		for _, l := range links {
+			if l.Action == "retire" && (r.Cleanup != "confirmed" || !r.Applied) {
+				return true, nil
+			}
+		}
 	}
 	emptyCleanup := included == 0 && len(grants) > 0 && cleanup && r.Cleanup == "confirmed" && r.Rollback == "none"
 	if removed > 0 || (!verified && !emptyCleanup) {

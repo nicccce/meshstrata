@@ -281,7 +281,7 @@ func (q *Queries) B04GetAction(ctx context.Context, arg B04GetActionParams) (B04
 }
 
 const b04GetArtifact = `-- name: B04GetArtifact :one
-SELECT id, task_id, node_id, target_revision, target_digest, key_id, ciphertext FROM b04_artifacts WHERE task_id=? AND node_id=?
+SELECT id, task_id, node_id, target_revision, target_digest, key_id, ciphertext, format FROM b04_artifacts WHERE task_id=? AND node_id=?
 `
 
 type B04GetArtifactParams struct {
@@ -300,6 +300,7 @@ func (q *Queries) B04GetArtifact(ctx context.Context, arg B04GetArtifactParams) 
 		&i.TargetDigest,
 		&i.KeyID,
 		&i.Ciphertext,
+		&i.Format,
 	)
 	return i, err
 }

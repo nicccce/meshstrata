@@ -13,6 +13,9 @@ const redelivery = 10 * time.Second
 
 func (s *Service) dispatch(ctx context.Context) error {
 	now := s.options.Now()
+	if err := s.settleV2(ctx); err != nil {
+		return err
+	}
 	if err := s.sweepTasks(ctx, now); err != nil {
 		return err
 	}
@@ -38,7 +41,25 @@ func (s *Service) dispatch(ctx context.Context) error {
 			continue
 		}
 		delivery, cancel := context.WithTimeout(ctx, remaining)
-		err = s.options.Deliver(delivery, c)
+		var format int64
+		err = s.repo.db.Read(ctx, func(q *dbgen.Queries) error {
+			a, e := q.B04GetArtifact(ctx, dbgen.B04GetArtifactParams{TaskID: string(c.TaskID), NodeID: string(c.NodeID)})
+			format = a.Format
+			return e
+		})
+		if err == nil {
+			if format == 2 {
+				if s.v2Session(c.NodeID) == "" {
+					err = problem(domain.NotImplemented)
+				} else {
+					err = s.options.V2Deliver(delivery, c)
+				}
+			} else if format == 1 {
+				err = s.options.Deliver(delivery, c)
+			} else {
+				err = problem(domain.NotImplemented)
+			}
+		}
 		cancel()
 		if err != nil {
 			continue
@@ -84,6 +105,12 @@ func (s *Service) claim(ctx context.Context, row dbgen.B04ListReadyRow, connecte
 		if err := checkTargetGrants(ctx, q, row.TaskID, row.NodeID, now); err != nil {
 			if isProblem(err) {
 				return finishTask(ctx, q, row.TaskID, domain.TaskFailed, now)
+			}
+			return err
+		}
+		if err := s.checkV2Target(ctx, q, row.TaskID, row.NodeID, now); err != nil {
+			if isProblem(err) {
+				return q.B04DeferTarget(ctx, dbgen.B04DeferTargetParams{TaskID: row.TaskID, NodeID: row.NodeID, Tick: tick, NextAttempt: next})
 			}
 			return err
 		}

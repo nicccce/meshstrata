@@ -98,12 +98,29 @@ func listMigrations(source fs.FS) ([]migration, error) {
 	return result, nil
 }
 
-func migrate(ctx context.Context, db *sql.DB, source fs.FS) error {
+func migrate(ctx context.Context, db *sql.DB, source fs.FS) (retErr error) {
 	list, err := listMigrations(source)
 	if err != nil {
 		return err
 	}
-	tx, err := db.BeginTx(ctx, nil)
+	// SQLite parent-table evolution must disable enforcement before BEGIN.
+	// Pin the connection, validate all relationships inside the transaction,
+	// and restore enforcement before returning it to the pool on every path.
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	if _, err = conn.ExecContext(ctx, "PRAGMA foreign_keys=OFF"); err != nil {
+		return err
+	}
+	defer func() {
+		_, err := conn.ExecContext(context.Background(), "PRAGMA foreign_keys=ON")
+		if err != nil {
+			retErr = fmt.Errorf("restore foreign key enforcement: %w", err)
+		}
+	}()
+	tx, err := conn.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin migrations: %w", err)
 	}
@@ -136,6 +153,19 @@ func migrate(ctx context.Context, db *sql.DB, source fs.FS) error {
 		if _, err := tx.ExecContext(ctx, `INSERT INTO schema_migrations (version) VALUES (?)`, m.version); err != nil {
 			return fmt.Errorf("record migration %s: %w", m.name, err)
 		}
+	}
+	rows, err := tx.QueryContext(ctx, "PRAGMA foreign_key_check")
+	if err != nil {
+		return err
+	}
+	invalid := rows.Next()
+	checkErr := rows.Err()
+	rows.Close()
+	if invalid {
+		return fmt.Errorf("migration foreign key check failed")
+	}
+	if checkErr != nil {
+		return checkErr
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit migrations: %w", err)
