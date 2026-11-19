@@ -1,12 +1,14 @@
 package checkpoint
 
 import (
+	"bytes"
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
 	"os"
 	"regexp"
 	"strconv"
@@ -54,6 +56,7 @@ type diskState struct {
 }
 
 type Store struct {
+	format    int
 	watermark domain.Revision
 	mu        sync.Mutex
 	dir       *PrivateDir
@@ -107,7 +110,11 @@ func Open(o Options) (*Store, error) {
 func (s *Store) initialize(now time.Time, requireExisting bool) error {
 	marker, markerErr := s.read(anchorFile, 64)
 	if markerErr == nil {
-		const prefix = "initialized-v1:"
+		prefix := "initialized-v1:"
+		if strings.HasPrefix(string(marker), "initialized-v2:") {
+			prefix = "initialized-v2:"
+			s.format = 2
+		}
 		if !strings.HasPrefix(string(marker), prefix) {
 			return ErrCorrupt
 		}
@@ -141,16 +148,23 @@ func (s *Store) initialize(now time.Time, requireExisting bool) error {
 	if err != nil || (errors.Is(markerErr, os.ErrNotExist) && disk.State.Revision != 0) {
 		return ErrCorrupt
 	}
-	if markerErr != nil || disk.State.Revision > s.watermark {
+	if markerErr != nil || disk.State.Revision > s.watermark || disk.State.Format == 2 && s.format != 2 {
 		// Only the state rename may lead the watermark, e.g. if the
 		// process exited between the two directory syncs.
+		if disk.State.Format == 2 {
+			s.format = 2
+		}
 		return s.mark(disk.State.Revision)
 	}
 	return nil
 }
 
 func (s *Store) mark(revision domain.Revision) error {
-	if err := s.write(anchorFile, []byte("initialized-v1:"+strconv.FormatInt(int64(revision), 10))); err != nil {
+	prefix := "initialized-v1:"
+	if s.format == 2 {
+		prefix = "initialized-v2:"
+	}
+	if err := s.write(anchorFile, []byte(prefix+strconv.FormatInt(int64(revision), 10))); err != nil {
 		s.unusable = true
 		return err
 	}
@@ -194,19 +208,52 @@ func (s *Store) readState() (diskState, error) {
 	if err != nil {
 		return d, err
 	}
-	if json.Unmarshal(b, &d) != nil || d.Restrictions == nil || d.State.Revision < s.watermark || validState(d.State, s.node) != nil {
+	var version struct{ Version int }
+	if json.Unmarshal(b, &version) != nil {
+		return d, ErrCorrupt
+	}
+	var decodeErr error
+	if version.Version == 2 {
+		var envelope struct {
+			Version int
+			Data    diskState
+		}
+		decodeErr = strictStateJSON(b, &envelope)
+		d = envelope.Data
+		if d.State.Format != 2 {
+			return diskState{}, ErrCorrupt
+		}
+	} else if version.Version == 0 {
+		if s.format == 2 {
+			return d, ErrCorrupt
+		}
+		decodeErr = strictStateJSON(b, &d)
+	} else {
+		return d, ErrCorrupt
+	}
+	if decodeErr != nil || d.Restrictions == nil || d.State.Revision < s.watermark || validState(d.State, s.node) != nil || s.validV2Sources(d.State) != nil {
 		return diskState{}, ErrCorrupt
 	}
 	return d, nil
 }
 
 func (s *Store) persist(d diskState) error {
-	b, err := json.Marshal(d)
+	var payload any = d
+	if d.State.Format == 2 {
+		payload = struct {
+			Version int
+			Data    diskState
+		}{2, d}
+	}
+	b, err := json.Marshal(payload)
 	if err != nil || len(b) > maxStateBytes {
 		return ErrState
 	}
 	if err := s.write(stateFile, b); err != nil {
 		return err
+	}
+	if d.State.Format == 2 {
+		s.format = 2
 	}
 	return s.mark(d.State.Revision)
 }
@@ -246,6 +293,9 @@ func (s *Store) Commit(ctx context.Context, expected domain.Revision, next contr
 	}
 	next.Revision = expected + 1
 	if err := validState(next, s.node); err != nil {
+		return err
+	}
+	if err := s.validV2Sources(next); err != nil {
 		return err
 	}
 	for _, result := range next.Outbox {
@@ -312,7 +362,7 @@ func (s *Store) SaveArtifact(ctx context.Context, key control.ArtifactKey, b []b
 	if err := s.available(ctx); err != nil {
 		return err
 	}
-	if _, err := control.DecodeBundle(b, key, s.node); err != nil {
+	if _, err := control.DecodeArtifact(b, key, s.node); err != nil {
 		return err
 	}
 	name, _ := artifactName(key)
@@ -343,7 +393,7 @@ func (s *Store) ReadArtifact(ctx context.Context, key control.ArtifactKey) ([]by
 	if err != nil {
 		return nil, err
 	}
-	if _, err := control.DecodeBundle(b, key, s.node); err != nil {
+	if _, err := control.DecodeArtifact(b, key, s.node); err != nil {
 		return nil, ErrCorrupt
 	}
 	return b, nil
@@ -358,4 +408,16 @@ func (s *Store) Close() error {
 	err := errors.Join(s.lock.Close(), s.dir.Close())
 	s.dir = nil
 	return err
+}
+
+func strictStateJSON(b []byte, out any) error {
+	d := json.NewDecoder(bytes.NewReader(b))
+	d.DisallowUnknownFields()
+	if e := d.Decode(out); e != nil {
+		return e
+	}
+	if d.Decode(new(any)) != io.EOF {
+		return ErrCorrupt
+	}
+	return nil
 }

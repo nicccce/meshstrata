@@ -24,7 +24,7 @@ type revocationPlan struct {
 func (p *revocationPlan) capture(ctx context.Context, old rendered) error {
 	p.captured = map[string]string{}
 	listeners := map[string]bool{}
-	for _, l := range old.bundle.Listeners {
+	for _, l := range old.listeners() {
 		listeners[string(l.ListenerID)] = true
 	}
 	cs, err := p.kernel.Connections(ctx)

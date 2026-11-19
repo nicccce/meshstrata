@@ -510,7 +510,7 @@ func writeCandidate(t *testing.T, a *Adapter, entries []core.Entry, name string)
 	if err = os.WriteFile(p, b, 0600); err != nil {
 		t.Fatal(err)
 	}
-	return Candidate{p, core.Digest(b), exp}
+	return Candidate{Path: p, Digest: core.Digest(b), Expected: exp}
 }
 func clientProxy(e core.Entry, realityPub []byte, cert string) map[string]any {
 	p := map[string]any{"name": "selected", "type": string(e.Protocol), "server": e.Address, "port": e.Port, "udp": true}

@@ -38,13 +38,18 @@ type Recovery interface {
 type ArtifactResolver interface {
 	Resolve(context.Context, domain.ID, domain.ID) (protocol.ArtifactKey, error)
 }
+type ObservationStore interface {
+	RecordObservation(context.Context, domain.ID, protocol.ObservationReportV2) error
+}
 type Options struct {
+	EnableV2         bool // explicit opt-in; requires recovered dual-format execution
 	RequireRuntime   bool
 	Authenticator    Authenticator
 	Results          ResultStore
 	Recovery         Recovery
 	Artifacts        protocol.ArtifactSource
 	ArtifactResolver ArtifactResolver
+	Observations     ObservationStore
 	Now              func() time.Time
 	PingInterval     time.Duration
 	PongTimeout      time.Duration
@@ -58,13 +63,18 @@ type Server struct {
 	wg     sync.WaitGroup
 }
 type peer struct {
-	ready   atomic.Bool
-	runtime atomic.Bool
-	conn    *websocket.Conn
-	cert    *x509.Certificate
-	ctx     context.Context
-	cancel  context.CancelFunc
-	write   sync.Mutex
+	session       domain.ID
+	v2            bool
+	recovery      atomic.Int32
+	ready         atomic.Bool
+	runtime       atomic.Bool
+	conn          *websocket.Conn
+	cert          *x509.Certificate
+	ctx           context.Context
+	cancel        context.CancelFunc
+	write         sync.Mutex
+	observationMu sync.Mutex
+	observation   *protocol.ObservationRequestV2
 }
 
 func New(o Options) (*Server, error) {
@@ -117,7 +127,12 @@ func (s *Server) upgrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	supported := false
+	v2 := false
 	for _, v := range websocket.Subprotocols(r) {
+		if v == protocol.SubprotocolV2 && s.o.EnableV2 {
+			supported = true
+			v2 = true
+		}
 		if v == Subprotocol {
 			supported = true
 		}
@@ -126,13 +141,24 @@ func (s *Server) upgrade(w http.ResponseWriter, r *http.Request) {
 		reply(w, 400, "INVALID_ARGUMENT")
 		return
 	}
-	up := websocket.Upgrader{Subprotocols: []string{Subprotocol}, ReadBufferSize: 4096, WriteBufferSize: 4096, HandshakeTimeout: 10 * time.Second, CheckOrigin: func(r *http.Request) bool { return r.Header.Get("Origin") == "" }, EnableCompression: false}
+	selected := Subprotocol
+	if v2 {
+		selected = protocol.SubprotocolV2
+	}
+	up := websocket.Upgrader{Subprotocols: []string{selected}, ReadBufferSize: 4096, WriteBufferSize: 4096, HandshakeTimeout: 10 * time.Second, CheckOrigin: func(r *http.Request) bool { return r.Header.Get("Origin") == "" }, EnableCompression: false}
 	conn, e := up.Upgrade(w, r, http.Header{"Cache-Control": []string{"no-store"}, "Referrer-Policy": []string{"no-referrer"}})
 	if e != nil {
 		return
 	}
 	ctx, cancel := context.WithCancel(r.Context())
-	p := &peer{conn: conn, cert: cert, ctx: ctx, cancel: cancel}
+	session, e := domain.NewID("session")
+	if e != nil {
+		cancel()
+		conn.Close()
+		return
+	}
+	ctx = protocol.WithSession(ctx, session)
+	p := &peer{conn: conn, cert: cert, ctx: ctx, cancel: cancel, session: session, v2: v2}
 	s.mu.Lock()
 	if s.closed {
 		s.mu.Unlock()
@@ -187,6 +213,15 @@ func (s *Server) upgrade(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	defer func() { cancel(); <-done }()
+	if p.v2 {
+		msgID, e := domain.NewID("msg")
+		if e != nil {
+			return
+		}
+		if s.send(p, protocol.Message{Type: "welcome", MessageID: msgID, NodeID: id, SentAt: s.o.Now()}) != nil {
+			return
+		}
+	}
 	first := true
 	for {
 		typ, data, e := conn.ReadMessage()
@@ -197,7 +232,23 @@ func (s *Server) upgrade(w http.ResponseWriter, r *http.Request) {
 			p.closeProtocol()
 			return
 		}
-		m, e := protocol.Decode(data, id)
+		var m protocol.Message
+		var report *protocol.ObservationReportV2
+		if p.v2 {
+			var v protocol.SessionV2
+			v, e = protocol.DecodeSessionV2(data, id)
+			if e == nil && v.SessionID != p.session {
+				e = ErrUnavailable
+			}
+			m = v.Message
+			report = v.ObservationReport
+			m.Version = protocol.Version
+			if e == nil && v.Type == "hello" {
+				p.recovery.Store(int32(v.RecoveryFormat))
+			}
+		} else {
+			m, e = protocol.Decode(data, id)
+		}
 		if e != nil {
 			p.closeProtocol()
 			return
@@ -218,6 +269,10 @@ func (s *Server) upgrade(w http.ResponseWriter, r *http.Request) {
 		}
 		first = false
 		switch m.Type {
+		case "observation":
+			if !p.ready.Load() || !p.runtime.Load() || report == nil || s.recordObservation(p, id, *report) != nil {
+				return
+			}
 		case "result":
 			if e = s.result(p, id, *m.Result); e != nil {
 				return
@@ -252,10 +307,18 @@ func (p *peer) closeProtocol() {
 	_ = p.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "invalid control message"), time.Now().Add(time.Second))
 }
 func (s *Server) send(p *peer, m protocol.Message) error {
-	if e := m.Validate(m.NodeID); e != nil {
-		return e
+	if !p.v2 {
+		if e := m.Validate(m.NodeID); e != nil {
+			return e
+		}
 	}
-	data, e := json.Marshal(m)
+	var payload any = m
+	if p.v2 {
+		m.Version = 2
+		v := protocol.SessionV2{Message: m, SessionID: p.session}
+		return s.sendV2(p, v)
+	}
+	data, e := json.Marshal(payload)
 	if e != nil || len(data) > protocol.MaxMessageBytes {
 		return ErrUnavailable
 	}
@@ -264,12 +327,80 @@ func (s *Server) send(p *peer, m protocol.Message) error {
 	_ = p.conn.SetWriteDeadline(time.Now().Add(s.o.WriteTimeout))
 	return p.conn.WriteMessage(websocket.TextMessage, data)
 }
+
+func (s *Server) sendV2(p *peer, v protocol.SessionV2) error {
+	if v.Validate(v.NodeID) != nil {
+		return ErrUnavailable
+	}
+	data, e := json.Marshal(v)
+	if e != nil || len(data) > protocol.MaxMessageBytes {
+		return ErrUnavailable
+	}
+	p.write.Lock()
+	defer p.write.Unlock()
+	_ = p.conn.SetWriteDeadline(time.Now().Add(s.o.WriteTimeout))
+	return p.conn.WriteMessage(websocket.TextMessage, data)
+}
+
+// ObserveV2 accepts references from a trusted scheduler, never an HTTP probe URL.
+// One outstanding request per connection bounds both work and replay state.
+func (s *Server) ObserveV2(ctx context.Context, node domain.ID, request protocol.ObservationRequestV2) error {
+	now := s.o.Now()
+	if s.o.Observations == nil || !request.Valid() || !request.Deadline.After(now) || request.Deadline.After(now.Add(30*time.Second)) {
+		return ErrUnavailable
+	}
+	s.mu.Lock()
+	p := s.peers[node]
+	s.mu.Unlock()
+	if p == nil || !p.v2 || p.recovery.Load() != 2 || !p.ready.Load() || !p.runtime.Load() || !s.current(node, p) {
+		return ErrUnavailable
+	}
+	if _, e := s.o.Authenticator.Authenticate(ctx, p.cert); e != nil {
+		return e
+	}
+	p.observationMu.Lock()
+	defer p.observationMu.Unlock()
+	if p.observation != nil && p.observation.Deadline.After(now) {
+		return ErrUnavailable
+	}
+	copy := request
+	if request.Target != nil {
+		target := *request.Target
+		copy.Target = &target
+	}
+	p.observation = &copy
+	id, e := domain.NewID("msg")
+	if e != nil {
+		return e
+	}
+	return s.sendV2(p, protocol.SessionV2{Message: protocol.Message{Version: 2, Type: "observe", MessageID: id, NodeID: node, SentAt: now}, SessionID: p.session, ObservationRequest: &copy})
+}
+
+func (s *Server) recordObservation(p *peer, node domain.ID, report protocol.ObservationReportV2) error {
+	if s.o.Observations == nil || !s.current(node, p) {
+		return ErrUnavailable
+	}
+	p.observationMu.Lock()
+	r := p.observation
+	p.observation = nil
+	p.observationMu.Unlock()
+	if r == nil || r.ID != report.ID || !r.Deadline.After(s.o.Now()) || !report.Valid(node) {
+		return ErrUnavailable
+	}
+	if r.Target == nil && report.Inventory == nil || r.Target != nil && (report.Egress == nil || *r.Target != report.Egress.Target) {
+		return ErrUnavailable
+	}
+	return s.o.Observations.RecordObservation(p.ctx, node, report)
+}
 func (s *Server) result(p *peer, id domain.ID, r protocol.Result) error {
-	if s.o.Results == nil {
+	if s.o.Results == nil || !s.current(id, p) {
 		return ErrUnavailable
 	}
 	if _, e := s.o.Results.RecordResult(p.ctx, id, r); e != nil {
 		return e
+	}
+	if !s.current(id, p) {
+		return ErrUnavailable
 	}
 	msgID, e := domain.NewID("msg")
 	if e != nil {
@@ -280,10 +411,16 @@ func (s *Server) result(p *peer, id domain.ID, r protocol.Result) error {
 
 // Deliver is called by the B04 scheduler only after its ledger/dependency checks.
 func (s *Server) Deliver(ctx context.Context, c protocol.Command) error {
+	return s.deliver(ctx, c, false)
+}
+func (s *Server) DeliverV2(ctx context.Context, c protocol.Command) error {
+	return s.deliver(ctx, c, true)
+}
+func (s *Server) deliver(ctx context.Context, c protocol.Command, v2 bool) error {
 	s.mu.Lock()
 	p := s.peers[c.NodeID]
 	s.mu.Unlock()
-	if p == nil || !p.ready.Load() || s.o.Results == nil || s.o.RequireRuntime && !p.runtime.Load() {
+	if p == nil || p.v2 != v2 || v2 && p.recovery.Load() != 2 || !p.ready.Load() || s.o.Results == nil || s.o.RequireRuntime && !p.runtime.Load() {
 		return ErrUnavailable
 	}
 	if _, e := s.o.Authenticator.Authenticate(ctx, p.cert); e != nil {
@@ -328,7 +465,7 @@ func (s *Server) Close() error {
 	return nil
 }
 func (s *Server) artifact(w http.ResponseWriter, r *http.Request) {
-	id, _, e := s.authenticate(r)
+	id, cert, e := s.authenticate(r)
 	if e != nil {
 		reply(w, 401, "UNAUTHENTICATED")
 		return
@@ -347,6 +484,23 @@ func (s *Server) artifact(w http.ResponseWriter, r *http.Request) {
 		reply(w, 403, "FORBIDDEN")
 		return
 	}
+	if formats, ok := s.o.ArtifactResolver.(interface {
+		ArtifactFormat(context.Context, domain.ID, domain.ID) (int, error)
+	}); ok {
+		format, err := formats.ArtifactFormat(r.Context(), id, task)
+		if err != nil || format != 1 && format != 2 {
+			reply(w, 403, "FORBIDDEN")
+			return
+		}
+		if format == 2 {
+			session, recovery := s.RecoverySession(id)
+			if recovery != 2 || session == "" || r.Header.Get("X-Meshstrata-Session") != session || !s.RuntimeConnected(id) {
+				reply(w, 403, "FORBIDDEN")
+				return
+			}
+			r = r.WithContext(protocol.WithSession(r.Context(), domain.ID(session)))
+		}
+	}
 	reader, e := s.o.Artifacts.Open(r.Context(), id, key)
 	if e != nil {
 		reply(w, 403, "FORBIDDEN")
@@ -355,6 +509,7 @@ func (s *Server) artifact(w http.ResponseWriter, r *http.Request) {
 	defer reader.Close()
 	const maximum = 16 << 20
 	data, e := io.ReadAll(io.LimitReader(reader, maximum+1))
+	defer clear(data)
 	if e != nil || len(data) > maximum {
 		reply(w, 500, "ARTIFACT_UNAVAILABLE")
 		return
@@ -364,9 +519,39 @@ func (s *Server) artifact(w http.ResponseWriter, r *http.Request) {
 		reply(w, 500, "ARTIFACT_UNAVAILABLE")
 		return
 	}
+	// Opening an immutable artifact does not authorize a later response after
+	// the certificate has been revoked or the authenticated session replaced.
+	if current, err := s.o.Authenticator.Authenticate(r.Context(), cert); err != nil || current != id {
+		reply(w, 403, "FORBIDDEN")
+		return
+	}
+	if session := protocol.SessionFromContext(r.Context()); session != "" {
+		current, recovery := s.RecoverySession(id)
+		if recovery != 2 || current != string(session) || !s.RuntimeConnected(id) {
+			reply(w, 403, "FORBIDDEN")
+			return
+		}
+	}
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Content-Type", "application/octet-stream")
 	_, _ = w.Write(data)
+}
+
+func (s *Server) current(node domain.ID, p *peer) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.peers[node] == p && p.ctx.Err() == nil
+}
+
+// RecoverySession is a nonblocking read of the current authenticated connection.
+func (s *Server) RecoverySession(node domain.ID) (string, int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	p := s.peers[node]
+	if p == nil || !p.v2 || p.ctx.Err() != nil || p.recovery.Load() != 2 {
+		return "", 0
+	}
+	return string(p.session), 2
 }

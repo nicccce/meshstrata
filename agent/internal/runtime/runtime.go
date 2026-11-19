@@ -39,6 +39,10 @@ type Process interface {
 var _ Kernel = (*mihomo.Adapter)(nil)
 
 type Options struct {
+	EnableV2               bool
+	Inventory              func(context.Context) (control.LoopInventory, error)
+	Observations           *ObservationOptionsV2 // opt-in local provisioning; no management input
+	ProbeFactoryV2         func(context.Context, control.BundleV2, mihomo.Candidate) (mihomo.Probe, error)
 	NodeID                 domain.ID
 	State                  State
 	Fetch                  func(context.Context, control.ArtifactKey, int64) ([]byte, error)
@@ -96,6 +100,9 @@ var (
 )
 
 func New(o Options) (*Runtime, error) {
+	if o.EnableV2 && (o.Inventory == nil || o.ProbeFactoryV2 == nil) {
+		return nil, ErrUnavailable
+	}
 	if !o.NodeID.Valid() || o.State == nil || o.Fetch == nil || o.Materials == nil || o.Kernel == nil ||
 		o.Process == nil || o.ProbeFactory == nil || o.RevocationProbeFactory == nil || len(o.APISecret) < 32 ||
 		!filepath.IsAbs(o.SocketPath) || filepath.Clean(o.SocketPath) != o.SocketPath || len(o.SocketPath) > 100 {
@@ -126,6 +133,21 @@ func New(o Options) (*Runtime, error) {
 }
 
 func (r *Runtime) Ready() <-chan struct{} { return r.ready }
+
+// RecoveryFormat is queried before the client offers the V2 subprotocol. A
+// runtime flag alone never advertises recovery: startup reconciliation and the
+// versioned authenticated store must both be available first.
+func (r *Runtime) RecoveryFormat(ctx context.Context) (int, error) {
+	if !r.available() || !r.o.EnableV2 {
+		return 0, ErrUnavailable
+	}
+	r.stateMu.Lock()
+	defer r.stateMu.Unlock()
+	if _, err := r.o.State.Load(ctx); err != nil {
+		return 0, err
+	}
+	return 2, nil
+}
 
 func (r *Runtime) available() bool {
 	select {
@@ -326,6 +348,14 @@ func (r *Runtime) Hello(ctx context.Context) (control.Hello, error) {
 		return control.Hello{}, err
 	}
 	size := len(base)
+	if r.o.EnableV2 {
+		m.Version = 2
+		envelope, err := json.Marshal(control.SessionV2{Message: m, SessionID: domain.ID("session_ffffffffffffffffffffffffffffffff"), RecoveryFormat: 2})
+		if err != nil {
+			return control.Hello{}, err
+		}
+		size = len(envelope)
+	}
 	for _, result := range s.Outbox {
 		b, err := json.Marshal(result)
 		if err != nil {

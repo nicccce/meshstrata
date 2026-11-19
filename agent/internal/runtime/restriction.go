@@ -13,6 +13,20 @@ import (
 type restriction struct {
 	grant control.Grant
 	tomb  control.Tombstone
+	v2    *control.BindingV2
+}
+
+func (v restriction) origin() control.ArtifactKey {
+	if v.v2 != nil {
+		return v.v2.Origin
+	}
+	return v.grant.Origin
+}
+func (v restriction) listener() control.BundleListener {
+	if v.v2 != nil {
+		return transportV2(v.v2.Origin.NodeID, v.v2.Listener)
+	}
+	return v.grant.Listener
 }
 
 func pendingRestrictions(s control.DurableState, history map[domain.ID]control.Result) (fresh, pending []restriction) {
@@ -35,6 +49,40 @@ func pendingRestrictions(s control.DurableState, history map[domain.ID]control.R
 			}
 		}
 		item := restriction{grant: g, tomb: t}
+		if !observed {
+			fresh = append(fresh, item)
+		}
+		if !observed || last.Cleanup != "confirmed" {
+			pending = append(pending, item)
+		}
+	}
+	for _, g := range s.BindingsV2 {
+		l := g.Listener
+		if l.Entry == nil {
+			for _, r := range s.RetiredLinks {
+				if r.Link != *l.Internal {
+					continue
+				}
+				confirmed := false
+				for _, c := range s.LinkCleanupsV2 {
+					confirmed = confirmed || c.Link == r.Link
+				}
+				if !confirmed {
+					pending = append(pending, restriction{v2: &g})
+				}
+			}
+			continue
+		}
+		t, ok := tombs[l.Entry.IdentityID]
+		if !ok {
+			continue
+		}
+		last := history[t.IdentityID]
+		observed := false
+		for _, e := range last.Restrictions {
+			observed = observed || e.IdentityID == t.IdentityID && e.Reason == t.Reason
+		}
+		item := restriction{v2: &g, tomb: t}
 		if !observed {
 			fresh = append(fresh, item)
 		}
@@ -82,7 +130,13 @@ func appendRestrictions(s *control.DurableState, items []restriction, digest str
 	groups := make(map[domain.ID][]restriction)
 	var order []domain.ID
 	for _, item := range items {
-		id := item.grant.Origin.TaskID
+		if item.v2 != nil && item.v2.Listener.Internal != nil {
+			if confirmed {
+				s.LinkCleanupsV2 = append(s.LinkCleanupsV2, control.LinkCleanupV2{Link: *item.v2.Listener.Internal, EffectiveDigest: digest, ConfirmedAt: s.ClockFloor})
+			}
+			continue
+		}
+		id := item.origin().TaskID
 		if len(groups[id]) == 0 {
 			order = append(order, id)
 		}
@@ -103,7 +157,7 @@ func appendRestrictions(s *control.DurableState, items []restriction, digest str
 			}
 			for _, item := range groups[id][offset:min(offset+32, len(groups[id]))] {
 				out.Restrictions = append(out.Restrictions, control.Restriction{
-					IdentityID: item.tomb.IdentityID, ListenerID: item.grant.Listener.ListenerID, Generation: item.tomb.Generation,
+					IdentityID: item.tomb.IdentityID, ListenerID: item.listener().ListenerID, Generation: item.tomb.Generation,
 					Reason: item.tomb.Reason, ObservedAt: s.ClockFloor, Epoch: s.RevocationEpoch, EffectiveDigest: digest,
 				})
 			}

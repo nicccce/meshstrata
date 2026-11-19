@@ -210,3 +210,15 @@ func isProblem(err error) bool {
 }
 
 func legitimatelyAbsent(err error) bool { return errors.Is(err, sql.ErrNoRows) }
+
+// ArtifactFormat exposes only the format discriminator to the authenticated
+// transport. Resolve/Open remain responsible for the actual read authorization.
+func (s *Service) ArtifactFormat(ctx context.Context, node, task domain.ID) (int, error) {
+	var format int
+	err := s.repo.db.Read(ctx, func(q *dbgen.Queries) error {
+		a, e := q.B04GetArtifact(ctx, dbgen.B04GetArtifactParams{TaskID: string(task), NodeID: string(node)})
+		format = int(a.Format)
+		return e
+	})
+	return format, err
+}

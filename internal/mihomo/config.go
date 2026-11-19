@@ -74,12 +74,14 @@ type User struct {
 	Flow     string `json:"flow,omitempty"`
 }
 type Reality struct {
+	Proxy       string   `json:"proxy,omitempty"` // V2 handshake only; V1 leaves empty
 	Destination string   `json:"dest"`
 	PrivateKey  string   `json:"private-key"`
 	ShortIDs    []string `json:"short-id"`
 	ServerNames []string `json:"server-names"`
 }
 type Listener struct {
+	Rule        string            `json:"rule,omitempty"`
 	Name        string            `json:"name"`
 	Type        string            `json:"type"`
 	Listen      string            `json:"listen"`
@@ -145,24 +147,26 @@ type Toggle struct {
 // The routing compiler is B04/B05 work; Rules must be explicit and only the
 // built-in DIRECT and REJECT targets are currently supported here.
 type Config struct {
-	Port          int             `json:"port"`
-	SocksPort     int             `json:"socks-port"`
-	MixedPort     int             `json:"mixed-port"`
-	RedirPort     int             `json:"redir-port"`
-	TProxyPort    int             `json:"tproxy-port"`
-	AllowLAN      bool            `json:"allow-lan"`
-	Mode          string          `json:"mode"`
-	LogLevel      string          `json:"log-level"`
-	Tun           Toggle          `json:"tun"`
-	IPTables      Toggle          `json:"iptables"`
-	DNS           DNS             `json:"dns"`
-	Controller    string          `json:"external-controller"`
-	ControllerTLS string          `json:"external-controller-tls"`
-	Socket        string          `json:"external-controller-unix"`
-	Secret        string          `json:"secret"`
-	Profile       map[string]bool `json:"profile"`
-	Listeners     []Listener      `json:"listeners"`
-	Rules         []string        `json:"rules"`
+	Proxies       []OutboundV2        `json:"proxies,omitempty"`
+	SubRules      map[string][]string `json:"sub-rules,omitempty"`
+	Port          int                 `json:"port"`
+	SocksPort     int                 `json:"socks-port"`
+	MixedPort     int                 `json:"mixed-port"`
+	RedirPort     int                 `json:"redir-port"`
+	TProxyPort    int                 `json:"tproxy-port"`
+	AllowLAN      bool                `json:"allow-lan"`
+	Mode          string              `json:"mode"`
+	LogLevel      string              `json:"log-level"`
+	Tun           Toggle              `json:"tun"`
+	IPTables      Toggle              `json:"iptables"`
+	DNS           DNS                 `json:"dns"`
+	Controller    string              `json:"external-controller"`
+	ControllerTLS string              `json:"external-controller-tls"`
+	Socket        string              `json:"external-controller-unix"`
+	Secret        string              `json:"secret"`
+	Profile       map[string]bool     `json:"profile"`
+	Listeners     []Listener          `json:"listeners"`
+	Rules         []string            `json:"rules"`
 }
 
 func Generate(entries []Entry, dns DNS, socket string, rules []string) (Config, []Expected, error) {
@@ -256,7 +260,7 @@ func BuildListener(e Entry) (Listener, error) {
 		}
 		l.Type = "vless"
 		l.Users = []User{{Username: e.IdentityID, UUID: e.UUID, Flow: "xtls-rprx-vision"}}
-		l.Reality = &Reality{e.RealityDestination, e.RealityPrivateKey, e.ShortIDs, e.ServerNames}
+		l.Reality = &Reality{Destination: e.RealityDestination, PrivateKey: e.RealityPrivateKey, ShortIDs: e.ShortIDs, ServerNames: e.ServerNames}
 	case Hysteria2:
 		if len(e.Password) < 16 || e.Certificate == "" || e.PrivateKey == "" {
 			return l, invalid("/entries/tls")

@@ -66,11 +66,11 @@ func (r *Runtime) liveRender(ctx context.Context, s control.DurableState) (rende
 func removals(old, next []control.BundleListener, pending []restriction) []control.BundleListener {
 	active := map[domain.ID]bool{}
 	for _, l := range next {
-		active[l.Authorization.IdentityID] = true
+		active[physicalID(l)] = true
 	}
 	var removed []control.BundleListener
 	add := func(l control.BundleListener) {
-		id := l.Authorization.IdentityID
+		id := physicalID(l)
 		if !active[id] {
 			removed = append(removed, l)
 			active[id] = true
@@ -80,21 +80,27 @@ func removals(old, next []control.BundleListener, pending []restriction) []contr
 		add(l)
 	}
 	for _, item := range pending {
-		add(item.grant.Listener)
+		add(item.listener())
 	}
 	return removed
 }
 
 func (r *Runtime) apply(ctx context.Context, snap *control.Snapshot, old, next rendered, pending []restriction) (application, error) {
-	out := application{removed: removals(old.bundle.Listeners, next.bundle.Listeners, pending)}
+	out := application{removed: removals(old.listeners(), next.listeners(), pending)}
 	if _, err := r.o.Kernel.Validate(ctx, next.Candidate); err != nil {
 		return out, errors.Join(ErrVerification, err)
+	}
+	if next.v2 != nil {
+		inv, err := r.loopInventory(ctx)
+		if err != nil || next.v2.CheckEgressLoops(inv) != nil {
+			return out, ErrVerification
+		}
 	}
 	state, err := r.o.Process.Status(ctx)
 	if err != nil {
 		return out, err
 	}
-	plan := &revocationPlan{removed: out.removed, current: next.bundle.Listeners, kernel: r.o.Kernel}
+	plan := &revocationPlan{removed: out.removed, current: next.listeners(), kernel: r.o.Kernel}
 	var proof mihomo.RevocationProbe
 	if len(out.removed) > 0 {
 		proof, err = r.o.RevocationProbeFactory(context.WithValue(ctx, revocationKey{}, plan), next.bundle, next.Candidate)
@@ -112,7 +118,7 @@ func (r *Runtime) apply(ctx context.Context, snap *control.Snapshot, old, next r
 				forceStop = true
 			}
 			for _, l := range out.removed {
-				for _, n := range next.bundle.Listeners {
+				for _, n := range next.listeners() {
 					if l.ListenerID == n.ListenerID {
 						forceStop = true
 					}
@@ -199,13 +205,13 @@ func (r *Runtime) apply(ctx context.Context, snap *control.Snapshot, old, next r
 // published. Require fresh positive traffic after filtering, and separately
 // prove every removed identity denied on a new transport.
 func retainedVerification(ctx context.Context, previous, current rendered) context.Context {
-	prior := make(map[domain.ID]control.BundleListener, len(previous.bundle.Listeners))
-	for _, l := range previous.bundle.Listeners {
-		prior[l.Authorization.IdentityID] = l
+	prior := make(map[domain.ID]control.BundleListener, len(previous.listeners()))
+	for _, l := range previous.listeners() {
+		prior[physicalID(l)] = l
 	}
 	retained := make(map[domain.ID]bool)
-	for _, l := range current.bundle.Listeners {
-		id := l.Authorization.IdentityID
+	for _, l := range current.listeners() {
+		id := physicalID(l)
 		if found, ok := prior[id]; ok && control.CheckGrant(control.Grant{Listener: found}, l) == nil {
 			retained[id] = true
 		}
@@ -214,7 +220,16 @@ func retainedVerification(ctx context.Context, previous, current rendered) conte
 }
 
 func (r *Runtime) verifyActive(ctx context.Context, next rendered, pid int) error {
-	probe, err := r.o.ProbeFactory(ctx, next.bundle, next.Candidate)
+	var probe mihomo.Probe
+	var err error
+	if next.v2 != nil {
+		if r.o.ProbeFactoryV2 == nil {
+			return ErrVerification
+		}
+		probe, err = r.o.ProbeFactoryV2(ctx, *next.v2, next.Candidate)
+	} else {
+		probe, err = r.o.ProbeFactory(ctx, next.bundle, next.Candidate)
+	}
 	if err != nil || probe == nil {
 		return ErrVerification
 	}
@@ -328,17 +343,12 @@ func (r *Runtime) restore(ctx context.Context, start *control.Snapshot, boot, ro
 	if err != nil {
 		return r.failedRestore(err)
 	}
-	now := authorization.Clock(s, r.o.Now())
 	var previous *control.Snapshot
 	if s.Checkpoint.PreviousGood != nil && len(pending) > 0 {
 		saved := *s.Checkpoint.PreviousGood
-		prev, err := r.artifact(ctx, saved)
+		filtered, err := r.filteredSnapshot(ctx, saved, s)
 		if err != nil {
 			return r.failedRestore(errors.Join(errUncertain, err))
-		}
-		filtered, err := r.render(ctx, prev, authorization.Active(s, prev, now))
-		if err != nil {
-			return r.failedRestore(err)
 		}
 		saved.EffectiveDigest, saved.Epoch = filtered.Digest, s.RevocationEpoch
 		previous = &saved
@@ -365,11 +375,7 @@ func (r *Runtime) restore(ctx context.Context, start *control.Snapshot, boot, ro
 		if startupRender, err = r.checkedRender(ctx, start); err != nil {
 			return r.failedRestore(errors.Join(errUncertain, err))
 		}
-		src, err := r.artifact(ctx, *start)
-		if err != nil {
-			return r.failedRestore(errors.Join(errUncertain, err))
-		}
-		next, err = r.render(ctx, src, authorization.Active(s, src, authorization.Clock(s, r.o.Now())))
+		next, err = r.filteredSnapshot(ctx, *start, s)
 		if err != nil {
 			return r.failedRestore(err)
 		}

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://meshstrata.invalid/contracts/bundle/v2",
-  "title": "Private configuration bundle format 2 (offline only)",
-  "description": "Active wire/runtime remains format 1. Go EncodeBundleV2/DecodeBundleV2 are normative for byte limits, exact encoding, pins and cross-field invariants. No arbitrary YAML, paths or management DTO.",
+  "title": "Private configuration bundle format 2",
+  "description": "Go EncodeBundleV2/DecodeBundleV2 are normative for exact bytes, pins and invariants. Available only with explicitly enabled authenticated V2 recovery; production composition remains format 1. No arbitrary YAML, paths or management DTO.",
   "x-max-bytes": 1048576,
   "x-runtime-supported": false,
   "type": "object",
@@ -808,5 +808,6 @@
         }
       ]
     }
-  }
+  },
+  "x-runtime-opt-in": true
 }

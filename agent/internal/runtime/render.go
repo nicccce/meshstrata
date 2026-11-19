@@ -20,6 +20,7 @@ import (
 type rendered struct {
 	mihomo.Candidate
 	bundle control.Bundle
+	v2     *control.BundleV2
 }
 
 func entry(l control.BundleListener) core.Entry {
@@ -120,6 +121,9 @@ func (r *Runtime) artifact(ctx context.Context, s control.Snapshot) (control.Bun
 func (r *Runtime) checkedRender(ctx context.Context, s *control.Snapshot) (rendered, error) {
 	if s == nil {
 		return rendered{}, nil
+	}
+	if s.Format == 2 {
+		return r.checkedRenderV2(ctx, s)
 	}
 	b, err := r.artifact(ctx, *s)
 	if err != nil {

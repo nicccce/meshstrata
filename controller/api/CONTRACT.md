@@ -100,4 +100,6 @@ Agent 的可选 Hello `runtime:true` 表示已经恢复的执行能力。旧 `co
 
 [bundle-v2.schema.json](bundle-v2.schema.json) 和 `control.EncodeBundleV2/DecodeBundleV2` 冻结新产物的私有强类型格式：逐 Listener 绑定确定下游或固定末端策略；入口有不可变授权，内部 link 有独立身份和永久 retirement；末端只表达有限的 CIDR/MATCH/目标/DNS。Go 验证为规范，包括固定字节 SHA256、数量和绑定；没有任意 YAML、脚本、宿主路径。schema 的 `x-runtime-supported` 为 false，`control.schema.json` 仍只声明运行格式 1，旧解码器拒绝格式 2。线协议、旧 Grant/恢复、API 注册与前端模式均未改变。I03 的格式协商、双格式账本、真实渲染及验证边界见 [阶段3交接](../../documents/backend-delivery/阶段3交接.md)。
 
+I03-B 增量：新增独立 [control-v2.schema.json](control-v2.schema.json)，明确 opt-in subprotocol、逐连接 SessionID、Hello recovery format 2 与受限观察请求/报告。V1 schema 保持原样，普通 production composition 仍未启用 V2；bundle schema 的 `x-runtime-opt-in=true` 只表示组件可显式启用。报告请求只含 ID/期限/可选出口 Pin，探针白名单、私有凭据和配置来自可信本地 provisioner。版本化恢复、真实观察、显式 V1 drain/switch、V2 removal 的 pending/释放边界见 [I03-B](../../documents/backend-delivery/I03-B.md)。这些是内部控制契约，不注册管理业务 HTTP。
+
 B06–B08 使用同一 Controller 进程内契约。管理员读模型只看安全视图，下载才能读取本订阅的凭据；完整客户端配置与 proxy-provider 为不同输出。B08/010 使用 `subscription_download` 的独立密文 envelope、验证 hash 和当前版本引用，保留 002 既有 credentials/CA。标准 HTTPS 能力路径、受管理员 + Origin/CSRF 保护的专用 Copy URL POST、no-store/no-referrer 和无重定向约定不变。

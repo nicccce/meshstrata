@@ -34,6 +34,15 @@ func (c *Client) DownloadArtifact(ctx context.Context, key protocol.ArtifactKey,
 	if e != nil {
 		return nil, ErrUnavailable
 	}
+	c.mu.Lock()
+	session := c.session
+	c.mu.Unlock()
+	if c.o.EnableV2 {
+		if session == "" {
+			return nil, ErrUnavailable
+		}
+		req.Header.Set("X-Meshstrata-Session", string(session))
+	}
 	resp, e := client.Do(req)
 	if e != nil {
 		return nil, ErrUnavailable
@@ -49,6 +58,13 @@ func (c *Client) DownloadArtifact(ctx context.Context, key protocol.ArtifactKey,
 	}
 	digest := sha256.Sum256(data)
 	if hex.EncodeToString(digest[:]) != key.TargetDigest {
+		clear(data)
+		return nil, ErrUnavailable
+	}
+	c.mu.Lock()
+	unchanged := session == c.session
+	c.mu.Unlock()
+	if c.o.EnableV2 && !unchanged {
 		clear(data)
 		return nil, ErrUnavailable
 	}

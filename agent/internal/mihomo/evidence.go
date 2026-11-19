@@ -102,7 +102,7 @@ func (a *Adapter) Inspect(ctx context.Context, c Candidate, pid int) (Evidence, 
 	if core.Digest(b) != c.Digest {
 		return out, core.ErrInvalid
 	}
-	if err = a.policy(b, c.Expected); err != nil {
+	if err = a.policy(b, c.Expected, c.Format); err != nil {
 		return out, err
 	}
 	pidfd, err := unix.PidfdOpen(pid, 0)
@@ -401,7 +401,7 @@ func (a *Adapter) CloseConnection(ctx context.Context, c Candidate, listener, id
 	if core.Digest(b) != c.Digest {
 		return core.ErrInvalid
 	}
-	if err = a.policy(b, c.Expected); err != nil {
+	if err = a.policy(b, c.Expected, c.Format); err != nil {
 		return err
 	}
 	allowed := false
@@ -453,7 +453,7 @@ func (a *Adapter) Revocation(ctx context.Context, c Candidate, p RevocationProbe
 	if core.Digest(b) != c.Digest {
 		return out, core.ErrInvalid
 	}
-	if err = a.policy(b, c.Expected); err != nil {
+	if err = a.policy(b, c.Expected, c.Format); err != nil {
 		return out, err
 	}
 	if p == nil {

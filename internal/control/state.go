@@ -13,6 +13,7 @@ import (
 // bytes. A verified artifact may later have a different EffectiveDigest at expiry.
 // B05 persists each phase separately; pointer nil means that phase never existed.
 type Snapshot struct {
+	Format          int             `json:"format,omitempty"`
 	TaskID          domain.ID       `json:"task_id"`
 	Revision        domain.Revision `json:"revision"`
 	ArtifactDigest  string          `json:"artifact_digest"`
@@ -21,6 +22,9 @@ type Snapshot struct {
 }
 
 func (s Snapshot) Validate() error {
+	if s.Format != 0 && s.Format != 1 && s.Format != 2 {
+		return ErrBinding
+	}
 	if !s.TaskID.Valid() || !validTarget(s.Revision, s.ArtifactDigest) || !digestPattern.MatchString(s.EffectiveDigest) || !s.Epoch.Valid() {
 		return ErrBinding
 	}

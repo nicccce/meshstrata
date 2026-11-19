@@ -55,6 +55,9 @@ func (s *Service) reconcileRemoval(ctx context.Context, task string) error {
 		if err := q.B04MarkRemovedPorts(ctx, gone.ID); err != nil {
 			return err
 		}
+		if err := s.prepareV2Removal(ctx, q, gone.ID); err != nil {
+			return err
+		}
 		peers, err := q.B04RemovalRouteTargets(ctx, gone.ID)
 		if err != nil {
 			return err
@@ -70,8 +73,22 @@ func (s *Service) reconcileRemoval(ctx context.Context, task string) error {
 	if err != nil {
 		return err
 	}
+	if err := s.reconcileV2Removal(ctx, task, string(intent.NodeID)); err != nil {
+		return err
+	}
 	groups := map[string]map[domain.ID]bool{}
 	for _, link := range links {
+		var modern bool
+		if err := s.repo.db.Read(ctx, func(q *dbgen.Queries) error {
+			var e error
+			modern, e = q.I03ModernRemovalListener(ctx, link.ListenerID)
+			return e
+		}); err != nil {
+			return err
+		}
+		if modern {
+			continue
+		}
 		if link.CleanupTaskID.Valid || link.NodeID == string(intent.NodeID) {
 			continue
 		}

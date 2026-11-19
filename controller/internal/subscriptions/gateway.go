@@ -37,6 +37,12 @@ func equalReservation(a, b stage3.EntryReservation) bool {
 }
 
 func checkPublishAuthorization(ctx context.Context, q *dbgen.Queries, i dbgen.B08Intent, now time.Time) error {
+	if alive, err := routeNodesAvailable(ctx, q, i); err != nil || !alive {
+		if err != nil {
+			return err
+		}
+		return problem(domain.RevisionConflict)
+	}
 	floor, err := dbNow(ctx, q)
 	if err != nil {
 		return safe(ctx, err)

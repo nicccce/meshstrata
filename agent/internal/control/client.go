@@ -33,10 +33,13 @@ type Runtime interface {
 	Acknowledge(context.Context, protocol.Receipt) error
 }
 type Options struct {
-	URL          string
-	NodeID       domain.ID
-	TLSConfig    func() (*tls.Config, error)
-	Runtime      Runtime
+	EnableV2  bool // explicit; Runtime must independently attest completed recovery
+	URL       string
+	NodeID    domain.ID
+	TLSConfig func() (*tls.Config, error)
+	Runtime   Runtime
+	// Local collector uses provisioned configuration and a numeric probe allowlist.
+	ObserveV2    func(context.Context, protocol.ObservationRequestV2) (protocol.ObservationReportV2, error)
 	ControlOnly  HelloSource
 	OnRejected   func()
 	Now          func() time.Time
@@ -54,6 +57,7 @@ type Client struct {
 	running bool
 	cancel  context.CancelFunc
 	conn    *websocket.Conn
+	session domain.ID
 	done    chan struct{}
 	closed  bool
 }
@@ -164,7 +168,21 @@ func (c *Client) runOnce(ctx context.Context, markEstablished func()) error {
 	config = config.Clone()
 	config.MinVersion = tls.VersionTLS13
 	config.NextProtos = []string{"http/1.1"}
-	dialer := websocket.Dialer{TLSClientConfig: config, Subprotocols: []string{Subprotocol}, HandshakeTimeout: 10 * time.Second, ReadBufferSize: 4096, WriteBufferSize: 4096, EnableCompression: false}
+	selected := Subprotocol
+	if c.o.EnableV2 {
+		r, ok := c.o.Runtime.(interface {
+			RecoveryFormat(context.Context) (int, error)
+		})
+		if !ok {
+			return ErrUnavailable
+		}
+		format, err := r.RecoveryFormat(ctx)
+		if err != nil || format != 2 {
+			return ErrUnavailable
+		}
+		selected = protocol.SubprotocolV2
+	}
+	dialer := websocket.Dialer{TLSClientConfig: config, Subprotocols: []string{selected}, HandshakeTimeout: 10 * time.Second, ReadBufferSize: 4096, WriteBufferSize: 4096, EnableCompression: false}
 	conn, resp, e := dialer.DialContext(ctx, c.o.URL, http.Header{})
 	if resp != nil && resp.Body != nil {
 		resp.Body.Close()
@@ -173,16 +191,32 @@ func (c *Client) runOnce(ctx context.Context, markEstablished func()) error {
 		return ErrUnavailable
 	}
 	defer conn.Close()
-	if conn.Subprotocol() != Subprotocol {
+	if conn.Subprotocol() != selected {
 		return ErrUnavailable
 	}
+	var session domain.ID
+	if c.o.EnableV2 {
+		conn.SetReadLimit(protocol.MaxMessageBytes)
+		_ = conn.SetReadDeadline(time.Now().Add(c.o.PongTimeout))
+		typ, data, e := conn.ReadMessage()
+		if e != nil || typ != websocket.TextMessage {
+			return ErrUnavailable
+		}
+		w, e := protocol.DecodeSessionV2(data, c.o.NodeID)
+		if e != nil || w.Type != "welcome" {
+			return ErrUnavailable
+		}
+		session = w.SessionID
+	}
 	c.mu.Lock()
+	c.session = session
 	c.conn = conn
 	c.mu.Unlock()
 	defer func() {
 		c.mu.Lock()
 		if c.conn == conn {
 			c.conn = nil
+			c.session = ""
 		}
 		c.mu.Unlock()
 	}()
@@ -213,6 +247,17 @@ func (c *Client) runOnce(ctx context.Context, markEstablished func()) error {
 		}
 	}()
 	defer func() { cancel(); <-done }()
+	writeV2 := func(v protocol.SessionV2) error {
+		if v.Validate(c.o.NodeID) != nil {
+			return ErrUnavailable
+		}
+		data, e := json.Marshal(v)
+		if e != nil || len(data) > protocol.MaxMessageBytes {
+			return ErrUnavailable
+		}
+		_ = conn.SetWriteDeadline(time.Now().Add(c.o.WriteTimeout))
+		return conn.WriteMessage(websocket.TextMessage, data)
+	}
 	send := func(m protocol.Message) error {
 		m.Version = protocol.Version
 		m.NodeID = c.o.NodeID
@@ -225,7 +270,16 @@ func (c *Client) runOnce(ctx context.Context, markEstablished func()) error {
 		if e = m.Validate(c.o.NodeID); e != nil {
 			return e
 		}
-		data, e := json.Marshal(m)
+		var payload any = m
+		if c.o.EnableV2 {
+			m.Version = 2
+			v := protocol.SessionV2{Message: m, SessionID: session}
+			if m.Type == "hello" {
+				v.RecoveryFormat = 2
+			}
+			return writeV2(v)
+		}
+		data, e := json.Marshal(payload)
 		if e != nil || len(data) > protocol.MaxMessageBytes {
 			return ErrUnavailable
 		}
@@ -236,7 +290,11 @@ func (c *Client) runOnce(ctx context.Context, markEstablished func()) error {
 	// Keep the reader free to process ping/pong while B05 performs slow work.
 	// One worker serializes all runtime calls and data writes; bounded queue fails
 	// closed if the peer floods commands or receipts.
-	jobs := make(chan protocol.Message, 128)
+	type job struct {
+		protocol.Message
+		request *protocol.ObservationRequestV2
+	}
+	jobs := make(chan job, 128)
 	workerDone := make(chan struct{})
 	go func() {
 		defer close(workerDone)
@@ -270,6 +328,20 @@ func (c *Client) runOnce(ctx context.Context, markEstablished func()) error {
 				return
 			case m := <-jobs:
 				switch m.Type {
+				case "observe":
+					if c.o.ObserveV2 == nil || m.request == nil || !m.request.Deadline.After(c.o.Now()) || m.request.Deadline.After(c.o.Now().Add(30*time.Second)) {
+						return
+					}
+					probe, cancelProbe := context.WithDeadline(local, m.request.Deadline)
+					report, err := c.o.ObserveV2(probe, *m.request)
+					cancelProbe()
+					if err != nil || report.ID != m.request.ID || !report.Valid(c.o.NodeID) {
+						return
+					}
+					id, err := domain.NewID("msg")
+					if err != nil || writeV2(protocol.SessionV2{Message: protocol.Message{Version: 2, Type: "observation", MessageID: id, NodeID: c.o.NodeID, SentAt: c.o.Now()}, SessionID: session, ObservationReport: &report}) != nil {
+						return
+					}
 				case "command":
 					if c.o.Runtime == nil {
 						c.reject(conn)
@@ -329,16 +401,29 @@ func (c *Client) runOnce(ctx context.Context, markEstablished func()) error {
 		if typ != websocket.TextMessage {
 			return ErrUnavailable
 		}
-		m, e := protocol.Decode(data, c.o.NodeID)
+		var m protocol.Message
+		var request *protocol.ObservationRequestV2
+		if c.o.EnableV2 {
+			v, err := protocol.DecodeSessionV2(data, c.o.NodeID)
+			e = err
+			if v.SessionID != session {
+				e = ErrUnavailable
+			}
+			m = v.Message
+			request = v.ObservationRequest
+			m.Version = protocol.Version
+		} else {
+			m, e = protocol.Decode(data, c.o.NodeID)
+		}
 		if e != nil {
 			return e
 		}
-		if m.Type != "command" && m.Type != "receipt" {
+		if m.Type != "command" && m.Type != "receipt" && (m.Type != "observe" || request == nil) {
 			return ErrUnavailable
 		}
 		markEstablished()
 		select {
-		case jobs <- m:
+		case jobs <- job{Message: m, request: request}:
 		case <-local.Done():
 			return local.Err()
 		default:

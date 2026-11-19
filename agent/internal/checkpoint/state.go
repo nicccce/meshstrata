@@ -21,6 +21,9 @@ type resultKey struct {
 }
 
 func validState(s control.DurableState, node domain.ID) error {
+	if validV2State(s, node) != nil {
+		return ErrState
+	}
 	if s.Checkpoint.NodeID != node || (s.Revision != 0 && !s.Revision.Valid()) || !s.RevocationEpoch.Valid() || s.ClockFloor.IsZero() {
 		return ErrState
 	}
@@ -82,7 +85,13 @@ func validState(s control.DurableState, node domain.ID) error {
 		seen[key] = true
 		for _, e := range r.Restrictions {
 			g := grants[e.IdentityID]
-			if g.Origin.TaskID != r.TaskID || g.Listener.ListenerID != e.ListenerID || tombs[e.IdentityID] != e.Generation ||
+			bound := g.Origin.TaskID == r.TaskID && g.Listener.ListenerID == e.ListenerID
+			for _, v2 := range s.BindingsV2 {
+				if a := v2.Listener.Entry; a != nil && a.IdentityID == e.IdentityID && a.Generation == e.Generation && v2.Origin.TaskID == r.TaskID && v2.Listener.Socket.ListenerID == e.ListenerID {
+					bound = true
+				}
+			}
+			if !bound || tombs[e.IdentityID] != e.Generation ||
 				e.Epoch > s.RevocationEpoch || e.ObservedAt.After(s.ClockFloor) ||
 				(r.Cleanup == "confirmed" && r.ConfirmedAt.Before(e.ObservedAt)) {
 				return ErrState
@@ -102,6 +111,9 @@ func matches(c control.Command, r control.Result) bool {
 }
 
 func mergeState(old control.DurableState, next *control.DurableState) error {
+	if mergeV2State(old, next) != nil {
+		return ErrState
+	}
 	if old.ClockFloor.After(next.ClockFloor) {
 		next.ClockFloor = old.ClockFloor
 	}

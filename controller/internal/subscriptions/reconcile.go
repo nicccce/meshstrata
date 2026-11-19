@@ -68,6 +68,9 @@ func selected(ctx context.Context, q *dbgen.Queries, i dbgen.B08Intent) (bool, e
 }
 
 func currentIdentity(ctx context.Context, q *dbgen.Queries, i dbgen.B08Intent) (bool, error) {
+	if alive, err := routeNodesAvailable(ctx, q, i); err != nil || !alive {
+		return false, err
+	}
 	e, err := q.B08LegacyEntryByRoute(ctx, dbgen.B08LegacyEntryByRouteParams{SubscriptionID: i.SubscriptionID, RouteID: i.RouteID})
 	if err != nil {
 		return false, err
@@ -81,6 +84,26 @@ func currentIdentity(ctx context.Context, q *dbgen.Queries, i dbgen.B08Intent) (
 	}
 	return v.ID == i.IdentityKey && v.Generation == i.Generation && v.CredentialRef == i.CredentialRef &&
 		v.ExpiresAt == i.ExpiresAt && !v.RevokedAt.Valid, nil
+}
+
+// Removal revokes downloads/late reservation immediately, before a worker has
+// persisted the corresponding cleanup intent. Use the immutable captured route,
+// rather than a mutable route head or an inventory advertisement.
+func routeNodesAvailable(ctx context.Context, q *dbgen.Queries, i dbgen.B08Intent) (bool, error) {
+	var route stage3.PublishedRoute
+	if json.Unmarshal([]byte(i.RouteJson), &route) != nil || route.Pin != routePin(i) || len(route.Tail.Hops) == 0 || len(route.Tail.Hops) > 8 {
+		return false, problem(unavailable)
+	}
+	for _, hop := range route.Tail.Hops {
+		n, err := q.GetNode(ctx, string(hop.NodeID))
+		if err != nil {
+			return false, err
+		}
+		if n.RemovedAt.Valid {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 // nextWork may advance only within its own short transaction. Every external
@@ -102,6 +125,12 @@ func (s *Service) nextWork(ctx context.Context, id string) (w work, err error) {
 		at := stamp(now)
 		if !i.RevokedAt.Valid {
 			active := eligible(sub, now) && i.ExpiresAt > at
+			if active {
+				active, err = routeNodesAvailable(ctx, q, i)
+				if err != nil {
+					return err
+				}
+			}
 			if active && i.State != "confirmed" {
 				active, err = selected(ctx, q, i)
 				if err != nil {

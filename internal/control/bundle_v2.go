@@ -15,8 +15,8 @@ import (
 	"github.com/nicccce/meshstrata/internal/domain"
 )
 
-// Format 2 is an offline codec. Do not add it to BundleVersion or advertise
-// runtime support before both peers implement versioned persistence and execution.
+// Format 2 has a separate codec and requires explicit authenticated V2 recovery
+// negotiation. BundleVersion and the original V1 decoder remain unchanged.
 const (
 	BundleVersion2   = 2
 	MaxRouteHops     = 8
@@ -611,14 +611,14 @@ func CheckEgressTargetLoops(s EgressTarget, inv LoopInventory, sockets []SocketV
 			return ErrBundle
 		}
 	}
-	for _, ep := range inv.ProtectedEndpoints {
-		if ep.Port() == s.Port && ep.Addr().Unmap() == ip {
-			return ErrBundle
-		}
-	}
 	local := ip.IsLoopback()
 	for _, addr := range inv.LocalAddresses {
 		local = local || addr.Unmap() == ip
+	}
+	for _, ep := range inv.ProtectedEndpoints {
+		if ep.Port() == s.Port && (ep.Addr().Unmap() == ip || ep.Addr().IsUnspecified() && ep.Addr().Is4() == ip.Is4() && local) {
+			return ErrBundle
+		}
 	}
 	for _, l := range sockets {
 		if l.Port == s.Port && l.Transport != "udp" && (l.Address == ip.String() || local && addressesOverlap(l.Address, ip.String())) {
@@ -634,6 +634,20 @@ func (b BundleV2) CheckEgressLoops(inv LoopInventory) error {
 	sockets := make([]SocketV2, 0, len(b.Listeners))
 	for _, l := range b.Listeners {
 		sockets = append(sockets, l.Socket)
+	}
+	for _, l := range b.Listeners {
+		if l.Socket.RealityKey != nil {
+			dest, err := netip.ParseAddrPort(l.Socket.RealityDestination)
+			if err != nil || dest.Port() == 0 {
+				return ErrBundle
+			}
+			// Only a reviewed fixed numeric REALITY handshake destination may
+			// use the isolated direct outbound, with the same loop protections.
+			target := EgressTarget{NodeID: b.NodeID, Type: "http", Host: dest.Addr().String(), DialIP: dest.Addr().String(), Port: dest.Port()}
+			if CheckEgressTargetLoops(target, inv, sockets) != nil {
+				return ErrBundle
+			}
+		}
 	}
 	for _, p := range b.Terminal {
 		for _, t := range p.Spec.Targets {

@@ -238,11 +238,13 @@ class Stage3Isolation(unittest.TestCase):
                         for entry in tar.getmembers() if entry.isfile()}
         # Curated pending shared contract, never sibling code or T02 work.
         for rel in ['internal/control/bundle.go', 'internal/control/bundle_v2.go',
+                    'internal/control/session_v2.go', 'internal/control/observation_v2.go',
                     'internal/control/bundle_v2_test.go', 'internal/secretstore/secretstore.go',
                     'controller/api/bundle-v2.schema.json', 'controller/api/doc.go',
                     'controller/api/contract_test.go', 'controller/internal/stage3/contract.go',
                     'controller/internal/stage3/pins.go', 'controller/internal/stage3/pins_test.go',
-                    'controller/api/control.schema.json', 'controller/api/openapi.json']:
+                    'controller/api/control.schema.json', 'controller/api/control-v2.schema.json',
+                    'controller/api/openapi.json']:
             cls.base[rel] = (cls.repo / rel).read_bytes()
 
     def setUp(self):

@@ -46,7 +46,7 @@ func fields(t reflect.Type) map[string]bool {
 func TestContractReferencesAndGoFields(t *testing.T) {
 	open := parse(t, OpenAPI)
 	ws := parse(t, ControlSchema)
-	for _, root := range []map[string]any{open, ws, parse(t, BundleSchema), parse(t, OfflineBundleV2Schema)} {
+	for _, root := range []map[string]any{open, ws, parse(t, ControlV2Schema), parse(t, BundleSchema), parse(t, OfflineBundleV2Schema)} {
 		var walk func(any)
 		walk = func(v any) {
 			switch n := v.(type) {
@@ -121,6 +121,38 @@ func TestContractReferencesAndGoFields(t *testing.T) {
 					t.Fatalf("write lacks auth/CSRF: %s", path)
 				}
 			}
+		}
+	}
+}
+
+func TestV2SessionAndObservationContract(t *testing.T) {
+	root := parse(t, ControlV2Schema)
+	if root["x-production-enabled"] != false || root["title"] != control.SubprotocolV2 {
+		t.Fatal("production V2 gate changed")
+	}
+	formats := root["x-runtime-bundle-formats"].([]any)
+	if len(formats) != 2 || formats[0] != float64(1) || formats[1] != float64(2) {
+		t.Fatal("dual format contract missing")
+	}
+	models := map[string]any{"ObservationRequestV2": control.ObservationRequestV2{}, "ObservationReportV2": control.ObservationReportV2{}, "InventoryV2": control.InventoryV2{}, "EgressObservationV2": control.EgressObservationV2{}, "InterfaceObservationV2": control.InterfaceObservationV2{}, "PinnedSocketSpecV2": control.PinnedSocketSpecV2{}, "ProtocolCapabilityV2": control.ProtocolCapabilityV2{}, "SocketSpec": control.SocketSpec{}}
+	for name, model := range models {
+		spec := schema(t, root, "$defs", name)
+		props := spec["properties"].(map[string]any)
+		want := fields(reflect.TypeOf(model))
+		if len(props) != len(want) || spec["additionalProperties"] != false {
+			t.Fatal("observation schema shape", name)
+		}
+		for field := range want {
+			if props[field] == nil {
+				t.Fatal("missing observation field", name, field)
+			}
+		}
+	}
+	for _, envelope := range root["oneOf"].([]any) {
+		spec := envelope.(map[string]any)
+		props := spec["properties"].(map[string]any)
+		if props["session_id"] == nil || props["version"].(map[string]any)["const"] != float64(2) || spec["additionalProperties"] != false {
+			t.Fatal("unbound V2 envelope")
 		}
 	}
 }

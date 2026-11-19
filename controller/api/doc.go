@@ -11,6 +11,9 @@ var OpenAPI []byte
 //go:embed control.schema.json
 var ControlSchema []byte
 
+//go:embed control-v2.schema.json
+var ControlV2Schema []byte
+
 //go:embed bundle.schema.json
 var BundleSchema []byte
 

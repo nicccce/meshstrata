@@ -241,6 +241,9 @@ func (s *Service) loadDownload(ctx context.Context, hash [sha256.Size]byte, load
 		}
 		snap.sub, snap.revision = sub, rev
 		for _, i := range entries {
+			if alive, err := routeNodesAvailable(ctx, q, i); err != nil || !alive {
+				return downloadError(ctx)
+			}
 			if i.State != "confirmed" || !i.TaskID.Valid || i.RevokedAt.Valid || i.CleanupState != "none" ||
 				!i.IdentityID.Valid || !i.EntryID.Valid || i.ExpiresAt <= stamp(now) {
 				return downloadError(ctx)

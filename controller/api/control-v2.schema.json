@@ -1,0 +1,1127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meshstrata.invalid/contracts/control/v2",
+  "title": "meshstrata.control.v2",
+  "x-runtime-bundle-formats": [
+    1,
+    2
+  ],
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 2
+        },
+        "type": {
+          "const": "command"
+        },
+        "message_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sent_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "command": {
+          "$ref": "#/$defs/Command"
+        },
+        "session_id": {
+          "$ref": "#/$defs/ID"
+        }
+      },
+      "required": [
+        "version",
+        "type",
+        "message_id",
+        "node_id",
+        "sent_at",
+        "command",
+        "session_id"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 2
+        },
+        "type": {
+          "const": "result"
+        },
+        "message_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sent_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "result": {
+          "$ref": "#/$defs/Result"
+        },
+        "session_id": {
+          "$ref": "#/$defs/ID"
+        }
+      },
+      "required": [
+        "version",
+        "type",
+        "message_id",
+        "node_id",
+        "sent_at",
+        "result",
+        "session_id"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 2
+        },
+        "type": {
+          "const": "receipt"
+        },
+        "message_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sent_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "receipt": {
+          "$ref": "#/$defs/Receipt"
+        },
+        "session_id": {
+          "$ref": "#/$defs/ID"
+        }
+      },
+      "required": [
+        "version",
+        "type",
+        "message_id",
+        "node_id",
+        "sent_at",
+        "receipt",
+        "session_id"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 2
+        },
+        "type": {
+          "const": "hello"
+        },
+        "message_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sent_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "hello": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/Hello"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "runtime": {
+                  "const": true
+                }
+              },
+              "required": [
+                "runtime"
+              ]
+            }
+          ]
+        },
+        "session_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "recovery_format": {
+          "const": 2
+        }
+      },
+      "required": [
+        "version",
+        "type",
+        "message_id",
+        "node_id",
+        "sent_at",
+        "hello",
+        "session_id",
+        "recovery_format"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 2
+        },
+        "type": {
+          "const": "welcome"
+        },
+        "message_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sent_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "session_id": {
+          "$ref": "#/$defs/ID"
+        }
+      },
+      "required": [
+        "version",
+        "type",
+        "message_id",
+        "node_id",
+        "sent_at",
+        "session_id"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 2
+        },
+        "type": {
+          "const": "observe"
+        },
+        "message_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sent_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "session_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "observation_request": {
+          "$ref": "#/$defs/ObservationRequestV2"
+        }
+      },
+      "required": [
+        "version",
+        "type",
+        "message_id",
+        "node_id",
+        "sent_at",
+        "session_id",
+        "observation_request"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 2
+        },
+        "type": {
+          "const": "observation"
+        },
+        "message_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sent_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "session_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "observation_report": {
+          "$ref": "#/$defs/ObservationReportV2"
+        }
+      },
+      "required": [
+        "version",
+        "type",
+        "message_id",
+        "node_id",
+        "sent_at",
+        "session_id",
+        "observation_report"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "$defs": {
+    "ID": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,23}_[0-9a-f]{32}$"
+    },
+    "Revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "Digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "Problem": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string"
+              },
+              "params": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "path",
+              "code"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "current_revision": {
+          "$ref": "#/$defs/Revision"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "additionalProperties": false
+    },
+    "NodeResult": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "target_revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "target_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "applied": {
+          "type": "boolean"
+        },
+        "verification": {
+          "enum": [
+            "not_checked",
+            "verified",
+            "failed",
+            "incomplete"
+          ]
+        },
+        "rollback": {
+          "enum": [
+            "none",
+            "pending",
+            "confirmed",
+            "failed"
+          ]
+        },
+        "cleanup": {
+          "enum": [
+            "none",
+            "pending",
+            "confirmed"
+          ]
+        },
+        "confirmed_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "issue": {
+          "$ref": "#/$defs/Problem"
+        }
+      },
+      "required": [
+        "node_id",
+        "target_revision",
+        "target_digest",
+        "applied",
+        "verification",
+        "rollback",
+        "cleanup",
+        "confirmed_at"
+      ],
+      "additionalProperties": false
+    },
+    "Result": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "target_revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "target_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "applied": {
+          "type": "boolean"
+        },
+        "verification": {
+          "enum": [
+            "not_checked",
+            "verified",
+            "failed",
+            "incomplete"
+          ]
+        },
+        "rollback": {
+          "enum": [
+            "none",
+            "pending",
+            "confirmed",
+            "failed"
+          ]
+        },
+        "cleanup": {
+          "enum": [
+            "none",
+            "pending",
+            "confirmed"
+          ]
+        },
+        "confirmed_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "issue": {
+          "$ref": "#/$defs/Problem"
+        },
+        "task_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "restrictions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Restriction"
+          },
+          "maxItems": 32
+        },
+        "effective_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of verified active render bytes. Artifact target_digest remains unchanged."
+        }
+      },
+      "required": [
+        "node_id",
+        "target_revision",
+        "target_digest",
+        "applied",
+        "verification",
+        "rollback",
+        "cleanup",
+        "confirmed_at",
+        "task_id",
+        "sequence"
+      ],
+      "additionalProperties": false
+    },
+    "Command": {
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "kind": {
+          "enum": [
+            "publish",
+            "rollback",
+            "revoke",
+            "cleanup",
+            "query_status",
+            "test_protocol",
+            "measure",
+            "check_egress",
+            "query_usage",
+            "read_logs"
+          ]
+        },
+        "target_revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "target_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "deadline": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ID"
+          },
+          "uniqueItems": true
+        },
+        "revocation_epoch": {
+          "$ref": "#/$defs/Revision"
+        }
+      },
+      "required": [
+        "task_id",
+        "node_id",
+        "kind",
+        "target_revision",
+        "target_digest",
+        "idempotency_key",
+        "deadline",
+        "depends_on",
+        "revocation_epoch"
+      ],
+      "additionalProperties": false
+    },
+    "Receipt": {
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "task_id",
+        "node_id",
+        "sequence"
+      ],
+      "additionalProperties": false
+    },
+    "Hello": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "applied_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "applied_digest": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{64})?$"
+        },
+        "revocation_epoch": {
+          "$ref": "#/$defs/Revision"
+        },
+        "pending_results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Result"
+          },
+          "maxItems": 100
+        },
+        "runtime": {
+          "type": "boolean",
+          "description": "Execution capability from a recovered Runtime. Absent for control-only clients."
+        }
+      },
+      "required": [
+        "node_id",
+        "applied_revision",
+        "applied_digest",
+        "revocation_epoch",
+        "pending_results"
+      ],
+      "additionalProperties": false
+    },
+    "Restriction": {
+      "type": "object",
+      "properties": {
+        "identity_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "listener_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "generation": {
+          "$ref": "#/$defs/Revision"
+        },
+        "reason": {
+          "enum": [
+            "expired",
+            "revoked"
+          ]
+        },
+        "observed_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "epoch": {
+          "$ref": "#/$defs/Revision"
+        },
+        "effective_digest": {
+          "$ref": "#/$defs/Digest"
+        }
+      },
+      "required": [
+        "identity_id",
+        "listener_id",
+        "generation",
+        "reason",
+        "observed_at",
+        "epoch",
+        "effective_digest"
+      ],
+      "additionalProperties": false
+    },
+    "Pin": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ID"
+        },
+        "revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "digest"
+      ],
+      "additionalProperties": false
+    },
+    "DNSInput": {
+      "type": "object",
+      "properties": {
+        "pin": {
+          "$ref": "#/$defs/Pin"
+        },
+        "bootstrap": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "maxItems": 8,
+          "minItems": 1
+        },
+        "resolvers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "maxItems": 8,
+          "minItems": 1
+        },
+        "ipv6": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pin",
+        "bootstrap",
+        "resolvers",
+        "ipv6"
+      ],
+      "additionalProperties": false
+    },
+    "LocalMaterial": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ID"
+        },
+        "purpose": {
+          "enum": [
+            "tls_certificate",
+            "tls_private_key",
+            "reality_private_key"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "purpose"
+      ],
+      "additionalProperties": false
+    },
+    "SocketSpec": {
+      "type": "object",
+      "properties": {
+        "tls_leaf_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "address": {
+          "type": "string",
+          "maxLength": 45
+        },
+        "transport": {
+          "enum": [
+            "tcp",
+            "udp",
+            "tcp_udp"
+          ]
+        },
+        "certificate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalMaterial"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "private_key": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalMaterial"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reality_key": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalMaterial"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reality_destination": {
+          "type": "string",
+          "maxLength": 320
+        },
+        "server_names": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 253
+          },
+          "minItems": 0,
+          "maxItems": 8
+        },
+        "short_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 16
+          },
+          "minItems": 0,
+          "maxItems": 8
+        },
+        "requested_port": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        }
+      },
+      "required": [
+        "address",
+        "requested_port",
+        "transport",
+        "certificate",
+        "private_key",
+        "reality_key",
+        "reality_destination",
+        "server_names",
+        "short_ids"
+      ],
+      "additionalProperties": false
+    },
+    "PinnedSocketSpecV2": {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "enum": [
+            "ss2022",
+            "trojan",
+            "vless",
+            "hysteria2"
+          ]
+        },
+        "pin": {
+          "$ref": "#/$defs/Pin"
+        },
+        "spec": {
+          "$ref": "#/$defs/SocketSpec"
+        },
+        "pool_first": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "pool_last": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        }
+      },
+      "required": [
+        "protocol",
+        "pin",
+        "spec",
+        "pool_first",
+        "pool_last"
+      ],
+      "additionalProperties": false
+    },
+    "ProtocolCapabilityV2": {
+      "type": "object",
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "protocol": {
+          "enum": [
+            "ss2022",
+            "trojan",
+            "vless",
+            "hysteria2"
+          ]
+        },
+        "business_udp": {
+          "const": "not_checked"
+        }
+      },
+      "required": [
+        "available",
+        "protocol",
+        "business_udp"
+      ],
+      "additionalProperties": false
+    },
+    "InterfaceObservationV2": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 15
+        },
+        "address": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "up": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "address",
+        "up"
+      ],
+      "additionalProperties": false
+    },
+    "LoopInventory": {
+      "type": "object",
+      "properties": {
+        "LocalAddresses": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "minItems": 1,
+          "maxItems": 512
+        },
+        "ProtectedEndpoints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "minItems": 0,
+          "maxItems": 1024
+        },
+        "ProtectedNetworks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "minItems": 0,
+          "maxItems": 256
+        },
+        "ProtectedInterfaces": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 15
+          },
+          "minItems": 0,
+          "maxItems": 128
+        }
+      },
+      "required": [
+        "LocalAddresses",
+        "ProtectedEndpoints",
+        "ProtectedNetworks",
+        "ProtectedInterfaces"
+      ],
+      "additionalProperties": false
+    },
+    "InventoryV2": {
+      "type": "object",
+      "properties": {
+        "interfaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/InterfaceObservationV2"
+          },
+          "minItems": 1,
+          "maxItems": 512
+        },
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "dns": {
+          "$ref": "#/$defs/DNSInput"
+        },
+        "loops": {
+          "$ref": "#/$defs/LoopInventory"
+        },
+        "sockets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PinnedSocketSpecV2"
+          },
+          "minItems": 1,
+          "maxItems": 32
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProtocolCapabilityV2"
+          },
+          "minItems": 1,
+          "maxItems": 4
+        },
+        "observed_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "expires_at": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      },
+      "required": [
+        "interfaces",
+        "node_id",
+        "node_revision",
+        "dns",
+        "loops",
+        "sockets",
+        "capabilities",
+        "observed_at",
+        "expires_at"
+      ],
+      "additionalProperties": false
+    },
+    "EgressObservationV2": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "node_revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "dns": {
+          "$ref": "#/$defs/Pin"
+        },
+        "target": {
+          "$ref": "#/$defs/Pin"
+        },
+        "interface": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 15
+        },
+        "source_ip": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "probe": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "observed_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "expires_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "business_udp": {
+          "const": false
+        }
+      },
+      "required": [
+        "node_id",
+        "node_revision",
+        "dns",
+        "target",
+        "interface",
+        "source_ip",
+        "probe",
+        "observed_at",
+        "expires_at",
+        "business_udp"
+      ],
+      "additionalProperties": false
+    },
+    "ObservationRequestV2": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ID"
+        },
+        "deadline": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "target": {
+          "$ref": "#/$defs/Pin"
+        }
+      },
+      "required": [
+        "id",
+        "deadline"
+      ],
+      "additionalProperties": false
+    },
+    "ObservationReportV2": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ID"
+        },
+        "inventory": {
+          "$ref": "#/$defs/InventoryV2"
+        },
+        "egress": {
+          "$ref": "#/$defs/EgressObservationV2"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "inventory"
+          ],
+          "not": {
+            "required": [
+              "egress"
+            ]
+          }
+        },
+        {
+          "required": [
+            "egress"
+          ],
+          "not": {
+            "required": [
+              "inventory"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "description": "Explicit authenticated V2 subprotocol with current-session recovery and bounded observation requests. Production composition remains disabled. V1 messages and persisted artifact bytes retain their original contract.",
+  "x-production-enabled": false
+}

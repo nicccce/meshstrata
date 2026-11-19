@@ -215,3 +215,15 @@ func TestDomainsArePureNames(t *testing.T) {
 		}
 	}
 }
+
+func TestEgressLoopsProtectOwnedWildcardAndLoopbackAliases(t *testing.T) {
+	target := EgressTarget{NodeID: bid("node"), Type: "http", Host: "127.0.0.2", DialIP: "127.0.0.2", Port: 3128}
+	inv := LoopInventory{LocalAddresses: []netip.Addr{netip.MustParseAddr("127.0.0.1")}, ProtectedEndpoints: []netip.AddrPort{netip.MustParseAddrPort("0.0.0.0:3128")}, ProtectedNetworks: []netip.Prefix{}, ProtectedInterfaces: []string{}}
+	if CheckEgressTargetLoops(target, inv, nil) == nil {
+		t.Fatal("wildcard listener bypassed through a loopback alias")
+	}
+	target.Host, target.DialIP = "192.0.2.100", "192.0.2.100"
+	if CheckEgressTargetLoops(target, inv, nil) != nil {
+		t.Fatal("remote proxy confused with local wildcard")
+	}
+}

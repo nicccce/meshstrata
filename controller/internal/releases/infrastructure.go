@@ -86,6 +86,9 @@ func (s *Service) RecordInventory(ctx context.Context, r InventoryReport) error 
 		sockets = append(sockets, dbgen.I03PutSocketParams{NodeID: string(r.NodeID), ConfigID: string(pin.ID), ConfigRevision: int64(pin.Revision), ConfigDigest: pin.Digest, Spec: raw, Protocol: string(protocol), BusinessUdp: string(udp), PoolFirst: int64(sock.PoolFirst), PoolLast: int64(sock.PoolLast)})
 	}
 	return s.repo.db.Write(ctx, func(q *dbgen.Queries) error {
+		if err := s.checkObservationSession(ctx, r.NodeID); err != nil {
+			return err
+		}
 		n, err := q.GetNode(ctx, string(r.NodeID))
 		if err != nil {
 			return missing(err)

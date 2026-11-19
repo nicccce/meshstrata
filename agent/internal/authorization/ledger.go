@@ -93,8 +93,7 @@ func equalSecret(a, b control.PrivateCredential) bool {
 func Expire(s *control.DurableState, now time.Time) {
 	s.ClockFloor = now
 	_, tombs := lookup(*s)
-	for _, g := range s.Grants {
-		a := g.Listener.Authorization
+	for _, a := range entryAuthorizations(*s) {
 		if _, exists := tombs[a.IdentityID]; exists || now.Before(a.ExpiresAt) {
 			continue
 		}
@@ -129,8 +128,7 @@ func Due(s control.DurableState, now time.Time) bool {
 func NextExpiry(s control.DurableState) time.Time {
 	_, tombs := lookup(s)
 	var next time.Time
-	for _, g := range s.Grants {
-		a := g.Listener.Authorization
+	for _, a := range entryAuthorizations(s) {
 		if _, exists := tombs[a.IdentityID]; !exists && (next.IsZero() || a.ExpiresAt.Before(next)) {
 			next = a.ExpiresAt
 		}

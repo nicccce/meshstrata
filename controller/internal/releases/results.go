@@ -76,6 +76,13 @@ func (s *Service) record(ctx context.Context, q *dbgen.Queries, r control.Result
 	if tn.TargetRevision != int64(r.TargetRevision) || tn.TargetDigest != r.TargetDigest {
 		return false, problem(domain.RevisionConflict)
 	}
+	a, err := q.B04GetArtifact(ctx, dbgen.B04GetArtifactParams{TaskID: id, NodeID: node.ID})
+	if err != nil {
+		return false, err
+	}
+	if a.Format != 1 && a.Format != 2 || a.Format == 2 && s.v2ResultSession(ctx, domain.ID(node.ID)) == "" {
+		return false, problem(domain.NotImplemented)
+	}
 	previous, err := q.B04GetResult(ctx, dbgen.B04GetResultParams{TaskID: id, NodeID: node.ID, Sequence: r.Sequence})
 	if err == nil {
 		if previous.PayloadDigest != hash {
@@ -85,16 +92,6 @@ func (s *Service) record(ctx context.Context, q *dbgen.Queries, r control.Result
 	}
 	if !legitimatelyAbsent(err) {
 		return false, err
-	}
-	a, err := q.B04GetArtifact(ctx, dbgen.B04GetArtifactParams{TaskID: id, NodeID: node.ID})
-	if err != nil {
-		return false, err
-	}
-	if a.Format != 1 && a.Format != 2 {
-		return false, problem(domain.NotImplemented)
-	}
-	if a.Format == 2 && s.v2Session(domain.ID(node.ID)) == "" {
-		return false, problem(domain.NotImplemented)
 	}
 	if target.Phase == "queued" || target.Fetched == 0 && (r.Applied || r.Cleanup == "confirmed" || len(r.Restrictions) > 0) {
 		return false, problem(domain.RevisionConflict)
@@ -330,6 +327,13 @@ func (s *Service) Hello(ctx context.Context, node domain.ID, h control.Hello) er
 				return e
 			}
 			if e == nil {
+				source, err := q.B04GetArtifact(ctx, dbgen.B04GetArtifactParams{TaskID: artifact.TaskID, NodeID: n.ID})
+				if err != nil {
+					return err
+				}
+				if source.Format == 2 && s.v2ResultSession(ctx, node) == "" {
+					return problem(domain.NotImplemented)
+				}
 				target, err := q.B04GetTarget(ctx, dbgen.B04GetTargetParams{TaskID: artifact.TaskID, NodeID: n.ID})
 				if err != nil {
 					return err

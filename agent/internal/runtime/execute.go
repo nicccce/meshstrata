@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -79,6 +80,23 @@ func (r *Runtime) Execute(ctx context.Context, c control.Command) (control.Resul
 		}
 	} else if err != nil {
 		return control.Result{}, err
+	}
+	// Fetch implementations may retain their immutable source buffer. Own the
+	// working copy before clearing private bytes on return.
+	data = bytes.Clone(data)
+	defer clear(data)
+	format, decodeErr := control.DecodeArtifact(data, key, r.o.NodeID)
+	if decodeErr != nil {
+		return r.finishFailure(c, false, "none", domain.InvalidArgument)
+	}
+	if format == 2 {
+		if !r.o.EnableV2 {
+			return r.finishFailure(c, false, "none", domain.NotImplemented)
+		}
+		return r.executeV2(ctx, c, data)
+	}
+	if s.Format == 2 {
+		return r.finishFailure(c, false, "none", domain.RevisionConflict)
 	}
 	b, err := control.DecodeBundle(data, key, r.o.NodeID)
 	if err != nil || b.BindCommand(c) != nil {

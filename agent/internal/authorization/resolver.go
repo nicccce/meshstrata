@@ -2,8 +2,10 @@ package authorization
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
 	"errors"
 	"path/filepath"
@@ -119,3 +121,32 @@ func CheckTLS(cert, key string) error {
 }
 
 var _ control.MaterialResolver = (*Resolver)(nil)
+
+// CheckTLSLeaf binds the locally provisioned leaf to the reviewed public pin.
+// It retains CheckTLS's private-file and key-pair checks before hashing the leaf.
+func CheckTLSLeaf(cert, key string, pin control.TLSLeafSHA256) error {
+	if err := CheckTLS(cert, key); err != nil {
+		return err
+	}
+	if pin == "" {
+		return nil
+	}
+	dir, err := checkpoint.OpenPrivateDir(filepath.Dir(cert))
+	if err != nil {
+		return ErrMaterial
+	}
+	data, err := dir.Read(filepath.Base(cert), 256<<10)
+	dir.Close()
+	if err != nil {
+		return ErrMaterial
+	}
+	block, _ := pem.Decode(data)
+	if block == nil || block.Type != "CERTIFICATE" {
+		return ErrMaterial
+	}
+	digest := sha256.Sum256(block.Bytes)
+	if !pin.Valid() || hex.EncodeToString(digest[:]) != string(pin) {
+		return ErrMaterial
+	}
+	return nil
+}

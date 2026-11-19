@@ -35,6 +35,7 @@ var (
 )
 
 type Options struct {
+	EnableV2                                 bool
 	Binary, BinarySHA256                     string
 	WorkDir, StateDir, ConfigDir, SocketPath string
 	// TCPAddress is optional, numeric loopback only; Secret must have >=32 bytes.
@@ -184,6 +185,7 @@ func (a *Adapter) binary(ctx context.Context) error {
 }
 
 type Candidate struct {
+	Format       int
 	Path, Digest string
 	Expected     []core.Expected
 }
@@ -207,7 +209,7 @@ func (a *Adapter) Validate(ctx context.Context, c Candidate) (Validated, error) 
 	if c.Digest != core.Digest(b) {
 		return Validated{}, core.ErrInvalid
 	}
-	if err = a.policy(b, c.Expected); err != nil {
+	if err = a.policy(b, c.Expected, c.Format); err != nil {
 		return Validated{}, err
 	}
 	if err = a.binary(ctx); err != nil {
@@ -265,7 +267,7 @@ func rejectDuplicates(d *json.Decoder) error {
 	}
 	return nil
 }
-func (a *Adapter) policy(b []byte, expected []core.Expected) error {
+func (a *Adapter) policy(b []byte, expected []core.Expected, format int) error {
 	d := json.NewDecoder(bytes.NewReader(b))
 	if rejectDuplicates(d) != nil {
 		return core.ErrInvalid
@@ -302,6 +304,13 @@ func (a *Adapter) policy(b []byte, expected []core.Expected) error {
 		if v {
 			return core.ErrInvalid
 		}
+	}
+	if format == 2 {
+		if !a.o.EnableV2 || policyV2Routes(c) != nil {
+			return core.ErrInvalid
+		}
+	} else if format != 0 && format != 1 || len(c.Proxies) != 0 || len(c.SubRules) != 0 {
+		return core.ErrInvalid
 	}
 	// Routing is explicit, never a silent default DIRECT fallback.
 	for _, r := range c.Rules {
@@ -349,6 +358,12 @@ func (a *Adapter) policy(b []byte, expected []core.Expected) error {
 		rebuilt, err := core.BuildListener(entry)
 		if err != nil {
 			return err
+		}
+		if format == 2 {
+			rebuilt.Rule = l.Rule
+			if rebuilt.Reality != nil {
+				rebuilt.Reality.Proxy = l.Reality.Proxy
+			}
 		}
 		x, _ := json.Marshal(l)
 		y, _ := json.Marshal(rebuilt)

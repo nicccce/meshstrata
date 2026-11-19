@@ -37,7 +37,7 @@ func fixture(t *testing.T) (*Adapter, Candidate) {
 	data, _ := json.Marshal(c)
 	p := filepath.Join(root, "candidate.json")
 	_ = os.WriteFile(p, data, 0600)
-	return a, Candidate{p, core.Digest(data), exp}
+	return a, Candidate{Path: p, Digest: core.Digest(data), Expected: exp}
 }
 func TestValidationBoundaries(t *testing.T) {
 	a, c := fixture(t)

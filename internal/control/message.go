@@ -212,6 +212,10 @@ type Execution struct {
 // identity grants/tombstones survive rollback; tombstones are never garbage-collected
 // on the basis of a Controller snapshot. Outbox can exceed 100; Hello pages it.
 type DurableState struct {
+	Format          int                  `json:",omitempty"` // zero denotes the original V1 state
+	LinkCleanupsV2  []LinkCleanupV2      `json:",omitempty"`
+	BindingsV2      []BindingV2          `json:",omitempty"`
+	RetiredLinks    []InternalRetirement `json:",omitempty"`
 	Revision        domain.Revision
 	Checkpoint      Checkpoint
 	RevocationEpoch domain.Revision

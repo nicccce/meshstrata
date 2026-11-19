@@ -80,6 +80,9 @@ func (s *Service) RecordEgressObservation(ctx context.Context, r EgressObservati
 		udp = 1
 	}
 	return s.repo.db.Write(ctx, func(q *dbgen.Queries) error {
+		if err := s.checkObservationSession(ctx, r.NodeID); err != nil {
+			return err
+		}
 		now := s.options.Now()
 		if !r.ExpiresAt.After(now) {
 			return problem(domain.TaskExpired)

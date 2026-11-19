@@ -129,7 +129,9 @@ func privateTestDir(t *testing.T) string {
 	return dir
 }
 
-func newFixture(t *testing.T) *fixture {
+func newFixture(t *testing.T) *fixture { return newNodeFixture(t, node) }
+
+func newNodeFixture(t *testing.T, node domain.ID) *fixture {
 	t.Helper()
 	f := &fixture{t: t, now: time.Now().UTC(), kernel: &fakeKernel{}, pending: make(chan struct{}, 10)}
 	f.clock.set(f.now)

@@ -33,6 +33,23 @@ func (s *Service) v2Session(node domain.ID) string {
 	return c.SessionID
 }
 
+// A recovering peer may replay its durable outbox before becoming ready for
+// commands. Only the authenticated adapter's current session may do so.
+func (s *Service) v2ResultSession(ctx context.Context, node domain.ID) string {
+	id := control.SessionFromContext(ctx)
+	if id == "" {
+		return s.v2Session(node)
+	}
+	if s.options.V2Session == nil || s.options.V2Deliver == nil {
+		return ""
+	}
+	c := s.options.V2Session(node)
+	if c.RecoveryFormat != 2 || c.SessionID != string(id) {
+		return ""
+	}
+	return c.SessionID
+}
+
 type preparedV2 struct {
 	node        stage3.NodePlan
 	artifact    dbgen.I03InsertV2ArtifactParams
@@ -131,7 +148,10 @@ func (s *Service) SubmitV2(ctx context.Context, m domain.Mutation, p stage3.Publ
 		// A V1 baseline needs an explicit migration/rotation flow, including its
 		// permanent restrictions. Capability alone cannot authorize that switch.
 		if snap.Legacy != nil {
-			return out, problem(domain.NotImplemented)
+			permit := switchPermit(ctx)
+			if permit == nil || permit.Node != n.NodeID || permit.Source != snap.Artifact || len(p.Nodes) != 1 || p.Kind != domain.Cleanup || p.Action != nil || p.InternalRetirement || p.EntryOperationID != "" || len(n.Template.Listeners) != 0 || len(n.Template.Terminal) != 0 || len(n.Template.RetiredLinks) != 0 || !slices.Equal(n.Template.Tombstones, snap.Legacy.Tombstones) {
+				return out, problem(domain.NotImplemented)
+			}
 		}
 		if snap.Extended != nil {
 			for _, old := range snap.Extended.Tombstones {
@@ -346,6 +366,10 @@ func (s *Service) SubmitV2(ctx context.Context, m domain.Mutation, p stage3.Publ
 			if e != nil {
 				return e
 			}
+		} else if switchPermit(ctx) != nil {
+			if e = checkLegacySwitch(ctx, q, switchPermit(ctx)); e != nil {
+				return e
+			}
 		} else if p.Action == nil {
 			ok, e := q.I03PublicationSubject(ctx, dbgen.I03PublicationSubjectParams{RouteID: string(p.Subject.ID), Revision: int64(p.Subject.Revision), DraftDigest: p.Subject.Digest})
 			if e != nil {
@@ -369,6 +393,11 @@ func (s *Service) SubmitV2(ctx context.Context, m domain.Mutation, p stage3.Publ
 		}
 		if e = q.I03PutTask(ctx, dbgen.I03PutTaskParams{TaskID: string(task), SubjectDigest: p.Subject.Digest, EntryOperationID: string(p.EntryOperationID)}); e != nil {
 			return e
+		}
+		if permit := switchPermit(ctx); permit != nil {
+			if e = q.B04InsertAction(ctx, dbgen.B04InsertActionParams{Scope: "i03:legacy-switch:" + string(permit.Node), Key: permit.Key, RequestDigest: permit.RequestDigest, TaskID: string(task)}); e != nil {
+				return e
+			}
 		}
 		if p.InternalRetirement {
 			if e = q.B04InsertAction(ctx, dbgen.B04InsertActionParams{Scope: "i03:retire:" + string(p.Subject.ID), Key: m.IdempotencyKey, RequestDigest: retireHash, TaskID: string(task)}); e != nil {
@@ -688,7 +717,8 @@ func (s *Service) checkV2Target(ctx context.Context, q *dbgen.Queries, task, nod
 	if a.Format == 1 {
 		return nil
 	}
-	if a.Format != 2 || s.v2Session(domain.ID(node)) == "" {
+	session := s.v2Session(domain.ID(node))
+	if a.Format != 2 || session == "" || (control.SessionFromContext(ctx) != "" && string(control.SessionFromContext(ctx)) != session) {
 		return problem(domain.NotImplemented)
 	}
 	meta, e := q.I03Task(ctx, task)

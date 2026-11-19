@@ -55,7 +55,11 @@ func (s *Service) dispatch(ctx context.Context) error {
 					err = s.options.V2Deliver(delivery, c)
 				}
 			} else if format == 1 {
-				err = s.options.Deliver(delivery, c)
+				if c.Kind == domain.Cleanup && s.v2Session(c.NodeID) != "" {
+					err = s.options.V2Deliver(delivery, c)
+				} else {
+					err = s.options.Deliver(delivery, c)
+				}
 			} else {
 				err = problem(domain.NotImplemented)
 			}
