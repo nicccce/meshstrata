@@ -304,3 +304,9 @@ func resultIssue(code sql.NullString) *domain.Problem {
 	}
 	return nil
 }
+
+// RetryTask is the trusted worker equivalent of the guarded retry action.
+// Source task CAS and the original action ledger remain authoritative.
+func (s *Service) RetryTask(ctx context.Context, id domain.ID, m domain.Mutation) (domain.TaskAccepted, error) {
+	return s.action(ctx, id, "retry", m)
+}

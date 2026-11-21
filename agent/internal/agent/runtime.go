@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -239,17 +240,41 @@ func composeRuntime(ctx context.Context, cfg config.Agent, client *atomic.Pointe
 	}
 	binary, socket := cfg.Runtime.MihomoBinary, cfg.RuntimeSocketPath()
 	adapter, err := mihomo.New(mihomo.Options{
-		Binary: binary, BinarySHA256: core.LinuxAMD64SHA256, WorkDir: filepath.Join(dir, "config"),
+		EnableV2: cfg.Runtime.EnableV2,
+		Binary:   binary, BinarySHA256: core.LinuxAMD64SHA256, WorkDir: filepath.Join(dir, "config"),
 		StateDir: filepath.Join(dir, "process"), ConfigDir: configDir, SocketPath: socket, Secret: apiSecret,
 	})
 	if err != nil {
 		return nil, nil, err
 	}
-	probes, err := execution.NewProbes(execution.ProbeOptions{Binary: binary, Dir: filepath.Join(dir, "probes"), Materials: resolver})
+	var canaries []netip.AddrPort
+	if cfg.Runtime.EnableV2 && cfg.Runtime.Provisioning != nil {
+		canaries = cfg.Runtime.Provisioning.EgressProbes
+	}
+	probes, err := execution.NewProbes(execution.ProbeOptions{V2Canaries: canaries, Binary: binary, Dir: filepath.Join(dir, "probes"), Materials: resolver})
 	if err != nil {
 		return nil, nil, err
 	}
+	var inventory func(context.Context) (control.LoopInventory, error)
+	var observations *execution.ObservationOptionsV2
+	if cfg.Runtime.EnableV2 {
+		p := cfg.Runtime.Provisioning
+		if p == nil {
+			return nil, nil, execution.ErrUnavailable
+		}
+		inventory = func(ctx context.Context) (control.LoopInventory, error) {
+			return execution.ObserveLoopInventory(ctx, p.Topology.Inventory())
+		}
+		observations = &execution.ObservationOptionsV2{Binary: binary, Probes: p.EgressProbes, Plan: func(context.Context) (execution.ObservationPlanV2, error) {
+			plan := execution.ObservationPlanV2{NodeID: node, Revision: 1, DNS: p.DNS, Sockets: p.Sockets, Targets: []execution.ObservedTargetV2{{Spec: control.EgressTarget{NodeID: node, Type: "node_default"}}}}
+			for _, t := range p.Targets {
+				plan.Targets = append(plan.Targets, execution.ObservedTargetV2{Pin: t.Pin, Spec: t.Spec, Auth: t.Auth})
+			}
+			return plan, nil
+		}}
+	}
 	engine, err := execution.New(execution.Options{
+		EnableV2: cfg.Runtime.EnableV2, Inventory: inventory, Observations: observations, ProbeFactoryV2: probes.ForwardFactoryV2,
 		NodeID: node, State: store, Materials: resolver, Kernel: adapter, Process: process,
 		ProbeFactory: probes.ForwardFactory, RevocationProbeFactory: probes.RevocationFactory,
 		ConfigDir: configDir, SocketPath: socket, APISecret: apiSecret,

@@ -14,11 +14,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/netip"
 	"os"
 	"os/exec"
 	"path/filepath"
+	goruntime "runtime"
 	"sync"
 	"syscall"
 	"time"
@@ -34,11 +36,12 @@ import (
 var errProbe = errors.New("AGENT_AUTHENTICATED_PROBE_UNAVAILABLE")
 
 type ProbeOptions struct {
-	Binary    string
-	Dir       string
-	Materials control.MaterialResolver
-	Timeout   time.Duration
-	Random    io.Reader
+	V2Canaries []netip.AddrPort // independent locally approved numeric TCP echo targets
+	Binary     string
+	Dir        string
+	Materials  control.MaterialResolver
+	Timeout    time.Duration
+	Random     io.Reader
 }
 
 type Probes struct {
@@ -52,6 +55,14 @@ func NewProbes(o ProbeOptions) (*Probes, error) {
 	}
 	if o.Random == nil {
 		o.Random = rand.Reader
+	}
+	if len(o.V2Canaries) > 8 {
+		return nil, errProbe
+	}
+	for _, p := range o.V2Canaries {
+		if !p.IsValid() || p.Port() == 0 || p.Addr().IsUnspecified() || p.Addr().IsMulticast() {
+			return nil, errProbe
+		}
 	}
 	if o.Timeout <= 0 || o.Timeout > 30*time.Second || o.Materials == nil {
 		return nil, errProbe
@@ -79,6 +90,7 @@ func (p *Probes) random(b []byte) error {
 type retainedProbeKey struct{}
 
 type forwardProbe struct {
+	canaries  []netip.AddrPort
 	retained  map[domain.ID]bool
 	p         *Probes
 	listeners map[string]control.BundleListener
@@ -101,7 +113,18 @@ func (p *forwardProbe) Forward(ctx context.Context, e core.Expected, network str
 		l.Address != e.Address || l.Port != e.Port || (network != "tcp" && (network != "udp" || !l.BusinessUDP)) {
 		return check(mihomo.Unverified)
 	}
-	target, closeTarget, err := echoTarget(ctx, network)
+	var target string
+	var closeTarget func()
+	var err error
+	if len(p.canaries) > 0 {
+		if network != "tcp" {
+			return check(mihomo.Unverified)
+		}
+		target = p.canaries[0].String()
+		closeTarget = func() {}
+	} else {
+		target, closeTarget, err = echoTarget(ctx, network)
+	}
 	if err != nil {
 		return check(mihomo.Unverified)
 	}
@@ -116,6 +139,7 @@ func (p *forwardProbe) Forward(ctx context.Context, e core.Expected, network str
 		}
 	}
 	if good != forwarded {
+		slog.Warn("Authenticated listener probe unavailable", "protocol", l.Protocol, "code", "correct_credential_no_echo")
 		return mihomo.Check{Status: mihomo.Unverified, Code: "correct_credential_no_echo"}
 	}
 	// Use a fresh transport for the negative control. Retry an inconclusive
@@ -132,6 +156,7 @@ func (p *forwardProbe) Forward(ctx context.Context, e core.Expected, network str
 				break
 			}
 		}
+		slog.Warn("Authenticated listener probe unavailable", "protocol", l.Protocol, "code", "wrong_credential_inconclusive")
 		return mihomo.Check{Status: mihomo.Unverified, Code: "wrong_credential_inconclusive"}
 	}
 	return check(mihomo.Succeeded)
@@ -315,7 +340,7 @@ type probeClient struct {
 	stop    func()
 }
 
-func (p *Probes) startClient(ctx context.Context, proxy map[string]any) (*probeClient, error) {
+func (p *Probes) startClient(ctx context.Context, proxy map[string]any, excluded ...string) (*probeClient, error) {
 	dir, err := os.MkdirTemp(p.options.Dir, "probe-")
 	if err != nil {
 		return nil, errProbe
@@ -342,12 +367,26 @@ func (p *Probes) startClient(ctx context.Context, proxy map[string]any) (*probeC
 	port := reservation.Addr().(*net.TCPAddr).Port
 	address := reservation.Addr().String()
 	token := hex.EncodeToString(auth[:])
+	bootstrap, closeBootstrap, err := probeBootstrap(ctx, excluded)
+	if err != nil {
+		reservation.Close()
+		return nil, err
+	}
+	defer closeBootstrap()
+	bootstrapAddress, err := netip.ParseAddrPort(bootstrap)
+	if err != nil {
+		reservation.Close()
+		return nil, errProbe
+	}
 	config := map[string]any{
 		"port": 0, "socks-port": port, "allow-lan": false, "bind-address": "127.0.0.1",
 		"authentication": []string{"meshstrata:" + token}, "mode": "rule", "log-level": "warning",
 		"tun": map[string]bool{"enable": false}, "dns": map[string]bool{"enable": false},
 		"profile": map[string]bool{"store-selected": false, "store-fake-ip": false},
-		"proxies": []any{proxy}, "rules": []string{"MATCH,selected"},
+		"proxies": []any{proxy}, "rules": []string{
+			fmt.Sprintf("AND,((NETWORK,tcp),(IP-CIDR,127.0.0.1/32),(DST-PORT,%d)),DIRECT", bootstrapAddress.Port()),
+			"MATCH,selected",
+		},
 	}
 	path := filepath.Join(dir, "client.json")
 	b, err := json.Marshal(config)
@@ -366,11 +405,23 @@ func (p *Probes) startClient(ctx context.Context, proxy map[string]any) (*probeC
 	cmd.Dir = dir
 	cmd.SysProcAttr = &unix.SysProcAttr{Pdeathsig: unix.SIGKILL}
 	cmd.Stdout, cmd.Stderr = log, log
-	if cmd.Start() != nil {
+	done := make(chan struct{})
+	started := make(chan error, 1)
+	go func() {
+		// Linux Pdeathsig follows the creating OS thread. Keep that thread
+		// alive until Wait completes, even after startClient's caller returns.
+		goruntime.LockOSThread()
+		defer goruntime.UnlockOSThread()
+		defer close(done)
+		err := cmd.Start()
+		started <- err
+		if err == nil {
+			_ = cmd.Wait()
+		}
+	}()
+	if err := <-started; err != nil {
 		return nil, errProbe
 	}
-	done := make(chan struct{})
-	go func() { _ = cmd.Wait(); close(done) }()
 	c := &probeClient{address: address, auth: token, log: log, done: done, stop: func() {
 		_ = cmd.Process.Kill()
 		<-done
@@ -380,8 +431,11 @@ func (p *Probes) startClient(ctx context.Context, proxy map[string]any) (*probeC
 	for {
 		conn, err := c.connect(ctx)
 		if err == nil {
+			ready := probeClientReady(p, ctx, conn, bootstrap)
 			conn.Close()
-			return c, nil
+			if ready {
+				return c, nil
+			}
 		}
 		select {
 		case <-done:
@@ -393,6 +447,51 @@ func (p *Probes) startClient(ctx context.Context, proxy map[string]any) (*probeC
 		case <-time.After(15 * time.Millisecond):
 		}
 	}
+}
+
+// The SOCKS listener can accept authentication while Mihomo's tunnel is still
+// suspended during startup. Confirm its data plane through an owned exact TCP
+// destination; never route an actual verification target through this exception.
+func probeBootstrap(ctx context.Context, excluded []string) (string, func(), error) {
+	blocked := map[netip.AddrPort]bool{}
+	for _, text := range excluded {
+		if text == "" {
+			continue
+		}
+		a, e := netip.ParseAddrPort(text)
+		if e != nil {
+			return "", nil, errProbe
+		}
+		blocked[netip.AddrPortFrom(a.Addr().Unmap(), a.Port())] = true
+	}
+	for range 8 {
+		target, closeTarget, e := echoTarget(ctx, "tcp")
+		if e != nil {
+			return "", nil, e
+		}
+		a, e := netip.ParseAddrPort(target)
+		if e == nil && !blocked[a] {
+			return target, closeTarget, nil
+		}
+		closeTarget()
+	}
+	return "", nil, errProbe
+}
+func probeClientReady(p *Probes, ctx context.Context, conn net.Conn, target string) bool {
+	rep, _, e := socksRequest(conn, 1, target)
+	if e != nil || rep != 0 {
+		return false
+	}
+	var nonce [32]byte
+	if p.random(nonce[:]) != nil {
+		return false
+	}
+	if _, e = conn.Write(nonce[:]); e != nil {
+		return false
+	}
+	var got [32]byte
+	_, e = io.ReadFull(conn, got[:])
+	return e == nil && bytes.Equal(nonce[:], got[:]) && ctx.Err() == nil
 }
 
 type observation int
@@ -410,7 +509,7 @@ func (p *Probes) observe(ctx context.Context, l control.BundleListener, target, 
 	if err != nil {
 		return unknown
 	}
-	client, err := p.startClient(ctx, proxy)
+	client, err := p.startClient(ctx, proxy, target)
 	if err != nil {
 		return unknown
 	}

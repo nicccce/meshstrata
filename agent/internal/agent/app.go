@@ -79,6 +79,8 @@ func Run(ctx context.Context, cfg config.Agent, logger *slog.Logger) error {
 			}
 			defer closeRuntime()
 			options.Runtime = engine
+			options.EnableV2 = cfg.Runtime.EnableV2
+			options.ObserveV2 = engine.ObserveV2
 			go func() {
 				runtimeExit <- engine.Run(local)
 				cancel()

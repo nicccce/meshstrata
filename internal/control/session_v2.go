@@ -124,3 +124,6 @@ func SessionFromContext(ctx context.Context) domain.ID {
 	id, _ := ctx.Value(sessionContextKey{}).(domain.ID)
 	return id
 }
+
+// UniqueJSON rejects duplicate keys recursively before strict boundary decoding.
+func UniqueJSON(b []byte) bool { return uniqueJSON(b) }

@@ -62,6 +62,11 @@ type preparedV2 struct {
 
 func (s *Service) SubmitV2(ctx context.Context, m domain.Mutation, p stage3.PublishPlan) (domain.TaskAccepted, error) {
 	var out domain.TaskAccepted
+	// Capture the caller's sealed candidate before normalization for task hashing.
+	entryDigest, digestErr := control.ComponentDigest(p)
+	if digestErr != nil {
+		return out, digestErr
+	}
 	if !mutationValid(m) || !p.Subject.Valid() || m.ExpectedRevision != p.Subject.Revision || len(p.Nodes) == 0 || len(p.Nodes) > 100 || p.Deadline.IsZero() {
 		return out, problem(domain.InvalidArgument)
 	}
@@ -278,7 +283,19 @@ func (s *Service) SubmitV2(ctx context.Context, m domain.Mutation, p stage3.Publ
 			if !found {
 				return out, problem(domain.GrantOriginUncertain)
 			}
-			t.fences = append(t.fences, dbgen.I03PutLinkFenceParams{TaskID: string(task), NodeID: string(t.node.NodeID), ReceiverID: string(receiver), LinkID: string(l.Forward.Next.Link.ID), TargetRevision: int64(key.TargetRevision), ArtifactDigest: key.TargetDigest, Epoch: int64(epoch)})
+			fence := dbgen.I03PutLinkFenceParams{TaskID: string(task), NodeID: string(t.node.NodeID), ReceiverID: string(receiver), LinkID: string(l.Forward.Next.Link.ID), TargetRevision: int64(key.TargetRevision), ArtifactDigest: key.TargetDigest, Epoch: int64(epoch)}
+			shared := false
+			for _, prior := range t.fences {
+				if prior.LinkID == fence.LinkID {
+					if prior != fence {
+						return out, problem(domain.GrantOriginUncertain)
+					}
+					shared = true
+				}
+			}
+			if !shared {
+				t.fences = append(t.fences, fence)
+			}
 		}
 	}
 	var actionHash string
@@ -317,6 +334,15 @@ func (s *Service) SubmitV2(ctx context.Context, m domain.Mutation, p stage3.Publ
 		}
 		if !errors.Is(e, sql.ErrNoRows) {
 			return e
+		}
+		if p.EntryOperationID != "" && p.Action == nil {
+			fence, e := q.I03CEntryPlanFence(ctx, dbgen.I03CEntryPlanFenceParams{OperationID: string(p.EntryOperationID), Kind: string(p.Kind)})
+			if e != nil && !errors.Is(e, sql.ErrNoRows) {
+				return e
+			}
+			if e == nil && fence != "" && fence != entryDigest {
+				return problem(domain.RevisionConflict)
+			}
 		}
 		now := s.options.Now()
 		if !p.Deadline.After(now) {
@@ -504,7 +530,11 @@ func checkV2Base(ctx context.Context, q *dbgen.Queries, t preparedV2) error {
 		if e != nil {
 			return e
 		}
-		if state.Reconciliation != "matched" || state.AppliedRevision != int64(t.snap.Artifact.TargetRevision) || state.ArtifactDigest != t.snap.Artifact.TargetDigest || state.EvidenceTaskID != "" {
+		confirmedRestriction, e := confirmedRestrictionBase(ctx, q, state)
+		if e != nil {
+			return e
+		}
+		if state.Reconciliation != "matched" || state.AppliedRevision != int64(t.snap.Artifact.TargetRevision) || state.ArtifactDigest != t.snap.Artifact.TargetDigest || state.EffectiveDigest != t.snap.EffectiveDigest || !confirmedRestriction {
 			return problem(domain.GrantOriginUncertain)
 		}
 	}
@@ -806,7 +836,11 @@ func (s *Service) checkV2Target(ctx context.Context, q *dbgen.Queries, task, nod
 		if e != nil {
 			return e
 		}
-		if n.RemovedAt.Valid || n.RevocationEpoch != f.Epoch || st.Epoch != f.Epoch || st.Reconciliation != "matched" || st.AppliedRevision != f.TargetRevision || st.ArtifactDigest != f.ArtifactDigest || st.EvidenceTaskID != "" || link.State != "active" {
+		confirmedRestriction, e := confirmedRestrictionBase(ctx, q, st)
+		if e != nil {
+			return e
+		}
+		if n.RemovedAt.Valid || n.RevocationEpoch != f.Epoch || st.Epoch != f.Epoch || st.Reconciliation != "matched" || st.AppliedRevision != f.TargetRevision || st.ArtifactDigest != f.ArtifactDigest || !confirmedRestriction || link.State != "active" {
 			return problem(domain.GrantOriginUncertain)
 		}
 	}

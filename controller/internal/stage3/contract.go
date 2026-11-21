@@ -350,13 +350,19 @@ type Preview struct {
 type RulesOptions struct{ Runtime }
 type ClientOptions struct{} // pure, no DB/clock/HTTP
 
+type InitialRouteChoice struct {
+	Name    string
+	RouteID domain.ID
+}
+
 type SubscriptionDraft struct {
-	ID          domain.ID
-	Name        string
-	ExpiresAt   time.Time
-	Profile     control.Pin
-	Routes      []control.Pin
-	Preferences ClientPreferences
+	InitialSelections []InitialRouteChoice // resolved only after real entry allocation; never stored as group identity
+	ID                domain.ID
+	Name              string
+	ExpiresAt         time.Time
+	Profile           control.Pin
+	Routes            []control.Pin
+	Preferences       ClientPreferences
 }
 type SubscriptionView struct {
 	Entity    domain.Entity

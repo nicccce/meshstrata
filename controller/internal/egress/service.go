@@ -234,6 +234,9 @@ func (s *Service) saveTarget(ctx context.Context, m domain.Mutation, in stage3.E
 			pin, duplicate = p, true
 			return nil
 		}
+		if err := stage3.RequireActive(ctx, q, "target", id); err != nil {
+			return err
+		}
 		if err := update(ctx, q, m, id, t.NodeID, "target", in.Name); err != nil {
 			return err
 		}
@@ -259,6 +262,105 @@ func (s *Service) saveTarget(ctx context.Context, m domain.Mutation, in stage3.E
 			return nil
 		}
 		return q.B06InsertEgressCredential(ctx, dbgen.B06InsertEgressCredentialParams{ID: string(t.CredentialRef), TargetID: string(id), OriginRevision: int64(pin.Revision), KeyID: sealed.KeyID, Ciphertext: sealed.Ciphertext})
+	})
+	if err == nil && duplicate {
+		return replay(pin)
+	}
+	return pin, err
+}
+
+// ReplaceTargetAuth atomically persists a new credential, exact target version
+// and replay result. The HTTP boundary never needs a second transaction.
+func (s *Service) ReplaceTargetAuth(ctx context.Context, m domain.Mutation, source control.Pin, auth stage3.ProxyAuth) (control.Pin, error) {
+	pin, err := s.replaceTargetAuth(ctx, m, source, auth)
+	if err = safe(ctx, err); err != nil {
+		return control.Pin{}, err
+	}
+	return pin, nil
+}
+func (s *Service) replaceTargetAuth(ctx context.Context, m domain.Mutation, source control.Pin, auth stage3.ProxyAuth) (control.Pin, error) {
+	const op = "egress.target.credentials"
+	if !source.Valid() || source.Revision != m.ExpectedRevision || !validAuth(auth) {
+		return control.Pin{}, problem(domain.InvalidArgument, "/pin")
+	}
+	if err := validateWrite(m, source.ID, "credentials"); err != nil {
+		return control.Pin{}, err
+	}
+	hash, err := control.ComponentDigest(source)
+	if err != nil {
+		return control.Pin{}, err
+	}
+	replay := func(pin control.Pin) (control.Pin, error) {
+		got, err := OpenAuth(ctx, s.opts.Runtime, s.opts.Cipher, pin, "")
+		if err != nil {
+			return control.Pin{}, err
+		}
+		if subtle.ConstantTimeCompare([]byte(got.Username), []byte(auth.Username)) != 1 || subtle.ConstantTimeCompare([]byte(got.Password), []byte(auth.Password)) != 1 {
+			return control.Pin{}, problem(domain.IdempotencyConflict, "")
+		}
+		return pin, nil
+	}
+	pin, found, err := s.readReplay(ctx, op, m.IdempotencyKey, hash)
+	if err != nil {
+		return control.Pin{}, err
+	}
+	if found {
+		return replay(pin)
+	}
+	var target control.EgressTarget
+	err = s.opts.DB.Read(ctx, func(q *dbgen.Queries) error {
+		v, err := version(ctx, q, source, "target", "")
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(v.Spec, &target)
+	})
+	if err != nil {
+		return control.Pin{}, err
+	}
+	if target.Type != "http" && target.Type != "socks5" {
+		return control.Pin{}, problem(domain.InvalidArgument, "/target")
+	}
+	target.CredentialRef, err = s.opts.NewID("credential")
+	if err != nil {
+		return control.Pin{}, err
+	}
+	plain, _ := json.Marshal(auth)
+	sealed, err := s.opts.Cipher.Seal(ctx, secretstore.Binding{Ref: target.CredentialRef, Purpose: secretstore.EgressProxy}, plain)
+	clear(plain)
+	if err != nil {
+		return control.Pin{}, err
+	}
+	pin, err = stage3.NewPin(source.ID, source.Revision+1, target)
+	if err != nil {
+		return control.Pin{}, err
+	}
+	raw, _ := json.Marshal(target)
+	duplicate := false
+	err = s.opts.DB.Write(ctx, func(q *dbgen.Queries) error {
+		prior, found, err := getReplay(ctx, q, op, m.IdempotencyKey, hash)
+		if err != nil {
+			return err
+		}
+		if found {
+			pin = prior
+			duplicate = true
+			return nil
+		}
+		if err = stage3.RequireActive(ctx, q, "target", source.ID); err != nil {
+			return err
+		}
+		current, err := q.B06EgressObject(ctx, string(source.ID))
+		if err != nil {
+			return err
+		}
+		if err = update(ctx, q, m, source.ID, target.NodeID, "target", current.Name); err != nil {
+			return err
+		}
+		if err = persist(ctx, q, m, op, hash, pin, raw); err != nil {
+			return err
+		}
+		return q.B06InsertEgressCredential(ctx, dbgen.B06InsertEgressCredentialParams{ID: string(target.CredentialRef), TargetID: string(source.ID), OriginRevision: int64(pin.Revision), KeyID: sealed.KeyID, Ciphertext: sealed.Ciphertext})
 	})
 	if err == nil && duplicate {
 		return replay(pin)
@@ -393,6 +495,14 @@ func (s *Service) savePolicy(ctx context.Context, m domain.Mutation, in stage3.E
 		if f {
 			pin = p
 			return nil
+		}
+		if err := stage3.RequireActive(ctx, q, "policy", id); err != nil {
+			return err
+		}
+		for _, t := range spec.Targets {
+			if err := stage3.RequireActive(ctx, q, "target", t.Pin.ID); err != nil {
+				return err
+			}
 		}
 		if err := update(ctx, q, m, id, spec.NodeID, "policy", in.Name); err != nil {
 			return err

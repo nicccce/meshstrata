@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/nicccce/meshstrata/internal/control"
 	"github.com/nicccce/meshstrata/internal/domain"
+	"github.com/nicccce/meshstrata/internal/privatefile"
 )
 
 type Common struct {
@@ -33,6 +35,9 @@ type Agent struct {
 	Runtime *AgentRuntime `json:"runtime,omitempty"`
 }
 type ControllerSecure struct {
+	EnableV2             bool              `json:"enable_v2,omitempty"`
+	PublicOrigin         string            `json:"public_origin,omitempty"`
+	EgressProbes         []netip.AddrPort  `json:"egress_probes,omitempty"`
 	TLSCertFile          string            `json:"tls_cert_file"`
 	TLSKeyFile           string            `json:"tls_key_file"`
 	WebCAFile            string            `json:"web_ca_file"`
@@ -44,7 +49,34 @@ type ControllerSecure struct {
 	ControllerURL        string            `json:"controller_url"`
 	ServerNames          []string          `json:"server_names"`
 }
+
+// Provisioning is trusted local policy, separate from administrative requests.
+type Provisioning struct {
+	DNS          control.DNSInput             `json:"dns"`
+	Sockets      []control.PinnedSocketSpecV2 `json:"sockets"`
+	Topology     ProtectedTopology            `json:"topology"`
+	EgressProbes []netip.AddrPort             `json:"egress_probes"`
+	Targets      []ProvisionedTarget          `json:"targets,omitempty"`
+}
+type ProtectedTopology struct {
+	LocalAddresses      []netip.Addr     `json:"local_addresses"`
+	ProtectedEndpoints  []netip.AddrPort `json:"protected_endpoints"`
+	ProtectedNetworks   []netip.Prefix   `json:"protected_networks"`
+	ProtectedInterfaces []string         `json:"protected_interfaces"`
+}
+
+func (p ProtectedTopology) Inventory() control.LoopInventory {
+	return control.LoopInventory{LocalAddresses: p.LocalAddresses, ProtectedEndpoints: p.ProtectedEndpoints, ProtectedNetworks: p.ProtectedNetworks, ProtectedInterfaces: p.ProtectedInterfaces}
+}
+
+type ProvisionedTarget struct {
+	Pin  control.Pin          `json:"pin"`
+	Spec control.EgressTarget `json:"spec"`
+	Auth *control.EgressAuth  `json:"auth,omitempty"`
+}
 type AgentRuntime struct {
+	EnableV2     bool                    `json:"enable_v2,omitempty"`
+	Provisioning *Provisioning           `json:"provisioning,omitempty"`
 	MihomoBinary string                  `json:"mihomo_binary"`
 	Materials    []control.LocalMaterial `json:"materials,omitempty"`
 }
@@ -85,6 +117,17 @@ func LoadController(path string) (Controller, error) {
 		if s.TLSCertFile == "" || s.TLSKeyFile == "" || s.CurrentKeyID == "" || len(s.KeyFiles) == 0 || len(s.AllowedOrigins) == 0 || s.ControlListenAddress == "" || s.ControllerURL == "" || len(s.ServerNames) == 0 {
 			return cfg, errors.New("secure mode requires complete TLS, keyring, origin and control configuration")
 		}
+		if s.EnableV2 && s.PublicOrigin == "" {
+			return cfg, errors.New("V2 requires trusted public_origin")
+		}
+		if len(s.EgressProbes) > 8 || s.EnableV2 && len(s.EgressProbes) == 0 {
+			return cfg, errors.New("V2 requires 1-8 numeric egress probes")
+		}
+		for _, p := range s.EgressProbes {
+			if !p.IsValid() || p.Port() == 0 || p.Addr().IsUnspecified() || p.Addr().IsMulticast() {
+				return cfg, errors.New("invalid numeric canary")
+			}
+		}
 		if _, _, err := net.SplitHostPort(s.ControlListenAddress); err != nil {
 			return cfg, errors.New("invalid control_listen_address")
 		}
@@ -117,6 +160,33 @@ func LoadAgent(path string) (Agent, error) {
 	if runtimeEnabled && (!filepath.IsAbs(cfg.Runtime.MihomoBinary) ||
 		filepath.Clean(cfg.Runtime.MihomoBinary) != cfg.Runtime.MihomoBinary || len(cfg.RuntimeSocketPath()) > 100) {
 		return cfg, errors.New("runtime requires an absolute Mihomo path and a short state_dir")
+	}
+	if cfg.Runtime != nil && cfg.Runtime.EnableV2 {
+		p := cfg.Runtime.Provisioning
+		if p == nil || len(p.Sockets) < 1 || len(p.Sockets) > 32 || !p.DNS.Pin.Valid() || len(p.Topology.ProtectedEndpoints) == 0 || p.Topology.ProtectedNetworks == nil || p.Topology.ProtectedInterfaces == nil || len(p.EgressProbes) < 1 || len(p.EgressProbes) > 8 || len(p.Targets) > control.MaxEgressTargets {
+			return cfg, errors.New("V2 requires bounded local provisioning and explicit protection topology")
+		}
+		for _, probe := range p.EgressProbes {
+			if !probe.IsValid() || probe.Port() == 0 || probe.Addr().IsUnspecified() || probe.Addr().IsMulticast() {
+				return cfg, errors.New("invalid numeric canary")
+			}
+		}
+	}
+	if cfg.Runtime != nil && cfg.Runtime.Provisioning != nil {
+		for _, target := range cfg.Runtime.Provisioning.Targets {
+			if target.Auth != nil {
+				absolute, err := filepath.Abs(path)
+				if err != nil {
+					return cfg, errors.New("private provisioning file unavailable")
+				}
+				raw, err := privatefile.Read(absolute, 1<<20)
+				clear(raw)
+				if err != nil {
+					return cfg, errors.New("proxy authentication requires a private provisioning file")
+				}
+				break
+			}
+		}
 	}
 	// Leave enough room for the Unix socket path on Linux (108 bytes including NUL).
 	if len(cfg.SocketPath()) > 107 {
@@ -165,7 +235,7 @@ func decode(path string, dest any) error {
 	if err := decoder.Decode(&raw); err != nil {
 		return fmt.Errorf("decode configuration: %w", err)
 	}
-	if len(raw) == 0 || raw[0] != '{' {
+	if len(raw) == 0 || raw[0] != '{' || !control.UniqueJSON(raw) {
 		return errors.New("configuration must be a JSON object")
 	}
 	strict := json.NewDecoder(strings.NewReader(string(raw)))

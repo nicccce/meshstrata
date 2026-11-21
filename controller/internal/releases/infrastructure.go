@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"reflect"
 	"time"
 
 	"github.com/nicccce/meshstrata/controller/internal/ports"
@@ -95,6 +96,23 @@ func (s *Service) RecordInventory(ctx context.Context, r InventoryReport) error 
 		}
 		if n.RemovedAt.Valid || n.ConnectionMode != "direct" || n.Revision != int64(r.NodeRevision) || n.TargetDnsRevision != int64(r.DNS.Pin.Revision) {
 			return problem(domain.RevisionConflict)
+		}
+		if s.options.RequirePreparation {
+			p, e := q.I03CPreparation(ctx, n.ID)
+			if e != nil {
+				return e
+			}
+			var expectedDNS control.DNSInput
+			var expectedSockets []control.PinnedSocketSpecV2
+			if json.Unmarshal(p.Dns, &expectedDNS) != nil || json.Unmarshal(p.Sockets, &expectedSockets) != nil || !reflect.DeepEqual(expectedDNS, r.DNS) || len(expectedSockets) != len(r.Sockets) {
+				return problem(domain.RevisionConflict)
+			}
+			for i, observed := range r.Sockets {
+				want := expectedSockets[i]
+				if want.Pin != observed.Pin || want.Protocol != observed.Protocol || want.PoolFirst != observed.PoolFirst || want.PoolLast != observed.PoolLast || !reflect.DeepEqual(want.Spec, observed.Spec) {
+					return problem(domain.RevisionConflict)
+				}
+			}
 		}
 		if err = q.I03PutDNS(ctx, dbgen.I03PutDNSParams{NodeID: n.ID, Revision: int64(r.DNS.Pin.Revision), Digest: r.DNS.Pin.Digest}); err != nil {
 			return err
@@ -243,7 +261,11 @@ func (s *Service) NodeSnapshot(ctx context.Context, id domain.ID) (stage3.NodeSn
 		if !usable {
 			return problem(domain.GrantOriginUncertain)
 		}
-		if a.TargetRevision > n.Revision || st.Epoch != n.RevocationEpoch || st.EvidenceTaskID != "" {
+		confirmedRestriction, e := confirmedRestrictionBase(ctx, q, st)
+		if e != nil {
+			return e
+		}
+		if a.TargetRevision > n.Revision || st.Epoch != n.RevocationEpoch || !confirmedRestriction {
 			return problem(domain.GrantOriginUncertain)
 		}
 		out.BaseState = "confirmed"
@@ -510,4 +532,13 @@ func (s *Service) ReserveIngress(ctx context.Context, in stage3.EntryReservation
 		return problem(domain.PortInUse)
 	})
 	return out, err
+}
+
+// An authenticated, confirmed local restriction only removes authority from the
+// immutable artifact. Pending or unmatched effective-state evidence stays fenced.
+func confirmedRestrictionBase(ctx context.Context, q *dbgen.Queries, st dbgen.B04NodeState) (bool, error) {
+	if st.EvidenceTaskID == "" {
+		return true, nil
+	}
+	return q.I03CConfirmedRestrictionBase(ctx, st.NodeID)
 }

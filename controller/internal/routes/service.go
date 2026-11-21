@@ -222,6 +222,12 @@ func (s *Service) saveDraft(ctx context.Context, m domain.Mutation, d stage3.Rou
 		if found, err := replay(ctx, q, op, m.IdempotencyKey, digest, &p); found || err != nil {
 			return err
 		}
+		if err := stage3.RequireActive(ctx, q, "route", p.ID); err != nil {
+			return err
+		}
+		if err := stage3.RequireActive(ctx, q, "policy", d.Egress.ID); err != nil {
+			return err
+		}
 		if m.ExpectedRevision == 0 {
 			if err := q.B06CreateRoute(ctx, dbgen.B06CreateRouteParams{ID: string(p.ID), Name: d.Name, UpdatedAt: touched}); err != nil {
 				return err
@@ -369,4 +375,10 @@ func (s *Service) PublishedRoute(ctx context.Context, pin control.Pin) (stage3.P
 		return stage3.PublishedRoute{}, ctx.Err()
 	}
 	return r, nil
+}
+
+// Draft reads the exact immutable draft for the administrative projection.
+func (s *Service) Draft(ctx context.Context, pin control.Pin) (stage3.RouteDraft, error) {
+	d, err := s.draft(ctx, pin)
+	return d, safe(ctx, err)
 }

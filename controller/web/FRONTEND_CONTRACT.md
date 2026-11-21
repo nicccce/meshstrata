@@ -451,3 +451,47 @@ every time; reset/delete invalidates old links without changing still-valid prox
 identities. Passwords, cookies, enrollment tokens, DNS/proxy credentials, node keys
 and local Mihomo secrets remain forbidden in ordinary URLs. No page layout or live
 mode change is part of I00; all these business routes remain unregistered.
+
+## I03-C ordinary secure composition (2026-11-19)
+
+The earlier reserved-only statements describe the B00/I03-B baseline. Explicit
+`secure.enable_v2=true` now installs the administrative business APIs listed in
+[OpenAPI](../api/openapi.json). Development HTTP and secure V1 configuration keep
+their prior routes. The frontend remains demo-only; these wire declarations do
+not enable the live adapter or issue background requests.
+
+B09 owns node preparation/observations and egress target/policy feature adapters;
+B10 owns route draft/validate/publish/history and rule profile/domain-set adapters;
+B11 owns subscription config/preview/renew/revoke/reset, task/cleanup polling and
+explicit Copy URL. All use administrator cookies; every write-like POST, PUT,
+PATCH or DELETE requires Origin, CSRF and the documented Mutation. Copy URL is
+an explicit sensitive read POST with administrator/Origin/CSRF, without Mutation.
+
+New catalog lists and references use `{items,next_cursor}` with opaque scoped
+cursors and limits 1–200 (default 50). Route history pages descend by revision.
+Keep the returned full Pin; draft `pin` and confirmed `published` have different
+digests. A publication returns a task, and confirmation requires actual node
+results plus route/subscription reconciliation. A 202 never means Verified.
+Source diagnostics include JSON pointer and source line/column. A 409 must keep
+the local draft and current_revision, and retries must reuse the original body
+and idempotency key. Do not invent empty successful data for an unavailable API.
+
+Ordinary subscription DTOs exclude token/URL and proxy secrets; entries include
+only this subscription's public ingress and fixed route Pin. Preferences choose
+stable entry IDs. On initial creation `initial_selections` resolves a reviewed
+route ID to its newly allocated entry ID. Explicit `rule-profile` adopts a new
+profile Pin while retaining route/entry identities; editing the catalog alone
+does not move existing subscriptions. Full `/subscriptions/v1/config/{token}`
+and independent `/subscriptions/v1/provider/{token}` outputs are different
+resources. Provider output contains only proxies. Sensitive responses remain in
+memory through the user action and never enter drafts/storage/diagnostics.
+
+Preparation is reviewed desired state. It is not an observation of a host:
+capabilities remain unavailable until an authenticated Agent measures the actual
+kernel, material references, interfaces and sockets. The Agent's local approved
+configuration bounds every request. Active-listener DNS changes and removal of
+in-use socket specifications currently return DEPENDENCY_IN_USE; drain and
+recreate reviewed identities before changing that configuration. Egress detail
+observations explicitly scope success to a fresh TCP canary. Business UDP stays
+not_checked. Operations are bounded to 1024 in a subscription detail, preparation
+dependencies to 201; neither is an unlimited history API.

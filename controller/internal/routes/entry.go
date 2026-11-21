@@ -290,8 +290,21 @@ func (s *Service) applyEntry(ctx context.Context, c stage3.EntryChange) (domain.
 	if plan.Subject != c.Subject || plan.EntryOperationID != c.Entry.OperationID || plan.Kind != c.Kind || !plan.Deadline.Equal(c.Entry.Deadline) {
 		return none, problem(domain.GrantOriginUncertain, "/entry/plan")
 	}
-	out, err := s.opts.Publisher.SubmitV2(ctx, domain.Mutation{ExpectedRevision: c.Mutation.ExpectedRevision, IdempotencyKey: string(derived("entry_task", c.Entry.OperationID, string(c.Kind)+"/"+strconv.FormatInt(c.RecoveryGeneration, 10)))}, plan)
+	digest, err := control.ComponentDigest(plan)
 	if err != nil {
+		return none, err
+	}
+	if err = s.seedEntryPlan(ctx, row, digest); err != nil {
+		return none, err
+	}
+	taskKey := string(derived("entry_task", c.Entry.OperationID, string(c.Kind)+"/"+strconv.FormatInt(c.RecoveryGeneration, 10)))
+	out, err := s.opts.Publisher.SubmitV2(ctx, domain.Mutation{ExpectedRevision: c.Mutation.ExpectedRevision, IdempotencyKey: taskKey}, plan)
+	if err != nil {
+		// Exact replay above must precede replanning: a lost accepted reply is
+		// authoritative even if its old node baseline has since advanced.
+		if codeIs(err, domain.RevisionConflict) {
+			return none, s.rebaseEntryPlan(ctx, c, row, digest, taskKey)
+		}
 		return none, dependency(ctx, err, "/entry/task")
 	}
 	if !out.TaskID.Valid() {
@@ -312,6 +325,73 @@ func (s *Service) applyEntry(ctx context.Context, c stage3.EntryChange) (domain.
 		return err
 	})
 	return out, err
+}
+
+func rememberEntryPlan(ctx context.Context, q *dbgen.Queries, row dbgen.B06EntryPlan, digest string) error {
+	return q.I03CRememberEntryPlan(ctx, dbgen.I03CRememberEntryPlanParams{Kind: row.Kind, IdemKey: row.IdemKey, Digest: digest, SecretRef: row.SecretRef, KeyID: row.KeyID, Ciphertext: row.Ciphertext})
+}
+
+func (s *Service) seedEntryPlan(ctx context.Context, row dbgen.B06EntryPlan, digest string) error {
+	return s.opts.DB.Write(ctx, func(q *dbgen.Queries) error {
+		current, e := q.B06EntryPlan(ctx, dbgen.B06EntryPlanParams{Kind: row.Kind, IdemKey: row.IdemKey})
+		if e != nil {
+			return e
+		}
+		if current.SecretRef != row.SecretRef || current.PlanDigest != "" && current.PlanDigest != digest {
+			return problem(domain.RevisionConflict, "/entry/plan")
+		}
+		if e = rememberEntryPlan(ctx, q, current, digest); e != nil {
+			return e
+		}
+		_, e = q.I03CSeedEntryPlanDigest(ctx, dbgen.I03CSeedEntryPlanDigestParams{Kind: row.Kind, IdemKey: row.IdemKey, PlanDigest: digest})
+		return e
+	})
+}
+
+func (s *Service) rebaseEntryPlan(ctx context.Context, c stage3.EntryChange, old dbgen.B06EntryPlan, oldDigest, taskKey string) error {
+	route, e := s.PublishedRoute(ctx, c.Entry.Route)
+	if e != nil {
+		return e
+	}
+	plan, refs, e := s.compileEntry(ctx, c, route)
+	if e != nil {
+		return e
+	}
+	digest, e := control.ComponentDigest(plan)
+	if e != nil {
+		return e
+	}
+	if digest == oldDigest {
+		return problem(domain.RevisionConflict, "/entry/plan")
+	}
+	ref := derived("entry_plan", c.Entry.OperationID, string(c.Kind)+"/"+digest)
+	sealed, e := s.sealPlan(ctx, ref, plan)
+	if e != nil {
+		return e
+	}
+	e = s.opts.DB.Write(ctx, func(q *dbgen.Queries) error {
+		// This CAS excludes any accepted task in the same SQLite transaction.
+		// SubmitV2 also checks the digest here, fencing a delayed old submitter.
+		n, e := q.I03CRebaseEntryPlan(ctx, dbgen.I03CRebaseEntryPlanParams{Kind: old.Kind, IdemKey: old.IdemKey, OldDigest: oldDigest, NewDigest: digest, SecretRef: string(ref), KeyID: sealed.KeyID, Ciphertext: sealed.Ciphertext, TaskKey: taskKey})
+		if e != nil {
+			return e
+		}
+		if n != 1 {
+			return problem(domain.RevisionConflict, "/entry/plan")
+		}
+		for _, id := range refs {
+			if e = q.B06AttachEntryReference(ctx, dbgen.B06AttachEntryReferenceParams{IdentityID: string(c.Entry.Authorization.IdentityID), LinkID: string(id)}); e != nil {
+				return e
+			}
+		}
+		old.SecretRef, old.KeyID, old.Ciphertext = string(ref), sealed.KeyID, sealed.Ciphertext
+		return rememberEntryPlan(ctx, q, old, digest)
+	})
+	if e != nil {
+		return e
+	}
+	// Resume from the durable candidate on the next bounded worker attempt.
+	return problem(domain.RevisionConflict, "/entry/plan")
 }
 
 func (s *Service) compileEntry(ctx context.Context, c stage3.EntryChange, route stage3.PublishedRoute) (stage3.PublishPlan, []domain.ID, error) {

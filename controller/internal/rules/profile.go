@@ -106,6 +106,14 @@ func (s *Service) SaveProfile(ctx context.Context, m domain.Mutation, input stag
 }
 
 func saveProfile(ctx context.Context, q *dbgen.Queries, m domain.Mutation, input stage3.ProfileInput, spec stage3.ProfileSpec, pin control.Pin, at string) error {
+	if err := stage3.RequireActive(ctx, q, "profile", pin.ID); err != nil {
+		return err
+	}
+	for _, p := range input.Sets {
+		if err := stage3.RequireActive(ctx, q, "domain_set", p.ID); err != nil {
+			return err
+		}
+	}
 	id, rev := string(pin.ID), int64(pin.Revision)
 	if m.ExpectedRevision == 0 {
 		if err := q.B07InsertProfileHead(ctx, dbgen.B07InsertProfileHeadParams{ID: id, Name: input.Name, Revision: rev, UpdatedAt: at}); err != nil {

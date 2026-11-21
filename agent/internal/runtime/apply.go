@@ -226,6 +226,22 @@ func (r *Runtime) verifyActive(ctx context.Context, next rendered, pid int) erro
 		if r.o.ProbeFactoryV2 == nil {
 			return ErrVerification
 		}
+		if observation := r.o.Observations; observation != nil {
+			inventory, e := r.loopInventory(ctx)
+			if e != nil {
+				return ErrVerification
+			}
+			sockets := make([]control.SocketV2, 0, len(next.v2.Listeners))
+			for _, listener := range next.v2.Listeners {
+				sockets = append(sockets, listener.Socket)
+			}
+			for _, canary := range observation.Probes {
+				target := control.EgressTarget{NodeID: r.o.NodeID, Type: "http", Host: canary.Addr().String(), DialIP: canary.Addr().String(), Port: canary.Port()}
+				if control.CheckEgressTargetLoops(target, inventory, sockets) != nil {
+					return ErrVerification
+				}
+			}
+		}
 		probe, err = r.o.ProbeFactoryV2(ctx, *next.v2, next.Candidate)
 	} else {
 		probe, err = r.o.ProbeFactory(ctx, next.bundle, next.Candidate)

@@ -3,6 +3,7 @@ package subscriptions
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"path"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 )
 
 const managementPrefix = "/api/v1/subscriptions/"
+const providerPath = "/subscriptions/v1/provider/"
 const copySuffix = "/download-link"
 
 func noLeak(w http.ResponseWriter) {
@@ -29,6 +31,20 @@ func notFound(w http.ResponseWriter) {
 // Run it before ServeMux and any middleware using URI/path for logs or metrics.
 func SensitiveTemplate(r *http.Request) (string, bool) {
 	p := r.URL.Path
+	// Recognize malformed/encoded namespace variants before any path cleaning or redirects.
+	for _, raw := range []string{p, r.URL.RawPath, r.RequestURI} {
+		for range 4 {
+			normalizedRaw := strings.ToLower(strings.ReplaceAll(raw, "\\", "/"))
+			if strings.Contains(normalizedRaw, "subscriptions") && (strings.Contains(normalizedRaw, "/subscriptions/v1") || strings.Contains(normalizedRaw, copySuffix) || !strings.Contains(normalizedRaw, "/api/v1/")) {
+				return configPath + "{token}", true
+			}
+			next, err := url.PathUnescape(raw)
+			if err != nil || next == raw {
+				break
+			}
+			raw = next
+		}
+	}
 	normalized := path.Clean("/" + strings.TrimLeft(p, "/"))
 	if strings.HasPrefix(p, "/subscriptions/") || strings.HasPrefix(normalized, "/subscriptions/") ||
 		normalized == "/subscriptions" || strings.Contains(p, configPath) {
@@ -41,7 +57,7 @@ func SensitiveTemplate(r *http.Request) (string, bool) {
 	return "", false
 }
 
-// HTTPHandler is deliberately unregistered. Dispatch sensitive requests from
+// HTTPHandler is dispatched directly by the secure composition. Route requests from
 // the outer HTTPS server before ServeMux (including malformed paths). Do not
 // attach any generic redirect or access-log middleware to these requests.
 func (s *Service) HTTPHandler() http.Handler {
@@ -64,9 +80,16 @@ func (s *Service) HTTPHandler() http.Handler {
 			return
 		}
 		switch {
-		case r.Method == http.MethodGet && strings.HasPrefix(p, configPath):
+		case r.Method == http.MethodGet && (strings.HasPrefix(p, configPath) || strings.HasPrefix(p, providerPath)):
 			token := strings.TrimPrefix(p, configPath)
-			out, err := s.DownloadFull(r.Context(), token)
+			var out []byte
+			var err error
+			if strings.HasPrefix(p, providerPath) {
+				token = strings.TrimPrefix(p, providerPath)
+				out, err = s.DownloadProvider(r.Context(), token)
+			} else {
+				out, err = s.DownloadFull(r.Context(), token)
+			}
 			if err != nil {
 				notFound(w)
 				return

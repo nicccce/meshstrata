@@ -22,7 +22,7 @@
 | README、产品/交互/开发日志、本任务书、会话登记 | 集成 | 业务会话仅写各自`backend-delivery/Bxx.md`和精确依赖提案`Bxx.deps`；测试写`Txx.md`，集成汇总实际状态 |
 | Git与发布产物 | 集成/准备（本轮I03-P独占） | 保护用户修改，检查通过后提交并推送当前分支；失败保留本地提交并报告真实原因 |
 
-后续迁移槽位固定为 **B01→003、B02→004、B03→005、B04→006、B05→007、B06→008、B07→009、B08→010、B09→011、B10→012、B11→013、B12→014、B13→015、B14→016、B15→017、B16→018、B17→019、B18→020**。每项只写 `controller/internal/storage/proposals/Bxx.sql` 提案（不被embed/sqlc扫描），集成按槽位顺序审阅安装为 `NNN_bxx.sql`，无变更写带原因的 `SELECT 1;`。保证迁移连续，不能提前提交带缺口的高编号；跨模块约束先联合审阅，不把整个Workspace塞成JSON。002交付前可修，交付后不可重写。额外迁移只能由集成更新登记并在020之后分配，禁止抢用其他槽位。
+后续迁移槽位固定为 **B01→003、B02→004、B03→005、B04→006、B05→007、B06→008、B07→009、B08→010、I03-C→011、B09→012、B10→013、B11→014、B12→015、B13→016、B14→017、B15→018、B16→019、B17→020、B18→021**。每项只写 `controller/internal/storage/proposals/Bxx.sql` 提案（不被embed/sqlc扫描），集成按槽位顺序审阅安装为 `NNN_bxx.sql`，无变更写带原因的 `SELECT 1;`。保证迁移连续，不能提前提交带缺口的高编号；跨模块约束先联合审阅，不把整个Workspace塞成JSON。002交付前可修，交付后不可重写。2026-11-19 I03-C 在尚未安装的下一连续槽 011 增加准备配置与归档账本；未开始 B09–B18 顺延，不提前安装占位迁移。后续额外迁移先更新本登记。
 
 查询分文件：B02 `queries/nodes.sql`、`nodes.go`；B04 `queries/{tasks,references}.sql`、`ledger.go`；B01 `queries/settings.sql`（设置存储，不接管CA实现）；其余项新建唯一的`queries/bxx_*.sql`。任何人不得直接编辑dbgen；集成在一批SQL齐备、全部迁移槽位连续后执行`make generate`，再执行`make check-generated`。生成文件没有并行所有者。B05主要维护节点本地检查点，不能操作Controller数据库连接或重用Controller密钥文件。
 
@@ -88,7 +88,7 @@
 | 规则文本/DomainSet/往返订阅 | rule-profiles/domain-sets API与生成校验 | rule_profiles/revisions/rule_lines/domain_sets/revisions/members/引用 | B07 / B11 | T03/T04 |
 | Activity任务/取消/重试/回滚/清理 | `/api/v1/tasks`及详情/actions；control result/receipt | tasks/task_nodes/dependencies/events；Applied/Verified/rollback/cleanup分离 | B04/B05 / B11 | T02/T04 |
 | Reverse节点/线路 | reverse API；远端Listener、Relay授权/映射、入口发布顺序 | reverse_tunnels/tunnel_references/ports、两端独立确认 | B12 / B09/B10 | T05 |
-| 证书与位置设置 | certificates/import/renew；location/settings | settings/credentials、节点本地私钥、证书记录由B13迁移015 | B13/B01 / B09 | T05 |
+| 证书与位置设置 | certificates/import/renew；location/settings | settings/credentials、节点本地私钥、证书记录由B13迁移016 | B13/B01 / B09 | T05 |
 | Measure/Remeasure/Cancel/Network Changed | `measure`、recommendation API，短期HTTPS探测授权 | measurements缓存scope/method/environment/revision/TTL | B14 / B10 | T06 |
 | Check Destination/IP/DNS/Coverage | `check_egress`，本地配对后的请求 | 检查结果按地址/范围/策略修订，B15扩展，value可null | B15 / B10/B11 | T06 |
 | Local Client Pair/Apply New/Reconnect | 浏览器本机Mihomo，显式操作；不经过Controller上传secret | 仅非敏感配对偏好，secret内存；可选原始RTT工具 | B15 / B09 | T06 |

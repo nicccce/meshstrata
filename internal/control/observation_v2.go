@@ -7,13 +7,44 @@ import (
 	"github.com/nicccce/meshstrata/internal/domain"
 )
 
-// Observation requests carry references only. Socket/DNS configuration, private
-// proxy credentials and numeric probe allowlists come from local provisioning.
+// Observation requests select locally approved socket/DNS contents. Proxy auth
+// is delivered only over the authenticated node channel; probe allowlists stay local.
 type ObservationRequestV2 struct {
-	ID       domain.ID `json:"id"`
-	Deadline time.Time `json:"deadline"`
-	Target   *Pin      `json:"target,omitempty"` // nil requests fresh inventory
+	Preparation *PreparationV2 `json:"preparation,omitempty"`
+	ID          domain.ID      `json:"id"`
+	Deadline    time.Time      `json:"deadline"`
+	Target      *Pin           `json:"target,omitempty"` // nil requests fresh inventory
 }
+
+// PreparationV2 selects only already locally approved DNS and socket contents.
+// NodeRevision is a CAS fence, never an observation of host configuration.
+type PreparedTargetV2 struct {
+	Pin  Pin          `json:"pin"`
+	Spec EgressTarget `json:"spec"`
+	Auth *EgressAuth  `json:"auth,omitempty"`
+}
+type PreparationV2 struct {
+	Target       *PreparedTargetV2    `json:"target,omitempty"`
+	NodeRevision domain.Revision      `json:"node_revision"`
+	DNS          DNSInput             `json:"dns"`
+	Sockets      []PinnedSocketSpecV2 `json:"sockets"`
+}
+
+func (p PreparationV2) Valid() bool {
+	if p.Target != nil && (!p.Target.Pin.Valid() || !p.Target.Spec.Valid()) {
+		return false
+	}
+	if !p.NodeRevision.Valid() || !p.DNS.Pin.Valid() || len(p.Sockets) < 1 || len(p.Sockets) > 32 {
+		return false
+	}
+	for _, s := range p.Sockets {
+		if !s.Pin.Valid() || s.PoolLast < s.PoolFirst || s.PoolFirst == 0 && s.PoolLast != 0 {
+			return false
+		}
+	}
+	return true
+}
+
 type ObservationReportV2 struct {
 	ID        domain.ID            `json:"id"`
 	Inventory *InventoryV2         `json:"inventory,omitempty"`
@@ -61,7 +92,7 @@ type EgressObservationV2 struct {
 }
 
 func (r ObservationRequestV2) Valid() bool {
-	return r.ID.Valid() && !r.Deadline.IsZero() && (r.Target == nil || r.Target.Valid())
+	return (r.Preparation == nil || r.Preparation.Valid()) && r.ID.Valid() && !r.Deadline.IsZero() && (r.Target == nil || r.Target.Valid())
 }
 func (r ObservationReportV2) Valid(node domain.ID) bool {
 	if !r.ID.Valid() || (r.Inventory == nil) == (r.Egress == nil) {

@@ -103,3 +103,29 @@ Agent 的可选 Hello `runtime:true` 表示已经恢复的执行能力。旧 `co
 I03-B 增量：新增独立 [control-v2.schema.json](control-v2.schema.json)，明确 opt-in subprotocol、逐连接 SessionID、Hello recovery format 2 与受限观察请求/报告。V1 schema 保持原样，普通 production composition 仍未启用 V2；bundle schema 的 `x-runtime-opt-in=true` 只表示组件可显式启用。报告请求只含 ID/期限/可选出口 Pin，探针白名单、私有凭据和配置来自可信本地 provisioner。版本化恢复、真实观察、显式 V1 drain/switch、V2 removal 的 pending/释放边界见 [I03-B](../../documents/backend-delivery/I03-B.md)。这些是内部控制契约，不注册管理业务 HTTP。
 
 B06–B08 使用同一 Controller 进程内契约。管理员读模型只看安全视图，下载才能读取本订阅的凭据；完整客户端配置与 proxy-provider 为不同输出。B08/010 使用 `subscription_download` 的独立密文 envelope、验证 hash 和当前版本引用，保留 002 既有 credentials/CA。标准 HTTPS 能力路径、受管理员 + Origin/CSRF 保护的专用 Copy URL POST、no-store/no-referrer 和无重定向约定不变。
+
+## I03-C 正式 opt-in 组合
+
+本节取代上文 I03-B 的“production 未启用、业务未注册”当前状态描述；历史边界仍保留。
+`secure.enable_v2=true` 安装 B06/B07/B08 服务、同库业务 worker、敏感下载外层 dispatcher；
+Agent `runtime.enable_v2=true` 启用恢复格式 2、真实 inventory 和观察。两侧必须显式配对配置。
+默认 V1/control_only 不改变协商。完整接口、字段、分页和写权限以 [OpenAPI](openapi.json) 为准，
+管理 DTO 由 `controller/internal/business` 显式投影；不得直出私有计划、Tail、Bundle、凭据引用、
+密码、UUID、密文或下载 token/URL。只有认证写入出口凭据和专用 Copy URL/下载可处理对应敏感值。
+
+准备配置以节点修订 CAS 持久化，不伪造 observations；Agent 只接受本地批准的 DNS、socket、
+端口池和目标地址。观察请求经节点 mTLS 通道可携带该已批准目标的短期认证材料，不能换目的地、
+下载路径或探针地址。观察不是持久发布任务，返回 pending/request_id 后查准备或出口详情，超时须
+显式重试；不能把 202 当验证成功。出口成功限定为当前修订/DNS/目标的短期 TCP 回显，UDP 不推断。
+可信 canary 必须由运维显式提供，末端可达；部署必须把 Controller/Relay/Mihomo API 和宿主保护边界
+完整配置在 topology。反向代理也必须在 URI 清洗/重定向/访问日志之前隔离敏感命名空间。
+
+新资源列表/引用分页默认 50、最大 200，cursor 绑定资源类型；线路历史按修订倒序分页。归档保留
+旧 Pin 和证据，实际保存新修订/引用的短事务再次检查归档状态，避免 HTTP 前置检查竞争。线路最后
+引用释放后由 worker 提交内部 link retirement，只有真实 cleanup 回执才能释放端口；离线保持 pending。
+RuleProfile 通过订阅 `rule-profile` 显式审阅采用新 Pin，下次下载更新规则，入口身份保持。
+
+当前限制：活动 listener 的 DNS 改动或移除 socket 规格返回 DEPENDENCY_IN_USE，须先排空相关身份；
+没有原地修改已授权身份。观察请求不是可重启恢复的 check_egress Task；prepare 详情依赖和订阅历史
+operation 数量有明确上限。full HTTPS 下载由本地验收工具正常校验 CA 后保存，再由 Mihomo CLI 加载；
+这不等同于客户端 GUI 的原生 URL 导入，也不代表宿主 TUN 或跨机已验收。见 [I03-C](../../documents/backend-delivery/I03-C.md)。

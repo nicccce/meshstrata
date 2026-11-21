@@ -25,8 +25,9 @@ type Repository struct{ db storage.Database }
 func NewRepository(db storage.Database) *Repository { return &Repository{db: db} }
 
 type Options struct {
-	EgressProbes []netip.AddrPort // explicit restricted numeric probe allowlist
-	// Nil in production until I03-B installs authenticated V2 negotiation.
+	RequirePreparation bool             // authenticated ordinary composition rejects unreviewed observations
+	EgressProbes       []netip.AddrPort // explicit restricted numeric probe allowlist
+	// Nil unless ordinary composition explicitly enables authenticated V2 negotiation.
 	V2Session     func(domain.ID) V2Session
 	V2Deliver     func(context.Context, control.Command) error
 	Now           func() time.Time

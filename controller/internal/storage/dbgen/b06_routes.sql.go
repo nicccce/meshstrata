@@ -146,7 +146,7 @@ func (q *Queries) B06DropEntryReferences(ctx context.Context, arg B06DropEntryRe
 }
 
 const b06EntryOperationPlan = `-- name: B06EntryOperationPlan :one
-SELECT recovery_generation, operation_id, origin_operation_id, kind, idem_key, request_digest, secret_ref, key_id, ciphertext, task_id FROM b06_entry_plans WHERE operation_id=? AND kind=? AND recovery_generation=?
+SELECT recovery_generation, operation_id, origin_operation_id, kind, idem_key, request_digest, secret_ref, key_id, ciphertext, task_id, plan_digest FROM b06_entry_plans WHERE operation_id=? AND kind=? AND recovery_generation=?
 `
 
 type B06EntryOperationPlanParams struct {
@@ -169,12 +169,13 @@ func (q *Queries) B06EntryOperationPlan(ctx context.Context, arg B06EntryOperati
 		&i.KeyID,
 		&i.Ciphertext,
 		&i.TaskID,
+		&i.PlanDigest,
 	)
 	return i, err
 }
 
 const b06EntryPlan = `-- name: B06EntryPlan :one
-SELECT recovery_generation, operation_id, origin_operation_id, kind, idem_key, request_digest, secret_ref, key_id, ciphertext, task_id FROM b06_entry_plans WHERE kind=? AND idem_key=?
+SELECT recovery_generation, operation_id, origin_operation_id, kind, idem_key, request_digest, secret_ref, key_id, ciphertext, task_id, plan_digest FROM b06_entry_plans WHERE kind=? AND idem_key=?
 `
 
 type B06EntryPlanParams struct {
@@ -196,6 +197,7 @@ func (q *Queries) B06EntryPlan(ctx context.Context, arg B06EntryPlanParams) (B06
 		&i.KeyID,
 		&i.Ciphertext,
 		&i.TaskID,
+		&i.PlanDigest,
 	)
 	return i, err
 }

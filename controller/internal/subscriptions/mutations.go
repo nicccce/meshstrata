@@ -340,6 +340,30 @@ func (s *Service) prepareConfig(ctx context.Context, d stage3.SubscriptionDraft,
 		preview.Entries = append(preview.Entries, e.snapshot)
 		plan.entries = append(plan.entries, e)
 	}
+	if len(d.InitialSelections) > stage3.MaxSubscriptionEntries+1 || len(d.InitialSelections) > 0 && len(d.Preferences.Selections) > 0 {
+		return plan, invalid("/initial_selections")
+	}
+	seenChoices := map[string]bool{}
+	for _, choice := range d.InitialSelections {
+		if seenChoices[choice.Name] {
+			return plan, invalid("/initial_selections")
+		}
+		seenChoices[choice.Name] = true
+		var entry domain.ID
+		for _, e := range preview.Entries {
+			if e.Route.Pin.ID == choice.RouteID {
+				entry = e.ID
+				break
+			}
+		}
+		if !entry.Valid() {
+			return plan, invalid("/initial_selections")
+		}
+		preview.Preferences.Selections = append(preview.Preferences.Selections, stage3.GroupChoice{Name: choice.Name, SelectedEntryID: entry})
+	}
+	if len(d.InitialSelections) > 0 {
+		p.Preferences = preview.Preferences
+	}
 	// Preview is a pure validation call; give it independent slices/pointers.
 	preview, err = clone(preview)
 	if err != nil {
@@ -360,8 +384,8 @@ func (s *Service) prepareConfig(ctx context.Context, d stage3.SubscriptionDraft,
 	if err != nil {
 		return plan, err
 	}
-	pref, err := jsonValue(d.Preferences)
-	plan.prefs = d.Preferences
+	pref, err := jsonValue(p.Preferences)
+	plan.prefs = p.Preferences
 	plan.rev = dbgen.B08InsertRevisionParams{SubscriptionID: string(d.ID), Revision: rev, Name: d.Name, Digest: pin.Digest,
 		ExpiresAt: stamp(d.ExpiresAt), ProfileID: string(d.Profile.ID), ProfileRevision: int64(d.Profile.Revision),
 		ProfileDigest: d.Profile.Digest, PreferencesJson: pref}
@@ -421,6 +445,14 @@ func earlier(a, b time.Time) time.Time {
 }
 
 func installConfig(ctx context.Context, q *dbgen.Queries, plan configPlan, old editing, at string) error {
+	if err := stage3.RequireActive(ctx, q, "profile", domain.ID(plan.rev.ProfileID)); err != nil {
+		return err
+	}
+	for _, p := range plan.entries {
+		if err := stage3.RequireActive(ctx, q, "route", p.snapshot.Route.Pin.ID); err != nil {
+			return err
+		}
+	}
 	if err := q.B08InsertRevision(ctx, plan.rev); err != nil {
 		return err
 	}

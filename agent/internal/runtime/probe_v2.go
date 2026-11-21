@@ -14,7 +14,7 @@ func (p *Probes) ForwardFactoryV2(ctx context.Context, b control.BundleV2, _ mih
 	if b.Validate() != nil {
 		return nil, errProbe
 	}
-	out := &forwardProbe{p: p, listeners: map[string]control.BundleListener{}}
+	out := &forwardProbe{p: p, canaries: p.options.V2Canaries, listeners: map[string]control.BundleListener{}}
 	for _, l := range b.Listeners {
 		out.listeners[string(l.Socket.ListenerID)] = transportV2(b.NodeID, l)
 	}

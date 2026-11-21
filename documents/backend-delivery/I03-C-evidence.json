@@ -1,0 +1,101 @@
+{
+  "date": "2026-11-22",
+  "scenario": "all",
+  "network_mode": "loopback TCP; TUN disabled and explicit test.local hosts mapping for runtime; original default TUN offline validation only",
+  "mihomo_sha256": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa",
+  "checks": [
+    "ordinary_controller_https_login_csrf",
+    "normal_agent_mtls_v2_observation",
+    "normal_agent_mtls_v2_observation",
+    "normal_agent_mtls_v2_observation",
+    "persistent_route_worker_publication",
+    "standard_https_full_config_download",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "client_ingress_ss2022_actual_tcp",
+    "persistent_route_worker_publication",
+    "standard_https_full_config_download",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "client_ingress_trojan_actual_tcp",
+    "persistent_route_worker_publication",
+    "standard_https_full_config_download",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "client_ingress_vless_actual_tcp",
+    "persistent_route_worker_publication",
+    "standard_https_full_config_download",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "client_ingress_hysteria2_actual_tcp",
+    "persistent_route_worker_publication",
+    "standard_https_full_config_download",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "mixed_2_hop_actual_tcp",
+    "persistent_route_worker_publication",
+    "standard_https_full_config_download",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "mixed_3_hop_actual_tcp",
+    "persistent_route_worker_publication",
+    "standard_https_full_config_download",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "normal_mtls_http_auth_observation_and_actual_terminal_tcp",
+    "persistent_route_worker_publication",
+    "standard_https_full_config_download",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "normal_mtls_socks5_auth_observation_and_actual_terminal_tcp",
+    "standard_https_full_config_download",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "standard_https_full_config_download",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "independent_provider_native_mihomo_https_fetch_actual_tcp",
+    "two_subscriptions_independent_credentials_ports_actual_tcp",
+    "reset_link_isolated_copy_after_refresh_proxy_identity_unchanged",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "renew_new_generation_old_client_rejected_other_subscription_live",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "route_remove_readd_new_identity_history_retained",
+    "reviewed_profile_adoption_next_download_same_entry_identity",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "controller_restart_persistent_subscription_intent_converges",
+    "standard_https_full_config_download",
+    "pinned_mihomo_isolated_tcp_actual_request",
+    "agent_expiry_with_controller_offline_old_client_rejected",
+    "delete_download_revoked_real_cleanup_confirmed_other_subscription_live",
+    "outer_https_sensitive_malformed_methods_headers_no_redirect_no_token_echo"
+  ],
+  "base_commit": "ae4a17267ffb19dd912e593035f432d6c1c4401f",
+  "source": "fixed base archive plus exact reviewed I03-C overlay; candidate buildinfo records the base, final per-commit artifacts are rebuilt after commit",
+  "candidate_binaries": {
+    "controller": {
+      "sha256": "8eb090458651cbb718bcfaeea4a6c5a45f269a9ae991e248825fd359890dfcd2",
+      "version": {
+        "component": "controller",
+        "version": "dev",
+        "commit": "ae4a17267ffb19dd912e593035f432d6c1c4401f",
+        "build_time": "2026-11-21T17:41:46Z"
+      }
+    },
+    "agent": {
+      "sha256": "26e8ae60ea836b73e85971d312977c613880e7fad5a326f1ab75d49f20856d35",
+      "version": {
+        "component": "agent",
+        "version": "dev",
+        "commit": "ae4a17267ffb19dd912e593035f432d6c1c4401f",
+        "build_time": "2026-11-21T17:41:46Z"
+      }
+    }
+  },
+  "cli_script_sha256": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e",
+  "gates": {
+    "make_check": "passed",
+    "check_pages": "passed",
+    "migration_001_to_010": "byte-for-byte frozen",
+    "migration_011": "populated upgrade and failed-transaction rollback passed"
+  },
+  "not_claimed": [
+    "T03/cross-machine/public internet/Alpine",
+    "host TUN traffic or GUI full-URL import",
+    "V2 business UDP or three-layer DNS origin",
+    "R02 complete real-machine boundary retest",
+    "100+ offline backlog and power-loss durability",
+    "frontend live adapters"
+  ]
+}

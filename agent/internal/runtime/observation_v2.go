@@ -27,8 +27,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// This plan is read only from trusted local provisioning. Requests on the wire
-// cannot supply topology, credentials, DNS, interfaces, ports or probe addresses.
+// Trusted local provisioning bounds this plan. Wire requests may select approved
+// DNS, sockets and target credentials, but cannot supply topology or probe addresses.
 type ObservationPlanV2 struct {
 	NodeID   domain.ID
 	Revision domain.Revision
@@ -71,6 +71,48 @@ func (r *Runtime) ObserveV2(ctx context.Context, req control.ObservationRequestV
 	plan, err := o.Plan(ctx)
 	if err != nil || plan.NodeID != r.o.NodeID || !plan.Revision.Valid() || !matchesObservationPin(plan.DNS.Pin, control.DNSPolicy{Bootstrap: plan.DNS.Bootstrap, Resolvers: plan.DNS.Resolvers, IPv6: plan.DNS.IPv6}) {
 		return out, ErrUnavailable
+	}
+	original := plan
+	if p := req.Preparation; p != nil {
+		// Pin identity may advance while its content must remain locally approved.
+		wantDNS, haveDNS := p.DNS, plan.DNS
+		wantDNS.Pin, haveDNS.Pin = control.Pin{}, control.Pin{}
+		if !reflect.DeepEqual(wantDNS, haveDNS) || !matchesObservationPin(p.DNS.Pin, control.DNSPolicy{Bootstrap: p.DNS.Bootstrap, Resolvers: p.DNS.Resolvers, IPv6: p.DNS.IPv6}) {
+			return out, ErrUnavailable
+		}
+		for _, requested := range p.Sockets {
+			allowed := false
+			for _, local := range plan.Sockets {
+				if requested.Protocol == local.Protocol && reflect.DeepEqual(requested.Spec, local.Spec) && requested.PoolFirst == local.PoolFirst && requested.PoolLast == local.PoolLast {
+					allowed = true
+					break
+				}
+			}
+			if !allowed {
+				return out, ErrUnavailable
+			}
+		}
+		if selected := p.Target; selected != nil {
+			if req.Target == nil || selected.Pin != *req.Target || !matchesObservationPin(selected.Pin, selected.Spec) {
+				return out, ErrUnavailable
+			}
+			allowed := false
+			want := selected.Spec
+			want.CredentialRef = ""
+			for _, local := range original.Targets {
+				have := local.Spec
+				have.CredentialRef = ""
+				if reflect.DeepEqual(want, have) {
+					allowed = true
+					break
+				}
+			}
+			if !allowed {
+				return out, ErrUnavailable
+			}
+			plan.Targets = []ObservedTargetV2{{Pin: selected.Pin, Spec: selected.Spec, Auth: selected.Auth}}
+		}
+		plan.Revision, plan.DNS, plan.Sockets = p.NodeRevision, p.DNS, p.Sockets
 	}
 	// Serialize owned-process observation with apply/recovery. A failed or busy
 	// observation never changes the execution ledger or grants capability.
@@ -175,7 +217,7 @@ func (r *Runtime) ObserveV2(ctx context.Context, req control.ObservationRequestV
 		out.Egress = &control.EgressObservationV2{NodeID: plan.NodeID, NodeRevision: plan.Revision, DNS: plan.DNS.Pin, Target: selected.Pin, Interface: iface, SourceIP: source, Probe: probe, ObservedAt: now, ExpiresAt: now.Add(time.Minute), BusinessUDP: false}
 	}
 	latest, err := o.Plan(ctx)
-	if err != nil || !reflect.DeepEqual(plan, latest) || ctx.Err() != nil || !out.Valid(r.o.NodeID) {
+	if err != nil || !reflect.DeepEqual(original, latest) || ctx.Err() != nil || !out.Valid(r.o.NodeID) {
 		return control.ObservationReportV2{}, ErrUnavailable
 	}
 	return out, nil

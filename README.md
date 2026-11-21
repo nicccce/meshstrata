@@ -308,3 +308,49 @@ meshstrata-controller submit-release -config controller.json < private-plan.json
 The plan format, local material registration, pinned build and test commands are
 documented in the [I02 integration report](documents/backend-delivery/I02.md) and
 [T02 plan](documents/backend-delivery/T02计划.md).
+
+### 阶段三 V2 普通运行（显式启用）
+
+安全 Controller 的 `secure` 配置新增 `enable_v2: true`、可信 HTTPS
+`public_origin` 和 `egress_probes: ["受控回显服务IP:端口"]`。回显服务只能回显收到的
+随机字节；两侧批准的数值地址必须一致，末端节点必须可达。它是运维受控验证目标，不能由浏览器
+提交 URL 或任意地址替代。保留原 TLS、CA、keyring、allowed_origins 配置，再使用原
+`prepare-local`、`run`、`initialize-admin`（密码经 stdin）流程；数据库安装连续迁移 011。
+
+Agent 保留可信入网 CA/指纹、node_id 与 `control.mode: "runtime"`，在 `runtime`
+显式设置 `enable_v2: true`、固定摘要的 `mihomo_binary` 和 `provisioning`：
+
+- `dns` 是带完整 Pin 的 numeric bootstrap/resolvers/ipv6 策略；`sockets` 是带 Pin、
+  protocol、SocketSpec、pool_first/pool_last 的本地批准列表。Pin digest 必须来自 Go
+  结构规范字节（不是任意重排 JSON 的摘要）；不要手写临时 inventory 或能力结论。
+- `topology` 使用 `local_addresses`、`protected_endpoints`、`protected_networks`、
+  `protected_interfaces`。后两项必须显式提供（可为空）；保护端点至少包括控制面，实际部署应包含
+  Relay、管理 API 和宿主保留网络/接口。实际本机地址、接口与本平台 socket 由 Agent 观察补充。
+- `egress_probes` 为 1–8 个已批准的数值 TCP 回显目标。可选 `targets` 批准出口类型、接口或
+  固定 host/dial_ip/port；不能借 Controller 请求改变本地白名单的目的地。HTTP/SOCKS5 认证
+  通过节点 mTLS 递送；本地 JSON 如含 `auth` 则必须位于 0700 目录中的 0600 受限文件。
+- TLS/REALITY 私钥在节点本地。先配置 `runtime.materials` 的 LocalMaterial ID/purpose，
+  正常 `enroll`、`prepare-runtime` 后调用 `meshstrata-agent import-materials -config ...`，
+  stdin 传 `{"materials":[{"ref":{"id":"...","purpose":"..."},"data":"base64 bytes"}]}`。
+  只导入批准引用；相同内容可重放，不同内容必须新建引用。业务 TLS leaf 不接受 CA 证书，
+  不使用管理 CA 私钥，也不在 HTTP 中接受任意文件路径。
+
+管理员经登录/Origin/CSRF 提交 `PUT /api/v1/nodes/{id}/preparation` 的期望配置并携带节点
+expected_revision/idempotency_key。Agent `run` 后 worker 请求真实观测；观察匹配当前修订才可
+发布线路。无需每个发布修订停机改 JSON。路线保存、校验、发布、订阅及清理使用正常 HTTPS API，
+发布/清理都等待实际任务结果；同库 worker 随 Controller 启停并恢复持久意图。现有活动身份的 DNS
+变更或 socket 规格移除须先排空，接口会返回 DEPENDENCY_IN_USE，不会伪造应用成功。
+
+本地可复验流程：先正常静态构建 Controller/Agent，再在固定 Mihomo 已存在时运行：
+
+```sh
+flock .local/cache/backend-check.lock env PYTHONDONTWRITEBYTECODE=1 \
+  python3 scripts/integration/i03c/local.py \
+  --controller bin/meshstrata-controller --agent bin/meshstrata-agent \
+  --mihomo .local/stage1-artifacts/mihomo --evidence .local/i03c-local.json
+```
+
+脚本仅使用受控 loopback、多份独立状态目录、正式 CLI 和正常 HTTPS；无 SQL 注入、SSH、宿主
+TUN/DNS/路由修改。默认完整配置做 `mihomo -t`；真实请求使用独立 mixed-port、TUN 关闭和显式
+本地测试域映射。标准完整链接经正常 CA 校验下载后加载文件，不等于 GUI 原生 URL 导入。
+详情与未完成门槛见 [I03-C](documents/backend-delivery/I03-C.md)，T03 不在此脚本自动启动。

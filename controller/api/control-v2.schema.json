@@ -1073,6 +1073,9 @@
         },
         "target": {
           "$ref": "#/$defs/Pin"
+        },
+        "preparation": {
+          "$ref": "#/$defs/PreparationV2"
         }
       },
       "required": [
@@ -1120,8 +1123,139 @@
           }
         }
       ]
+    },
+    "PreparationV2": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node_revision",
+        "dns",
+        "sockets"
+      ],
+      "properties": {
+        "node_revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "dns": {
+          "$ref": "#/$defs/DNSInput"
+        },
+        "sockets": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/PinnedSocketSpecV2"
+          }
+        },
+        "target": {
+          "$ref": "#/$defs/PreparedTargetV2"
+        }
+      }
+    },
+    "EgressTarget": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "$ref": "#/$defs/ID"
+        },
+        "type": {
+          "enum": [
+            "node_default",
+            "interface",
+            "http",
+            "socks5"
+          ]
+        },
+        "interface": {
+          "type": "string",
+          "maxLength": 15
+        },
+        "host": {
+          "type": "string",
+          "maxLength": 253
+        },
+        "dial_ip": {
+          "type": "string",
+          "maxLength": 45
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "credential_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ID"
+            },
+            {
+              "const": ""
+            }
+          ]
+        }
+      },
+      "required": [
+        "node_id",
+        "type",
+        "interface",
+        "host",
+        "dial_ip",
+        "port",
+        "credential_ref"
+      ],
+      "additionalProperties": false
+    },
+    "EgressAuth": {
+      "type": "object",
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/Pin"
+        },
+        "ref": {
+          "$ref": "#/$defs/ID"
+        },
+        "audience": {
+          "$ref": "#/$defs/ID"
+        },
+        "username": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "password": {
+          "type": "string",
+          "maxLength": 255
+        }
+      },
+      "required": [
+        "target",
+        "ref",
+        "audience",
+        "username",
+        "password"
+      ],
+      "additionalProperties": false
+    },
+    "PreparedTargetV2": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pin",
+        "spec"
+      ],
+      "properties": {
+        "pin": {
+          "$ref": "#/$defs/Pin"
+        },
+        "spec": {
+          "$ref": "#/$defs/EgressTarget"
+        },
+        "auth": {
+          "$ref": "#/$defs/EgressAuth"
+        }
+      }
     }
   },
   "description": "Explicit authenticated V2 subprotocol with current-session recovery and bounded observation requests. Production composition remains disabled. V1 messages and persisted artifact bytes retain their original contract.",
-  "x-production-enabled": false
+  "x-production-enabled": true,
+  "x-production-opt-in": "secure.enable_v2 / runtime.enable_v2"
 }

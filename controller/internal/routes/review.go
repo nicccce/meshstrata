@@ -465,7 +465,8 @@ func addPolicy(b *control.BundleV2, t control.TerminalV2) error {
 			return problem(domain.RevisionConflict, "/egress")
 		}
 	}
-	b.Terminal = append(b.Terminal, t)
+	b.Terminal = append(slices.Clone(b.Terminal), t)
+	sortBundle(b)
 	return nil
 }
 

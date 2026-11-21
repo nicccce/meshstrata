@@ -255,6 +255,7 @@ type B06EntryPlan struct {
 	KeyID              string
 	Ciphertext         []byte
 	TaskID             sql.NullString
+	PlanDigest         string
 }
 
 type B06Ingress struct {
@@ -683,6 +684,54 @@ type I03V2Task struct {
 	TaskID           string
 	SubjectDigest    string
 	EntryOperationID string
+}
+
+type I03cArchive struct {
+	Kind       string
+	ID         string
+	Revision   int64
+	ArchivedAt string
+}
+
+type I03cEntryPlanHistory struct {
+	Kind       string
+	IdemKey    string
+	Digest     string
+	SecretRef  string
+	KeyID      string
+	Ciphertext []byte
+}
+
+type I03cLivePolicyVersion struct {
+	ID       string
+	Revision int64
+}
+
+type I03cLiveProfileVersion struct {
+	ID       string
+	Revision int64
+}
+
+type I03cLiveRouteVersion struct {
+	RouteID        string
+	Revision       int64
+	EgressID       string
+	EgressRevision int64
+}
+
+type I03cMutation struct {
+	Operation string
+	IdemKey   string
+	Digest    string
+	Result    []byte
+}
+
+type I03cPreparation struct {
+	NodeID   string
+	Revision int64
+	Digest   string
+	Dns      []byte
+	Sockets  []byte
 }
 
 type Listener struct {

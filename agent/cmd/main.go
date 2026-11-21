@@ -16,9 +16,10 @@ func main() {
 		Load: config.LoadAgent,
 		Run:  agent.Run,
 		Actions: map[string]func(context.Context, config.Agent, io.Reader) error{
-			"enroll":          agent.Enroll,
-			"prepare-runtime": agent.PrepareRuntime,
-			"stop-runtime":    agent.StopRuntime,
+			"enroll":           agent.Enroll,
+			"prepare-runtime":  agent.PrepareRuntime,
+			"import-materials": agent.ImportMaterials,
+			"stop-runtime":     agent.StopRuntime,
 		},
 		Healthcheck: func(ctx context.Context, cfg config.Agent) (any, error) {
 			return agent.CheckHealth(ctx, cfg)

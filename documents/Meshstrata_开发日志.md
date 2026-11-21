@@ -405,3 +405,9 @@ T02 保持 partial / interrupted，旧提交的阳性不自动覆盖 R02。B06 �
 会话 `01a1eca2-9669-77e2-9d4a-d9f1dc15a0de`，基线 c46a256，沿用当前 checkout/分支。先复现 B06/B07/B08 原隔离检查，再安装正式 008–010、精确依赖与 sqlc；001–007 保持字节不变，本次后 001–010 冻结。SQLite 历史 parent FK/CA/凭据升级及失败回滚、真实 B01/B04/B06/B07/B08 进程内联合路径已验证。
 
 Controller 网关增加双格式 artifact 分派、不可变 V2 密文、真实节点/端口/内部链路账本、审阅与能力 fence、cleanup 持久新代重试/丢回复补偿。修正订阅删除后重加历史、独立实际入口端口、稳定客户端代理标识与可选业务 TLS leaf pin。完整检查及阳性/未证边界见 [I03-A](backend-delivery/I03-A.md)。生产 V2 能力提供者为空，未改 wire、Agent 执行/恢复或 composition/业务 HTTP；前端继续 demo。B/C/T03 均未启动，无远程操作；T02 草稿和测试机保持原状。本批完成即停，提交推送以最终回复为准。
+
+## 2026-11-19｜I03-C 普通 V2 组合与安全业务 HTTP
+
+显式配置普通 Controller/Agent 的 V2、可信本地材料/拓扑、mTLS 库存与出口观察，组合真实 B06/B07/B08 和可恢复业务 worker；安全 DTO、CAS/幂等、有限分页/归档引用、线路/规则/出口/订阅 HTTP 与外层敏感下载同步 OpenAPI。正式新增 011，001–010 保持冻结。修复策略预览 slice/排序、发布后出口观察刷新，以及多入口共享下游时重复 fence 的事务失败；凭据版本和重放回执同事务。
+
+本地普通 CLI/Mihomo 验收、完整门禁和实际模式边界详见 [I03-C](backend-delivery/I03-C.md)。前端仅 wire 类型和阶段四对接说明，仍为 demo。T03 仅[计划](backend-delivery/T03计划.md)，未派发或执行；T02 partial/interrupted 与 R02 真机待证项不改变。没有子代理、worktree、SSH 或宿主网络配置变更，原 T02 草稿与缓存未触碰。最终提交、推送和带完整 commit 的静态产物以报告/最终回复为准。

@@ -68,6 +68,9 @@ func (s *Service) publishDraft(ctx context.Context, m domain.Mutation, pin contr
 			if found, err := replay(ctx, q, op, m.IdempotencyKey, hash, &id); found || err != nil {
 				return err
 			}
+			if err := stage3.RequireActive(ctx, q, "route", pin.ID); err != nil {
+				return err
+			}
 			current, err := q.B06RouteRevision(ctx, string(pin.ID))
 			if err != nil {
 				return err

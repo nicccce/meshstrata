@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nicccce/meshstrata/controller/internal/business"
+	"github.com/nicccce/meshstrata/controller/internal/subscriptions"
 	"github.com/nicccce/meshstrata/internal/control"
 	"github.com/nicccce/meshstrata/internal/domain"
 )
@@ -108,7 +110,33 @@ func TestContractReferencesAndGoFields(t *testing.T) {
 		"get /control/v1/tasks/{task_id}/bundle": true,
 		"post /enroll/v1":                        true, "post /enroll/v1/renew": true, "get /control/v1": true,
 	}
-	// Reserved business writes must explicitly require both administrator session and CSRF.
+	for _, resource := range []string{"routes", "rule-profiles", "domain-sets", "egress-targets", "egress-policies", "subscriptions"} {
+		base := "/api/v1/" + resource
+		param := "{id}"
+		if resource == "subscriptions" {
+			param = "{subscription_id}"
+		}
+		for _, key := range []string{"get " + base, "post " + base, "get " + base + "/" + param, "patch " + base + "/" + param, "delete " + base + "/" + param} {
+			implemented[key] = true
+		}
+		if resource != "subscriptions" {
+			implemented["get "+base+"/"+param+"/references"] = true
+		}
+	}
+	for _, key := range []string{
+		"get /api/v1/routes/{id}/history", "post /api/v1/routes/{id}/validate", "post /api/v1/routes/{id}/publish",
+		"post /api/v1/rule-profiles/{id}/copy", "post /api/v1/domain-sets/{id}/copy",
+		"post /api/v1/egress-targets/{id}/credentials", "post /api/v1/egress-targets/{id}/validate",
+		"get /api/v1/nodes/{node_id}/preparation", "put /api/v1/nodes/{node_id}/preparation",
+		"post /api/v1/nodes/{node_id}/observe", "post /api/v1/nodes/{node_id}/drain-legacy", "post /api/v1/nodes/{node_id}/switch-v2",
+		"get /subscriptions/v1/config/{token}", "get /subscriptions/v1/provider/{token}",
+	} {
+		implemented[key] = true
+	}
+	for _, action := range []string{"preview", "renew", "reset-token", "rule-profile", "download-link"} {
+		implemented["post /api/v1/subscriptions/{subscription_id}/"+action] = true
+	}
+	// All business writes must explicitly require both administrator session and CSRF.
 	for path, item := range open["paths"].(map[string]any) {
 		for method, raw := range item.(map[string]any) {
 			op := raw.(map[string]any)
@@ -127,14 +155,14 @@ func TestContractReferencesAndGoFields(t *testing.T) {
 
 func TestV2SessionAndObservationContract(t *testing.T) {
 	root := parse(t, ControlV2Schema)
-	if root["x-production-enabled"] != false || root["title"] != control.SubprotocolV2 {
+	if root["x-production-enabled"] != true || root["title"] != control.SubprotocolV2 {
 		t.Fatal("production V2 gate changed")
 	}
 	formats := root["x-runtime-bundle-formats"].([]any)
 	if len(formats) != 2 || formats[0] != float64(1) || formats[1] != float64(2) {
 		t.Fatal("dual format contract missing")
 	}
-	models := map[string]any{"ObservationRequestV2": control.ObservationRequestV2{}, "ObservationReportV2": control.ObservationReportV2{}, "InventoryV2": control.InventoryV2{}, "EgressObservationV2": control.EgressObservationV2{}, "InterfaceObservationV2": control.InterfaceObservationV2{}, "PinnedSocketSpecV2": control.PinnedSocketSpecV2{}, "ProtocolCapabilityV2": control.ProtocolCapabilityV2{}, "SocketSpec": control.SocketSpec{}}
+	models := map[string]any{"ObservationRequestV2": control.ObservationRequestV2{}, "ObservationReportV2": control.ObservationReportV2{}, "InventoryV2": control.InventoryV2{}, "EgressObservationV2": control.EgressObservationV2{}, "InterfaceObservationV2": control.InterfaceObservationV2{}, "PinnedSocketSpecV2": control.PinnedSocketSpecV2{}, "ProtocolCapabilityV2": control.ProtocolCapabilityV2{}, "SocketSpec": control.SocketSpec{}, "PreparationV2": control.PreparationV2{}, "PreparedTargetV2": control.PreparedTargetV2{}}
 	for name, model := range models {
 		spec := schema(t, root, "$defs", name)
 		props := spec["properties"].(map[string]any)
@@ -161,8 +189,8 @@ func TestV2SessionAndObservationContract(t *testing.T) {
 func TestSubscriptionCapabilityLinkContract(t *testing.T) {
 	open := parse(t, OpenAPI)
 	op := schema(t, open, "paths", "/subscriptions/v1/config/{token}", "get")
-	if op["x-implemented"] != false || len(op["security"].([]any)) != 0 {
-		t.Fatal("Copy URL must remain reserved and require no cookie/header security")
+	if op["x-implemented"] != true || len(op["security"].([]any)) != 0 {
+		t.Fatal("Copy URL must be implemented and require no cookie/header security")
 	}
 	auth := op["x-authentication"].(map[string]any)
 	if auth["in"] != "path" || auth["parameter"] != "token" || auth["scope"] != "single_subscription_download" || auth["administrator_authority"] != false {
@@ -183,8 +211,8 @@ func TestSubscriptionCapabilityLinkContract(t *testing.T) {
 	}
 	link := schema(t, open, "paths", "/api/v1/subscriptions/{subscription_id}/download-link", "post")
 	security := link["security"].([]any)[0].(map[string]any)
-	if security["AdminSession"] == nil || security["CSRF"] == nil || link["x-implemented"] != false {
-		t.Fatal("explicit link retrieval must require admin+CSRF and remain reserved")
+	if security["AdminSession"] == nil || security["CSRF"] == nil || link["x-implemented"] != true {
+		t.Fatal("explicit link retrieval must require admin+CSRF and be implemented")
 	}
 	recovery := link["x-token-recovery"].(map[string]any)
 	if recovery["reset_required_after_refresh"] != false || recovery["verification"] != "hash" || recovery["migration"] != "010" || recovery["credential_purpose"] != "subscription_download" || recovery["subscription_field"] != "download_token_credential_ref" || recovery["credential_table"] != "subscription_download_credentials" {
@@ -264,9 +292,9 @@ func TestOfflineBundleV2Contract(t *testing.T) {
 	if len(wire) != 1 || wire[0] != float64(control.BundleVersion) {
 		t.Fatal("wire still advertises only the active format")
 	}
-	if root["x-runtime-supported"] != false || schema(t, root, "properties", "format")["const"] != float64(control.BundleVersion2) ||
+	if root["x-runtime-supported"] != true || schema(t, root, "properties", "format")["const"] != float64(control.BundleVersion2) ||
 		control.BundleVersion != 1 || root["x-max-bytes"] != float64(control.MaxBundleBytes) {
-		t.Fatal("offline codec must not advertise runtime support")
+		t.Fatal("V2 runtime must remain an explicit opt-in")
 	}
 	models := map[string]any{
 		"BundleV2": control.BundleV2{}, "ListenerV2": control.ListenerV2{}, "TerminalV2": control.TerminalV2{},
@@ -300,6 +328,29 @@ func TestOfflineBundleV2Contract(t *testing.T) {
 		for field := range want {
 			if props[field] == nil {
 				t.Fatalf("%s.%s missing", name, field)
+			}
+		}
+	}
+}
+
+func TestBusinessSafeDTOFields(t *testing.T) {
+	root := parse(t, OpenAPI)
+	for name, model := range map[string]any{
+		"BusinessRoute": business.Route{}, "BusinessHop": business.Hop{}, "BusinessCatalog": business.Catalog{}, "BusinessTarget": business.Target{}, "BusinessEgress": business.Egress{}, "BusinessEgressObservation": business.EgressObservation{}, "BusinessPreferences": business.Preferences{}, "BusinessSubscription": business.Subscription{}, "BusinessSubscriptionManagement": subscriptions.ManagementView{}, "BusinessEntry": subscriptions.ManagementEntry{}, "BusinessPreparation": business.Preparation{}, "BusinessObservation": business.Observation{}, "BusinessOperation": business.Operation{},
+	} {
+		props := schema(t, root, "components", "schemas", name, "properties")
+		want := fields(reflect.TypeOf(model))
+		if len(props) != len(want) {
+			t.Fatalf("%s DTO/schema count %d/%d", name, len(want), len(props))
+		}
+		for k := range want {
+			if props[k] == nil {
+				t.Fatalf("%s.%s absent", name, k)
+			}
+		}
+		for _, forbidden := range []string{"credential_ref", "password", "uuid", "download_url", "token", "ciphertext", "tail", "bundle"} {
+			if props[forbidden] != nil {
+				t.Fatalf("unsafe management field %s.%s", name, forbidden)
 			}
 		}
 	}

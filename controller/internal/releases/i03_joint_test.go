@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/netip"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -792,4 +793,131 @@ func TestI03RealBuilderRevocationRaceDiscardsOutput(t *testing.T) {
 	if pending != 1 {
 		t.Fatal("port released before cleanup")
 	}
+}
+
+func TestI03MultiHopIndependentSubscriptionsShareReceiverFence(t *testing.T) {
+	j := jointFor(t, 3)
+	ids := []domain.ID{}
+	for node := range j.reports {
+		ids = append(ids, node)
+	}
+	slices.Sort(ids)
+	route := j.publish(j.draft("shared three-hop route", ids))
+	one := j.subscription("one", route)
+	two := j.subscription("two", route)
+	if one.Entries[0].IdentityID == two.Entries[0].IdentityID || one.Entries[0].Endpoint.Port == two.Entries[0].Endpoint.Port {
+		t.Fatal("entry isolation lost")
+	}
+	for _, v := range []stage3.SubscriptionView{one, two} {
+		if v.Sync != "confirmed" {
+			t.Fatal("multi-hop subscription not confirmed")
+		}
+	}
+}
+
+func TestI03UnsubmittedEntryPlanRebasesAfterReconnect(t *testing.T) {
+	hasCode := func(e error, code domain.ErrorCode) bool {
+		var p *domain.Problem
+		return errors.As(e, &p) && p.Code == code
+	}
+	j := jointFor(t, 1)
+	var node domain.ID
+	for id := range j.reports {
+		node = id
+	}
+	route := j.publish(j.draft("reconnect-plan", []domain.ID{node}))
+	one := j.subscription("reconnect-one", route)
+	d := stage3.SubscriptionDraft{Name: "reconnect-two", ExpiresAt: j.now.Add(time.Hour), Profile: j.profile, Routes: []control.Pin{route.Pin}, Preferences: stage3.ClientPreferences{DNS: stage3.ClientDNS{Bootstrap: []string{"1.1.1.1"}, ProxyServers: []string{"https://1.1.1.1/dns-query"}, Business: []string{"https://1.0.0.1/dns-query"}}}}
+	two, e := j.subs.Create(j.ctx, domain.Mutation{IdempotencyKey: "reconnect-two"}, d)
+	must(t, e)
+	var pending dbgen.B08Intent
+	must(t, j.store.Read(j.ctx, func(q *dbgen.Queries) error {
+		rows, e := q.B08AllLiveIntents(j.ctx, string(two.Entity.ID))
+		if e == nil {
+			pending = rows[0]
+		}
+		return e
+	}))
+	j.capable = false
+	if e = j.subs.Reconcile(j.ctx, domain.ID(pending.ID)); !hasCode(e, domain.NotImplemented) {
+		t.Fatalf("offline submission: %v", e)
+	}
+	j.capable = true
+	// Another durable operation wins the node CAS after reconnect.
+	j.subscription("concurrent-subscription", route)
+	for n := 0; n < 3; n++ {
+		j.refresh()
+		e = j.subs.Reconcile(j.ctx, domain.ID(pending.ID))
+		if e == nil {
+			break
+		}
+		if !hasCode(e, domain.RevisionConflict) {
+			t.Fatal(e)
+		}
+		if n == 0 {
+			j.reopen()
+			j.compose()
+		}
+	}
+	must(t, e)
+	j.drive(two.Entity.ID)
+	v, e := j.subs.Get(j.ctx, one.Entity.ID)
+	must(t, e)
+	if v.Sync != "confirmed" {
+		t.Fatal("other subscription lost confirmation")
+	}
+	var candidates, tasks int
+	must(t, j.raw().QueryRow("SELECT count(*) FROM i03c_entry_plan_history h JOIN b06_entry_plans p USING(kind,idem_key) WHERE p.operation_id=?", pending.ID).Scan(&candidates))
+	must(t, j.raw().QueryRow("SELECT count(*) FROM i03_v2_tasks WHERE entry_operation_id=?", pending.ID).Scan(&tasks))
+	if candidates != 2 || tasks != 1 {
+		t.Fatalf("candidate history or single acceptance lost: candidates=%d tasks=%d", candidates, tasks)
+	}
+}
+
+func TestI03ConfirmedOfflineRestrictionAllowsLaterCleanup(t *testing.T) {
+	j := jointFor(t, 1)
+	var node domain.ID
+	for id := range j.reports {
+		node = id
+	}
+	route := j.publish(j.draft("offline-expiry", []domain.ID{node}))
+	one := j.subscription("expires", route)
+	j.now = j.now.Add(time.Minute)
+	j.refresh()
+	two := j.subscription("retained", route)
+	var grant dbgen.B04Grant
+	var tn dbgen.TaskNode
+	must(t, j.store.Read(j.ctx, func(q *dbgen.Queries) error {
+		var e error
+		grant, e = q.B04GetGrant(j.ctx, string(one.Entries[0].IdentityID))
+		if e != nil {
+			return e
+		}
+		tn, e = q.GetTaskNode(j.ctx, dbgen.GetTaskNodeParams{TaskID: grant.OriginTaskID.String, NodeID: string(node)})
+		return e
+	}))
+	expires, eTime := time.Parse(time.RFC3339Nano, grant.ExpiresAt)
+	must(t, eTime)
+	j.fixture.now = expires.Add(time.Second)
+	j.refresh()
+	c := control.Command{TaskID: domain.ID(grant.OriginTaskID.String), NodeID: node, TargetRevision: domain.Revision(tn.TargetRevision), TargetDigest: tn.TargetDigest}
+	r := j.result(c, 2, false)
+	r.Applied = false
+	r.Cleanup = "pending"
+	r.Restrictions = []control.Restriction{{IdentityID: domain.ID(grant.IdentityID), ListenerID: domain.ID(grant.ListenerID), Generation: domain.Revision(grant.Generation), Reason: "expired", Epoch: 1, ObservedAt: j.now, EffectiveDigest: strings.Repeat("c", 64)}}
+	_, e := j.s.RecordResult(j.ctx, node, r)
+	must(t, e)
+	if _, e = j.s.NodeSnapshot(j.ctx, node); e == nil {
+		t.Fatal("pending restriction admitted as baseline")
+	}
+	r.Sequence = 3
+	r.Cleanup = "confirmed"
+	r.ConfirmedAt = &j.now
+	_, e = j.s.RecordResult(j.ctx, node, r)
+	must(t, e)
+	_, e = j.s.NodeSnapshot(j.ctx, node)
+	must(t, e)
+	_, e = j.subs.Delete(j.ctx, domain.Mutation{ExpectedRevision: two.Entity.Revision, IdempotencyKey: "delete-after-expiry"}, two.Entity.ID)
+	must(t, e)
+	j.cleanup(two.Entity.ID)
 }

@@ -215,6 +215,9 @@ func (s *Service) SaveDomainSet(ctx context.Context, m domain.Mutation, id domai
 		return control.Pin{}, err
 	}
 	return s.write(ctx, saveSet, m.IdempotencyKey, hash, pin, func(q *dbgen.Queries) error {
+		if err := stage3.RequireActive(ctx, q, "domain_set", pin.ID); err != nil {
+			return err
+		}
 		id, rev := string(pin.ID), int64(pin.Revision)
 		if m.ExpectedRevision == 0 {
 			if err := q.B07InsertDomainHead(ctx, dbgen.B07InsertDomainHeadParams{ID: id, Identifier: id, Name: name, Revision: rev, UpdatedAt: at}); err != nil {

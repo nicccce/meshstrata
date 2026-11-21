@@ -2,9 +2,12 @@ package runtime
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
+	goruntime "runtime"
 	"testing"
 	"time"
 
@@ -13,6 +16,7 @@ import (
 	"github.com/nicccce/meshstrata/internal/controltest"
 	"github.com/nicccce/meshstrata/internal/domain"
 	core "github.com/nicccce/meshstrata/internal/mihomo"
+	"golang.org/x/sys/unix"
 )
 
 func realV2Node(t *testing.T, binary string, b control.BundleV2) (*fixture, *Runtime, *Probes, *Supervisor, *mihomo.Adapter) {
@@ -192,4 +196,159 @@ func TestRealV2ThreeNodesRestartAndOfflineExpiry(t *testing.T) {
 		t.Fatal("route bypassed stopped relay")
 	}
 	t.Log("three real kernels: receiver-first publish, PID-preserving recovery, precise expiry with a retained connection, and no direct fallback")
+}
+
+// Pdeathsig is tied to Linux's creating thread, not just the Agent process.
+func TestRealProbeSurvivesCreatorThreadExit(t *testing.T) {
+	binary := os.Getenv("I03_MIHOMO_BINARY")
+	if binary == "" {
+		t.Skip("explicit locked kernel required")
+	}
+	goruntime.LockOSThread()
+	defer goruntime.UnlockOSThread()
+	f := newNodeFixture(t, controltest.ID("node"))
+	p, e := NewProbes(ProbeOptions{Binary: binary, Dir: privateTestDir(t), Materials: f.opts.Materials})
+	if e != nil {
+		t.Fatal(e)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	type started struct {
+		client *probeClient
+		err    error
+		tid    int
+	}
+	ch := make(chan started, 1)
+	releaseMain := make(chan struct{})
+	defer close(releaseMain)
+	launchCaller := func() {
+		go func() {
+			goruntime.LockOSThread()
+			tid := unix.Gettid()
+			if tid == os.Getpid() {
+				// Go keeps its initial thread alive. Park it so the next caller
+				// necessarily runs on a disposable, non-leader thread.
+				ch <- started{tid: tid}
+				<-releaseMain
+				goruntime.UnlockOSThread()
+				return
+			}
+			client, e := p.startClient(ctx, map[string]any{"name": "selected", "type": "direct"})
+			ch <- started{client, e, tid}
+			// No UnlockOSThread: returning retires this disposable OS thread.
+		}()
+	}
+	launchCaller()
+	v := <-ch
+	if v.tid == os.Getpid() {
+		launchCaller()
+		v = <-ch
+	}
+	if v.err != nil {
+		t.Fatal(v.err)
+	}
+	defer v.client.stop()
+	until := time.Now().Add(time.Second)
+	retired := false
+	for time.Now().Before(until) {
+		if _, e := os.Stat(fmt.Sprintf("/proc/self/task/%d", v.tid)); os.IsNotExist(e) {
+			retired = true
+			break
+		}
+		time.Sleep(time.Millisecond)
+	}
+	if !retired {
+		t.Fatal("caller OS thread did not retire")
+	}
+	select {
+	case <-v.client.done:
+		t.Fatal("probe was killed when caller OS thread retired")
+	case <-time.After(200 * time.Millisecond):
+	}
+	echo, closeEcho, e := echoTarget(ctx, "tcp")
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer closeEcho()
+	conn, e := v.client.connect(ctx)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer conn.Close()
+	rep, _, e := socksRequest(conn, 1, echo)
+	if e != nil || rep != 0 {
+		t.Fatal("probe SOCKS unavailable", e)
+	}
+	payload := []byte("probe must outlive its caller OS thread")
+	if _, e = conn.Write(payload); e != nil {
+		t.Fatal(e)
+	}
+	got := make([]byte, len(payload))
+	if _, e = io.ReadFull(conn, got); e != nil || string(got) != string(payload) {
+		t.Fatal("probe forwarding failed after caller thread exit", e)
+	}
+}
+
+func TestRealProbeBootstrapCannotForwardVerificationTarget(t *testing.T) {
+	binary := os.Getenv("I03_MIHOMO_BINARY")
+	if binary == "" {
+		t.Skip("explicit locked kernel required")
+	}
+	f := newNodeFixture(t, controltest.ID("node"))
+	p, e := NewProbes(ProbeOptions{Binary: binary, Dir: privateTestDir(t), Materials: f.opts.Materials})
+	if e != nil {
+		t.Fatal(e)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	bad, e := net.Listen("tcp4", "127.0.0.1:0")
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer bad.Close()
+	hit := make(chan struct{}, 1)
+	go func() {
+		for {
+			c, e := bad.Accept()
+			if e != nil {
+				return
+			}
+			select {
+			case hit <- struct{}{}:
+			default:
+			}
+			c.Close()
+		}
+	}()
+	target, closeTarget, e := echoTarget(ctx, "tcp")
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer closeTarget()
+	client, e := p.startClient(ctx, map[string]any{"name": "selected", "type": "socks5", "server": "127.0.0.1", "port": bad.Addr().(*net.TCPAddr).Port}, target)
+	if e != nil {
+		t.Fatal("owned bootstrap did not become ready", e)
+	}
+	defer client.stop()
+	conn, e := client.connect(ctx)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer conn.Close()
+	conn.SetDeadline(time.Now().Add(time.Second))
+	rep, _, e := socksRequest(conn, 1, target)
+	if e == nil && rep == 0 {
+		payload := []byte("verification must use the selected outbound")
+		if _, e = conn.Write(payload); e == nil {
+			got := make([]byte, len(payload))
+			if _, e = io.ReadFull(conn, got); e == nil && string(got) == string(payload) {
+				t.Fatal("bootstrap exception bypassed the selected outbound")
+			}
+		}
+	}
+	select {
+	case <-hit:
+	case <-time.After(time.Second):
+		t.Fatal("verification never reached the selected outbound")
+	}
 }

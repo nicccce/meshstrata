@@ -81,7 +81,14 @@ func runSecure(ctx context.Context, cfg config.Controller, store *storage.Store,
 	defer node.Close()
 	local, cancel := context.WithCancel(ctx)
 	defer cancel()
-	done := make(chan error, 3)
+	count := 3
+	if services.business != nil {
+		count++
+	}
+	done := make(chan error, count)
+	if services.business != nil {
+		go func() { done <- services.business.Run(local) }()
+	}
 	go func() { done <- services.releases.Run(local) }()
 	go func() { done <- httpx.Serve(local, tls.NewListener(web, services.webTLS), services.admin, logger) }()
 	go func() { done <- httpx.Serve(local, tls.NewListener(node, services.nodeTLS), services.node, logger) }()
@@ -89,7 +96,7 @@ func runSecure(ctx context.Context, cfg config.Controller, store *storage.Store,
 	err := <-done
 	cancel()
 	services.channel.Close() // HTTP Shutdown cannot close hijacked WebSockets.
-	for range 2 {
+	for range count - 1 {
 		if other := <-done; err == nil {
 			err = other
 		}
