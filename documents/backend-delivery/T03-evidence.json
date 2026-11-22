@@ -1,0 +1,2171 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-22",
+  "timezone": "Asia/Shanghai",
+  "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+  "artifactSHA256": {
+    "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+    "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+    "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+  },
+  "overall": "fail",
+  "overallExplanation": "Partial acceptance: both-platform ingress and mixed-path/lifecycle matrices passed, unresolved observation/SOCKS5 failures retained and explicit environment gaps not passed.",
+  "privateEvidenceRoot": "/root/meshstrata/.local/meshstrata-t03-20261122-042737",
+  "hosts": {
+    "A": {
+      "os": "Ubuntu24.04.1",
+      "init": "systemd",
+      "memoryKiB": 4009844
+    },
+    "B": {
+      "os": "Alpine3.23.7",
+      "init": "OpenRC",
+      "memoryKiB": 445420,
+      "change": "Python3.12.16 and13 required packages installed, retained"
+    }
+  },
+  "networkMode": "IPv4, real cross-host TCP; Hy2 UDP outer; runtime TUN-off, explicit test.local hosts mapping; numeric terminal/canary; no public/three-layer DNS claim",
+  "runs": [
+    {
+      "run": "r0",
+      "phase": "r0",
+      "started": "2026-11-22T04:37:52.289483Z",
+      "result": "fail",
+      "error_type": "AssertionError",
+      "cleanup": {
+        "A": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": []
+        },
+        "B": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": []
+        }
+      },
+      "ended": "2026-11-22T04:38:07.195284Z"
+    },
+    {
+      "run": "r1",
+      "phase": "r1",
+      "started": "2026-11-22T04:38:39.276082Z",
+      "result": "fail",
+      "error_type": "AssertionError",
+      "cleanup": {
+        "A": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": []
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": []
+        }
+      },
+      "ended": "2026-11-22T04:38:55.596749Z"
+    },
+    {
+      "run": "r2",
+      "phase": "r2",
+      "started": "2026-11-22T04:39:22.996894Z",
+      "current_case": "entry-hysteria2",
+      "result": "pass",
+      "cleanup": {
+        "A": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": []
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [
+            "r2/n0/s/runtime/api/m.sock"
+          ]
+        }
+      },
+      "ended": "2026-11-22T04:41:07.035399Z"
+    },
+    {
+      "run": "r3",
+      "phase": "r3",
+      "started": "2026-11-22T04:41:29.996947Z",
+      "result": "fail",
+      "error_type": "AssertionError",
+      "cleanup": {
+        "A": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        },
+        "B": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r2/n0/s/runtime/api/m.sock"
+          ]
+        }
+      },
+      "ended": "2026-11-22T04:42:41.294864Z"
+    },
+    {
+      "run": "r4",
+      "phase": "r4",
+      "started": "2026-11-22T04:44:19.443046Z",
+      "current_case": "egress",
+      "result": "fail",
+      "error_type": "AssertionError",
+      "cleanup": {
+        "A": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r4/n0/s/runtime/api/m.sock"
+          ]
+        }
+      },
+      "ended": "2026-11-22T04:46:04.903515Z"
+    },
+    {
+      "run": "r5",
+      "phase": "r5",
+      "started": "2026-11-22T04:46:45.689523Z",
+      "test_source_sha256": {
+        "preflight.py": "c8be2ba361351ba4eae18307d1715ed3136655ab224678009277583a76c144cf",
+        "network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "audit.py": "ee5b57990fa3469daa6901180ffd0cd827cbb0defe411bea3af435922eadf85c",
+        "diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "worker.py": "121a3c0def1ce6d6ef500bce460c6d426b17c9f4d6fe34928b6a742b07c7d817",
+        "prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "run.py": "c0d49c268d060419467a1bfdb55ac58de2a48ce1ac82ac887357dfda8e407b11"
+      },
+      "result": "pass",
+      "cleanup": {
+        "A": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        },
+        "B": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        }
+      },
+      "ended": "2026-11-22T04:47:02.618264Z"
+    },
+    {
+      "run": "r6",
+      "phase": "r6",
+      "started": "2026-11-22T04:47:54.826662Z",
+      "test_source_sha256": {
+        "preflight.py": "c8be2ba361351ba4eae18307d1715ed3136655ab224678009277583a76c144cf",
+        "network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "audit.py": "ee5b57990fa3469daa6901180ffd0cd827cbb0defe411bea3af435922eadf85c",
+        "diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "worker.py": "95f5102eb9d966a361ea5eb865daf3da6f46832d15f8527d1f4f2ef13718e337",
+        "prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "run.py": "22fd408e947dd927bf6162f0c9791e69eac9f507daa3dea4e66f8ac0c6160467"
+      },
+      "current_case": "entry-hysteria2",
+      "result": "pass",
+      "cleanup": {
+        "A": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r6/n0/s/runtime/api/m.sock"
+          ]
+        },
+        "B": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        }
+      },
+      "ended": "2026-11-22T04:48:52.568526Z"
+    },
+    {
+      "run": "r7",
+      "phase": "r7",
+      "started": "2026-11-22T04:49:49.333684Z",
+      "test_source_sha256": {
+        "preflight.py": "c8be2ba361351ba4eae18307d1715ed3136655ab224678009277583a76c144cf",
+        "network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "audit.py": "ee5b57990fa3469daa6901180ffd0cd827cbb0defe411bea3af435922eadf85c",
+        "diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "run.py": "d28ba4dcae90c893705a0f6dd4ce5b3f455127d40d0512c54897153984eb5d07"
+      },
+      "current_case": "subscription-lifecycle",
+      "result": "pass",
+      "cleanup": {
+        "A": {
+          "stop_runtime_exits": [
+            0,
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r7/n1/s/runtime/api/m.sock",
+            "r7/n2/s/runtime/api/m.sock"
+          ]
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r7/n0/s/runtime/api/m.sock"
+          ]
+        }
+      },
+      "ended": "2026-11-22T04:55:37.051753Z"
+    },
+    {
+      "run": "r8",
+      "phase": "r8",
+      "started": "2026-11-22T04:55:50.512598Z",
+      "test_source_sha256": {
+        "preflight.py": "c8be2ba361351ba4eae18307d1715ed3136655ab224678009277583a76c144cf",
+        "network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "audit.py": "d0f4851bbff49df788ff4f280412fc765f5698db15cd03b90b085a8c0ab4852c",
+        "diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "run.py": "d28ba4dcae90c893705a0f6dd4ce5b3f455127d40d0512c54897153984eb5d07"
+      },
+      "current_case": "egress",
+      "result": "fail",
+      "error_type": "AssertionError",
+      "cleanup": {
+        "A": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        }
+      },
+      "ended": "2026-11-22T04:57:02.189224Z"
+    },
+    {
+      "run": "r9",
+      "phase": "r9",
+      "started": "2026-11-22T04:57:44.834271Z",
+      "test_source_sha256": {
+        "preflight.py": "c8be2ba361351ba4eae18307d1715ed3136655ab224678009277583a76c144cf",
+        "network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "audit.py": "35f8a637c7ff6bf9780a64f59d76c380cf54056284238cbc687ac135ac8be79f",
+        "diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "run.py": "d28ba4dcae90c893705a0f6dd4ce5b3f455127d40d0512c54897153984eb5d07"
+      },
+      "result": "pass",
+      "cleanup": {
+        "A": {
+          "stop_runtime_exits": [
+            0,
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r9/n1/s/runtime/api/m.sock",
+            "r9/n2/s/runtime/api/m.sock"
+          ]
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r9/n0/s/runtime/api/m.sock"
+          ]
+        }
+      },
+      "ended": "2026-11-22T05:00:39.001373Z"
+    },
+    {
+      "run": "r10",
+      "phase": "r10",
+      "started": "2026-11-22T05:01:06.756132Z",
+      "test_source_sha256": {
+        "preflight.py": "c8be2ba361351ba4eae18307d1715ed3136655ab224678009277583a76c144cf",
+        "network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "socks.py": "34ea65cb7e05e16532228a2c8fdcad04976dac924f044d5cac1ade01cdeb57f4",
+        "audit.py": "35f8a637c7ff6bf9780a64f59d76c380cf54056284238cbc687ac135ac8be79f",
+        "diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "run.py": "d28ba4dcae90c893705a0f6dd4ce5b3f455127d40d0512c54897153984eb5d07"
+      },
+      "result": "fail",
+      "error_type": "AssertionError",
+      "cleanup": {
+        "A": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        }
+      },
+      "ended": "2026-11-22T05:02:33.290583Z"
+    },
+    {
+      "run": "r11",
+      "phase": "r11",
+      "started": "2026-11-22T05:04:06.887213Z",
+      "test_source_sha256": {
+        "collect.py": "237d444e7a5e26b0b7f304315ce1b69f39b7f45abba852534c90c806589fd598",
+        "preflight.py": "c8be2ba361351ba4eae18307d1715ed3136655ab224678009277583a76c144cf",
+        "network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "socks.py": "34ea65cb7e05e16532228a2c8fdcad04976dac924f044d5cac1ade01cdeb57f4",
+        "audit.py": "35f8a637c7ff6bf9780a64f59d76c380cf54056284238cbc687ac135ac8be79f",
+        "diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "run.py": "d28ba4dcae90c893705a0f6dd4ce5b3f455127d40d0512c54897153984eb5d07",
+        "restart.py": "7d8b37b7f4c991296cc08124487f3f7c8960609f3d495ccacc39623eb18e13f0"
+      },
+      "result": "fail",
+      "error_type": "AssertionError",
+      "cleanup": {
+        "A": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r11/n0/s/runtime/api/m.sock"
+          ]
+        }
+      },
+      "ended": "2026-11-22T05:06:15.863758Z"
+    }
+  ],
+  "cases": [
+    {
+      "caseID": "T03-A01",
+      "result": "pass",
+      "title": "固定产物和双平台实际运行",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "local SHA256SUMS/manifest/COMMIT/version",
+        "upload exact artifact set",
+        "remote nine hashes and ordinary version commands"
+      ],
+      "expected": "both platforms run the exact static product",
+      "actual": "nine hashes match locally and on each host; both CLI versions bind the full product commit",
+      "startedAt": null,
+      "endedAt": null,
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/artifact-0.txt",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/artifact-1.txt",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/final-artifact-0.txt",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/final-artifact-1.txt"
+      ],
+      "recordedAt": "2026-11-22T05:07:53.587680Z"
+    },
+    {
+      "caseID": "T03-N01",
+      "result": "pass",
+      "title": "仅准确端口双向 TCP/UDP 与 canary 网络预检",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "check original listeners",
+        "known-source TCP/UDP echo at exact required endpoints",
+        "close probe listeners"
+      ],
+      "expected": "loopback, peer and build-source echoes",
+      "actual": "42/42 succeeded; remote random32-byte and build fixed-marker echoes; no cloud/network changes",
+      "startedAt": null,
+      "endedAt": null,
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/network.json"
+      ],
+      "endpoints": {
+        "tcp": [
+          8443,
+          9443,
+          28443,
+          28444,
+          28445,
+          38443
+        ],
+        "udp": [
+          28446
+        ]
+      },
+      "probeCount": 42,
+      "recordedAt": "2026-11-22T05:07:53.587680Z"
+    },
+    {
+      "caseID": "T03-P-r2-ss2022",
+      "result": "pass",
+      "title": "跨机入口 ss2022",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "ordinary CLI prepare/enroll/material import",
+        "current real observation",
+        "route save/review/publish",
+        "subscription confirmed",
+        "trusted HTTPS full download",
+        "fixed remote Mihomo actual controlled TCP",
+        "delete/cleanup/archive"
+      ],
+      "expected": "actual controlled target response through selected ingress",
+      "actual": "actual controlled TCP response verified",
+      "startedAt": "2026-11-22T04:39:22.996894Z",
+      "endedAt": "2026-11-22T04:41:07.035399Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r2/result.json"
+      ],
+      "protocol": "ss2022",
+      "port": 28443,
+      "controller": "A",
+      "ingress": "B",
+      "client": "A",
+      "actualCaseStartedAt": "2026-11-22T04:39:37.871832Z",
+      "actualCaseEndedAt": "2026-11-22T04:39:56.891304Z",
+      "recordedAt": "2026-11-22T04:41:07.035399Z"
+    },
+    {
+      "caseID": "T03-P-r2-trojan",
+      "result": "pass",
+      "title": "跨机入口 trojan",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "ordinary CLI prepare/enroll/material import",
+        "current real observation",
+        "route save/review/publish",
+        "subscription confirmed",
+        "trusted HTTPS full download",
+        "fixed remote Mihomo actual controlled TCP",
+        "delete/cleanup/archive"
+      ],
+      "expected": "actual controlled target response through selected ingress",
+      "actual": "actual controlled TCP response verified",
+      "startedAt": "2026-11-22T04:39:22.996894Z",
+      "endedAt": "2026-11-22T04:41:07.035399Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r2/result.json"
+      ],
+      "protocol": "trojan",
+      "port": 28443,
+      "controller": "A",
+      "ingress": "B",
+      "client": "A",
+      "actualCaseStartedAt": "2026-11-22T04:39:56.891483Z",
+      "actualCaseEndedAt": "2026-11-22T04:40:20.175067Z",
+      "recordedAt": "2026-11-22T04:41:07.035399Z"
+    },
+    {
+      "caseID": "T03-P-r2-vless",
+      "result": "pass",
+      "title": "跨机入口 vless",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "ordinary CLI prepare/enroll/material import",
+        "current real observation",
+        "route save/review/publish",
+        "subscription confirmed",
+        "trusted HTTPS full download",
+        "fixed remote Mihomo actual controlled TCP",
+        "delete/cleanup/archive"
+      ],
+      "expected": "actual controlled target response through selected ingress",
+      "actual": "actual controlled TCP response verified",
+      "startedAt": "2026-11-22T04:39:22.996894Z",
+      "endedAt": "2026-11-22T04:41:07.035399Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r2/result.json"
+      ],
+      "protocol": "vless",
+      "port": 28443,
+      "controller": "A",
+      "ingress": "B",
+      "client": "A",
+      "actualCaseStartedAt": "2026-11-22T04:40:20.175273Z",
+      "actualCaseEndedAt": "2026-11-22T04:40:38.677470Z",
+      "recordedAt": "2026-11-22T04:41:07.035399Z"
+    },
+    {
+      "caseID": "T03-P-r2-hysteria2",
+      "result": "pass",
+      "title": "跨机入口 hysteria2",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "ordinary CLI prepare/enroll/material import",
+        "current real observation",
+        "route save/review/publish",
+        "subscription confirmed",
+        "trusted HTTPS full download",
+        "fixed remote Mihomo actual controlled TCP",
+        "delete/cleanup/archive"
+      ],
+      "expected": "actual controlled target response through selected ingress",
+      "actual": "TCP response verified; Hy2 uses actual cross-host UDP outer transport",
+      "startedAt": "2026-11-22T04:39:22.996894Z",
+      "endedAt": "2026-11-22T04:41:07.035399Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r2/result.json"
+      ],
+      "protocol": "hysteria2",
+      "port": 28446,
+      "controller": "A",
+      "ingress": "B",
+      "client": "A",
+      "actualCaseStartedAt": "2026-11-22T04:40:38.677644Z",
+      "actualCaseEndedAt": "2026-11-22T04:41:02.876448Z",
+      "recordedAt": "2026-11-22T04:41:07.035399Z"
+    },
+    {
+      "caseID": "T03-P-r6-ss2022",
+      "result": "pass",
+      "title": "跨机入口 ss2022",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "ordinary CLI prepare/enroll/material import",
+        "current real observation",
+        "route save/review/publish",
+        "subscription confirmed",
+        "trusted HTTPS full download",
+        "fixed remote Mihomo actual controlled TCP",
+        "delete/cleanup/archive"
+      ],
+      "expected": "actual controlled target response through selected ingress",
+      "actual": "actual controlled TCP response verified",
+      "startedAt": "2026-11-22T04:47:54.826662Z",
+      "endedAt": "2026-11-22T04:48:52.568526Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r6/result.json"
+      ],
+      "protocol": "ss2022",
+      "port": 28443,
+      "controller": "B",
+      "ingress": "A",
+      "client": "B",
+      "actualCaseStartedAt": "2026-11-22T04:48:05.931725Z",
+      "actualCaseEndedAt": "2026-11-22T04:48:14.531729Z",
+      "recordedAt": "2026-11-22T04:48:52.568526Z"
+    },
+    {
+      "caseID": "T03-P-r6-trojan",
+      "result": "pass",
+      "title": "跨机入口 trojan",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "ordinary CLI prepare/enroll/material import",
+        "current real observation",
+        "route save/review/publish",
+        "subscription confirmed",
+        "trusted HTTPS full download",
+        "fixed remote Mihomo actual controlled TCP",
+        "delete/cleanup/archive"
+      ],
+      "expected": "actual controlled target response through selected ingress",
+      "actual": "actual controlled TCP response verified",
+      "startedAt": "2026-11-22T04:47:54.826662Z",
+      "endedAt": "2026-11-22T04:48:52.568526Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r6/result.json"
+      ],
+      "protocol": "trojan",
+      "port": 28443,
+      "controller": "B",
+      "ingress": "A",
+      "client": "B",
+      "actualCaseStartedAt": "2026-11-22T04:48:14.531969Z",
+      "actualCaseEndedAt": "2026-11-22T04:48:25.585950Z",
+      "recordedAt": "2026-11-22T04:48:52.568526Z"
+    },
+    {
+      "caseID": "T03-P-r6-vless",
+      "result": "pass",
+      "title": "跨机入口 vless",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "ordinary CLI prepare/enroll/material import",
+        "current real observation",
+        "route save/review/publish",
+        "subscription confirmed",
+        "trusted HTTPS full download",
+        "fixed remote Mihomo actual controlled TCP",
+        "delete/cleanup/archive"
+      ],
+      "expected": "actual controlled target response through selected ingress",
+      "actual": "actual controlled TCP response verified",
+      "startedAt": "2026-11-22T04:47:54.826662Z",
+      "endedAt": "2026-11-22T04:48:52.568526Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r6/result.json"
+      ],
+      "protocol": "vless",
+      "port": 28443,
+      "controller": "B",
+      "ingress": "A",
+      "client": "B",
+      "actualCaseStartedAt": "2026-11-22T04:48:25.586158Z",
+      "actualCaseEndedAt": "2026-11-22T04:48:35.556989Z",
+      "recordedAt": "2026-11-22T04:48:52.568526Z"
+    },
+    {
+      "caseID": "T03-P-r6-hysteria2",
+      "result": "pass",
+      "title": "跨机入口 hysteria2",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "ordinary CLI prepare/enroll/material import",
+        "current real observation",
+        "route save/review/publish",
+        "subscription confirmed",
+        "trusted HTTPS full download",
+        "fixed remote Mihomo actual controlled TCP",
+        "delete/cleanup/archive"
+      ],
+      "expected": "actual controlled target response through selected ingress",
+      "actual": "TCP response verified; Hy2 uses actual cross-host UDP outer transport",
+      "startedAt": "2026-11-22T04:47:54.826662Z",
+      "endedAt": "2026-11-22T04:48:52.568526Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r6/result.json"
+      ],
+      "protocol": "hysteria2",
+      "port": 28446,
+      "controller": "B",
+      "ingress": "A",
+      "client": "B",
+      "actualCaseStartedAt": "2026-11-22T04:48:35.557216Z",
+      "actualCaseEndedAt": "2026-11-22T04:48:48.534197Z",
+      "recordedAt": "2026-11-22T04:48:52.568526Z"
+    },
+    {
+      "caseID": "T03-O01",
+      "result": "fail",
+      "title": "首次 Alpine Controller / Ubuntu Agent 当前观察超时",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal secure CLI setup/enrollment",
+        "prepare CAS",
+        "wait current observation for55s"
+      ],
+      "expected": "real current inventory within bound",
+      "actual": "OBSERVATION_UNAVAILABLE until55s; root cause unresolved; independent r5 observation and r6 matrix later passed",
+      "startedAt": "2026-11-22T04:41:29.996947Z",
+      "endedAt": "2026-11-22T04:42:41.294864Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r3/result.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r3/error.txt",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r3/safe-process-logs-1.txt"
+      ],
+      "recordedAt": "2026-11-22T04:42:41.294864Z"
+    },
+    {
+      "caseID": "T03-R02",
+      "result": "pass",
+      "title": "混合 2 节点固定路径",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal API draft/review/publish",
+        "assert real downstream-first confirmations",
+        "real HTTPS subscription and TCP response",
+        "open controlled CONNECT stream",
+        "inspect each owned kernel PID/start/FD sockets",
+        "normal delete/cleanup/archive"
+      ],
+      "expected": "verified ordered nodes and real forwarding through every instance",
+      "actual": "two/three nodes across two physical hosts; task timestamps and live connections prove ordered forwarding",
+      "startedAt": "2026-11-22T04:49:49.333684Z",
+      "endedAt": "2026-11-22T04:55:37.051753Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/result.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/path-2-host0.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/path-2-host1.json"
+      ],
+      "nodeOrder": [
+        {
+          "node": "node_d17e8a00606f260418da114a4903d335",
+          "host": "A",
+          "state": "/root/ms-t03-20261122-042737/r7/n1"
+        },
+        {
+          "node": "node_9d7d148c165992fba061ac3d9c922d48",
+          "host": "B",
+          "state": "/root/ms-t03-20261122-042737/r7/n0"
+        }
+      ],
+      "taskEvidence": [
+        {
+          "taskID": "task_260833c8c334a59626d22cbd9d4f7b9d",
+          "state": "succeeded",
+          "nodes": [
+            {
+              "node_id": "node_d17e8a00606f260418da114a4903d335",
+              "target_revision": 3,
+              "target_digest": "a6ad428a3faa3bcfbe641a965a5f72278d4c5025f05bb111fc0bbdadf8e2c156",
+              "applied": true,
+              "verification": "verified",
+              "rollback": "none",
+              "cleanup": "none",
+              "confirmed_at": "2026-11-22T04:50:27.73825298Z"
+            },
+            {
+              "node_id": "node_9d7d148c165992fba061ac3d9c922d48",
+              "target_revision": 3,
+              "target_digest": "d352be1b1c6b7789a06657caee1dff813ad396aa172a8703882a9230ba92ba6e",
+              "applied": true,
+              "verification": "verified",
+              "rollback": "none",
+              "cleanup": "none",
+              "confirmed_at": "2026-11-22T04:50:27.171187381Z"
+            }
+          ]
+        }
+      ],
+      "ownedKernelConnections": [
+        {
+          "nodeID": "node_d17e8a00606f260418da114a4903d335",
+          "host": "A",
+          "pid": 30794,
+          "startIdentity": "16421538",
+          "connections": [
+            {
+              "transport": "tcp",
+              "localPort": 38254,
+              "remotePort": 28443,
+              "state": "01"
+            },
+            {
+              "transport": "tcp6",
+              "localPort": 28443,
+              "remotePort": 58396,
+              "state": "01"
+            }
+          ]
+        },
+        {
+          "nodeID": "node_9d7d148c165992fba061ac3d9c922d48",
+          "host": "B",
+          "pid": 20643,
+          "startIdentity": "197158689",
+          "connections": [
+            {
+              "transport": "tcp",
+              "localPort": 57496,
+              "remotePort": 18080,
+              "state": "01"
+            },
+            {
+              "transport": "tcp6",
+              "localPort": 28443,
+              "remotePort": 38254,
+              "state": "01"
+            }
+          ]
+        }
+      ],
+      "recordedAt": "2026-11-22T04:55:37.051753Z"
+    },
+    {
+      "caseID": "T03-R03",
+      "result": "pass",
+      "title": "混合 3 节点固定路径",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal API draft/review/publish",
+        "assert real downstream-first confirmations",
+        "real HTTPS subscription and TCP response",
+        "open controlled CONNECT stream",
+        "inspect each owned kernel PID/start/FD sockets",
+        "normal delete/cleanup/archive"
+      ],
+      "expected": "verified ordered nodes and real forwarding through every instance",
+      "actual": "two/three nodes across two physical hosts; task timestamps and live connections prove ordered forwarding",
+      "startedAt": "2026-11-22T04:49:49.333684Z",
+      "endedAt": "2026-11-22T04:55:37.051753Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/result.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/path-3-host0.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/path-3-host1.json"
+      ],
+      "nodeOrder": [
+        {
+          "node": "node_d425347cf0db389480ddd8af4e0c53a2",
+          "host": "A",
+          "state": "/root/ms-t03-20261122-042737/r7/n2"
+        },
+        {
+          "node": "node_9d7d148c165992fba061ac3d9c922d48",
+          "host": "B",
+          "state": "/root/ms-t03-20261122-042737/r7/n0"
+        },
+        {
+          "node": "node_d17e8a00606f260418da114a4903d335",
+          "host": "A",
+          "state": "/root/ms-t03-20261122-042737/r7/n1"
+        }
+      ],
+      "taskEvidence": [
+        {
+          "taskID": "task_9cb79a70da3246a2eb313f15f2996fa8",
+          "state": "succeeded",
+          "nodes": [
+            {
+              "node_id": "node_d425347cf0db389480ddd8af4e0c53a2",
+              "target_revision": 3,
+              "target_digest": "1cf2fd85d183bfd713c59da7bc27ad8c182eb4b6d52bf3f8687f6021888a2548",
+              "applied": true,
+              "verification": "verified",
+              "rollback": "none",
+              "cleanup": "none",
+              "confirmed_at": "2026-11-22T04:51:07.634672958Z"
+            },
+            {
+              "node_id": "node_9d7d148c165992fba061ac3d9c922d48",
+              "target_revision": 6,
+              "target_digest": "c0bf0f890bb6a964686bdc7632cf4d16e1647d58642b2bc3551e3c4398cad8cf",
+              "applied": true,
+              "verification": "verified",
+              "rollback": "none",
+              "cleanup": "confirmed",
+              "confirmed_at": "2026-11-22T04:51:07.058136738Z"
+            },
+            {
+              "node_id": "node_d17e8a00606f260418da114a4903d335",
+              "target_revision": 6,
+              "target_digest": "106e4fd63c49f7c15497dfcd20bb15866233dc09b255fde0ead543d1ae247415",
+              "applied": true,
+              "verification": "verified",
+              "rollback": "none",
+              "cleanup": "confirmed",
+              "confirmed_at": "2026-11-22T04:51:05.940847654Z"
+            }
+          ]
+        }
+      ],
+      "ownedKernelConnections": [
+        {
+          "nodeID": "node_d425347cf0db389480ddd8af4e0c53a2",
+          "host": "A",
+          "pid": 30895,
+          "startIdentity": "16425528",
+          "connections": [
+            {
+              "transport": "tcp",
+              "localPort": 39188,
+              "remotePort": 28443,
+              "state": "01"
+            },
+            {
+              "transport": "tcp6",
+              "localPort": 29443,
+              "remotePort": 37136,
+              "state": "01"
+            }
+          ]
+        },
+        {
+          "nodeID": "node_d17e8a00606f260418da114a4903d335",
+          "host": "A",
+          "pid": 30794,
+          "startIdentity": "16421538",
+          "connections": [
+            {
+              "transport": "tcp",
+              "localPort": 37870,
+              "remotePort": 18080,
+              "state": "01"
+            },
+            {
+              "transport": "tcp6",
+              "localPort": 28443,
+              "remotePort": 55154,
+              "state": "01"
+            }
+          ]
+        },
+        {
+          "nodeID": "node_9d7d148c165992fba061ac3d9c922d48",
+          "host": "B",
+          "pid": 20643,
+          "startIdentity": "197158689",
+          "connections": [
+            {
+              "transport": "tcp",
+              "localPort": 55154,
+              "remotePort": 28443,
+              "state": "01"
+            },
+            {
+              "transport": "tcp6",
+              "localPort": 28443,
+              "remotePort": 39188,
+              "state": "01"
+            }
+          ]
+        }
+      ],
+      "recordedAt": "2026-11-22T04:55:37.051753Z"
+    },
+    {
+      "caseID": "T03-E01",
+      "result": "pass",
+      "title": "Node Default 真实末端",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal Node Default target/policy",
+        "real observation and publication",
+        "controlled end-to-end TCP"
+      ],
+      "expected": "real terminal forwarding",
+      "actual": "verified in both ingress directions and mixed paths",
+      "startedAt": "2026-11-22T04:39:22.996894Z",
+      "endedAt": "2026-11-22T04:55:37.051753Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r2/result.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r6/result.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/result.json"
+      ],
+      "recordedAt": "2026-11-22T04:55:37.051753Z"
+    },
+    {
+      "caseID": "T03-E02",
+      "result": "pass",
+      "title": "HTTP CONNECT 正确/错误认证与无回退",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "wrong credentials and remote407 rejection",
+        "correct credential normal mTLS observation",
+        "real selected-exit target response",
+        "stop matching proxy",
+        "real request fails while target remains alive",
+        "delete confirmed and archive"
+      ],
+      "expected": "good credentials forward; bad rejected; stopped selected exit fails",
+      "actual": "all HTTP steps passed before later SOCKS5 failure",
+      "startedAt": "2026-11-22T04:44:19.443046Z",
+      "endedAt": "2026-11-22T04:46:04.903515Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r4/events.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r4/http-wrong-auth.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r4/result.json"
+      ],
+      "recordedAt": "2026-11-22T04:46:04.903515Z"
+    },
+    {
+      "caseID": "T03-E03",
+      "result": "fail",
+      "title": "SOCKS5 正向观察与转发",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "fresh negative-first case",
+        "fresh correct-first control",
+        "normal credential write and validate",
+        "wait30s current observation"
+      ],
+      "expected": "correct credentials yield current observation and actual forwarding",
+      "actual": "both failed current observation; r10 helper accepted1 and rejected1 handshake, Controller target stayed not_checked; positive forwarding and stopped-SOCKS5 exit remain not_run",
+      "startedAt": "2026-11-22T04:55:50.512598Z",
+      "endedAt": "2026-11-22T05:02:33.290583Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r8/error.txt",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r10/error.txt",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r10/target-final-dto.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r10/proxy-stats-1.json"
+      ],
+      "recordedAt": "2026-11-22T05:02:33.290583Z"
+    },
+    {
+      "caseID": "T03-E04",
+      "result": "fail",
+      "title": "HTTP 出口停止清理后同节点 SOCKS5 发布",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "HTTP actual success and no-fallback",
+        "delete subscription actual cleanup",
+        "archive route",
+        "SOCKS5 wrong then correct credentials",
+        "save route and validate bounded50s"
+      ],
+      "expected": "new selected SOCKS5 route becomes reviewable",
+      "actual": "/egress/evidence NOT_FOUND remained; no root-cause assertion",
+      "startedAt": "2026-11-22T04:44:19.443046Z",
+      "endedAt": "2026-11-22T04:46:04.903515Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r4/events.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r4/last-review.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r4/error.txt"
+      ],
+      "recordedAt": "2026-11-22T04:46:04.903515Z"
+    },
+    {
+      "caseID": "T03-E05",
+      "result": "pass",
+      "title": "SOCKS5 错误认证明确拒绝",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "write invalid authentication via normal HTTPS",
+        "request real mTLS observation",
+        "remote controlled proxy returns explicit auth failure",
+        "target never becomes verified"
+      ],
+      "expected": "explicit rejection, no false verified",
+      "actual": "remote auth-rejected counter increased; no successful observation",
+      "startedAt": "2026-11-22T04:44:19.443046Z",
+      "endedAt": "2026-11-22T04:57:02.189224Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r4/result.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r8/result.json"
+      ],
+      "recordedAt": "2026-11-22T04:57:02.189224Z"
+    },
+    {
+      "caseID": "T03-S01",
+      "result": "pass",
+      "title": "同后缀复用、独立入口和身份",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal three-node route and two independent subscriptions",
+        "controlled live streams and per-node listener snapshots",
+        "normal policy PATCH revision1 to2",
+        "publish/subscribe both policies",
+        "delete/archive with actual cleanup and exact port bind checks"
+      ],
+      "expected": "shared suffix reuses one listener; next policy revision gets distinct resources; last-reference ports free",
+      "actual": "passed; removing one keeps other stream, fork cleanup frees only forked ports, final archive frees shared ports",
+      "startedAt": "2026-11-22T04:57:44.834271Z",
+      "endedAt": "2026-11-22T05:00:39.001373Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/result.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/events.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/shared-host0.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/shared-host1.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/forked-host0.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/forked-host1.json"
+      ],
+      "sharedPorts": [
+        [
+          28443
+        ],
+        [
+          28443
+        ]
+      ],
+      "forkedPorts": [
+        [
+          28443,
+          28444
+        ],
+        [
+          28443,
+          28444
+        ]
+      ],
+      "policyRevisions": [
+        1,
+        2
+      ],
+      "recordedAt": "2026-11-22T05:00:39.001373Z"
+    },
+    {
+      "caseID": "T03-S02",
+      "result": "pass",
+      "title": "不同末端策略修订不误共享",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal three-node route and two independent subscriptions",
+        "controlled live streams and per-node listener snapshots",
+        "normal policy PATCH revision1 to2",
+        "publish/subscribe both policies",
+        "delete/archive with actual cleanup and exact port bind checks"
+      ],
+      "expected": "shared suffix reuses one listener; next policy revision gets distinct resources; last-reference ports free",
+      "actual": "passed; removing one keeps other stream, fork cleanup frees only forked ports, final archive frees shared ports",
+      "startedAt": "2026-11-22T04:57:44.834271Z",
+      "endedAt": "2026-11-22T05:00:39.001373Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/result.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/events.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/shared-host0.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/shared-host1.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/forked-host0.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/forked-host1.json"
+      ],
+      "sharedPorts": [
+        [
+          28443
+        ],
+        [
+          28443
+        ]
+      ],
+      "forkedPorts": [
+        [
+          28443,
+          28444
+        ],
+        [
+          28443,
+          28444
+        ]
+      ],
+      "policyRevisions": [
+        1,
+        2
+      ],
+      "recordedAt": "2026-11-22T05:00:39.001373Z"
+    },
+    {
+      "caseID": "T03-S03",
+      "result": "pass",
+      "title": "最后引用真实清理才释放端口",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal three-node route and two independent subscriptions",
+        "controlled live streams and per-node listener snapshots",
+        "normal policy PATCH revision1 to2",
+        "publish/subscribe both policies",
+        "delete/archive with actual cleanup and exact port bind checks"
+      ],
+      "expected": "shared suffix reuses one listener; next policy revision gets distinct resources; last-reference ports free",
+      "actual": "passed; removing one keeps other stream, fork cleanup frees only forked ports, final archive frees shared ports",
+      "startedAt": "2026-11-22T04:57:44.834271Z",
+      "endedAt": "2026-11-22T05:00:39.001373Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/result.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/events.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/shared-host0.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/shared-host1.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/forked-host0.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r9/forked-host1.json"
+      ],
+      "sharedPorts": [
+        [
+          28443
+        ],
+        [
+          28443
+        ]
+      ],
+      "forkedPorts": [
+        [
+          28443,
+          28444
+        ],
+        [
+          28443,
+          28444
+        ]
+      ],
+      "policyRevisions": [
+        1,
+        2
+      ],
+      "recordedAt": "2026-11-22T05:00:39.001373Z"
+    },
+    {
+      "caseID": "T03-L01",
+      "result": "pass",
+      "title": "标准完整 HTTPS 下载和 CLI 加载",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal HTTPS mutations and CAS",
+        "durable worker task confirmation",
+        "actual fixed Mihomo requests and negative requests",
+        "inspect safe DTO and trusted downloads"
+      ],
+      "expected": "specified lifecycle invariant holds",
+      "actual": "trusted CA verification, default TUN -t and real TUN-off CLI -f forwarding passed; GUI import not claimed",
+      "startedAt": "2026-11-22T04:49:49.333684Z",
+      "endedAt": "2026-11-22T04:55:37.051753Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/events.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/result.json"
+      ],
+      "recordedAt": "2026-11-22T04:55:37.051753Z"
+    },
+    {
+      "caseID": "T03-L02",
+      "result": "pass",
+      "title": "原生 HTTPS provider 拉取/刷新",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal HTTPS mutations and CAS",
+        "durable worker task confirmation",
+        "actual fixed Mihomo requests and negative requests",
+        "inspect safe DTO and trusted downloads"
+      ],
+      "expected": "specified lifecycle invariant holds",
+      "actual": "Mihomo native provider fetch and REST-triggered native refresh plus actual TCP passed",
+      "startedAt": "2026-11-22T04:49:49.333684Z",
+      "endedAt": "2026-11-22T04:55:37.051753Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/events.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/result.json"
+      ],
+      "recordedAt": "2026-11-22T04:55:37.051753Z"
+    },
+    {
+      "caseID": "T03-L03",
+      "result": "pass",
+      "title": "Copy URL、重置、独立凭据",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal HTTPS mutations and CAS",
+        "durable worker task confirmation",
+        "actual fixed Mihomo requests and negative requests",
+        "inspect safe DTO and trusted downloads"
+      ],
+      "expected": "specified lifecycle invariant holds",
+      "actual": "fresh admin login Copy URL stable; reset old URL404; proxy parameters unchanged; other subscription live",
+      "startedAt": "2026-11-22T04:49:49.333684Z",
+      "endedAt": "2026-11-22T04:55:37.051753Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/events.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/result.json"
+      ],
+      "recordedAt": "2026-11-22T04:55:37.051753Z"
+    },
+    {
+      "caseID": "T03-L04",
+      "result": "pass",
+      "title": "续期代次、移除再加入、规则采用",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal HTTPS mutations and CAS",
+        "durable worker task confirmation",
+        "actual fixed Mihomo requests and negative requests",
+        "inspect safe DTO and trusted downloads"
+      ],
+      "expected": "specified lifecycle invariant holds",
+      "actual": "new generation rejects old client; remove/re-add changes identity; explicit profile adoption changes next download rules and preserves identity",
+      "startedAt": "2026-11-22T04:49:49.333684Z",
+      "endedAt": "2026-11-22T04:55:37.051753Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/events.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/result.json"
+      ],
+      "recordedAt": "2026-11-22T04:55:37.051753Z"
+    },
+    {
+      "caseID": "T03-L05",
+      "result": "pass",
+      "title": "正常重启与持久意图恢复",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal HTTPS mutations and CAS",
+        "durable worker task confirmation",
+        "actual fixed Mihomo requests and negative requests",
+        "inspect safe DTO and trusted downloads"
+      ],
+      "expected": "specified lifecycle invariant holds",
+      "actual": "committed renewal converged after Controller restart; Alpine Agent same-state restart retained authorized traffic",
+      "startedAt": "2026-11-22T04:49:49.333684Z",
+      "endedAt": "2026-11-22T04:55:37.051753Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/events.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/result.json"
+      ],
+      "recordedAt": "2026-11-22T04:55:37.051753Z"
+    },
+    {
+      "caseID": "T03-L06",
+      "result": "pass",
+      "title": "删除即时撤销下载、真实 cleanup 与重复请求",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal HTTPS mutations and CAS",
+        "durable worker task confirmation",
+        "actual fixed Mihomo requests and negative requests",
+        "inspect safe DTO and trusted downloads"
+      ],
+      "expected": "specified lifecycle invariant holds",
+      "actual": "download404 immediately, actual cleanup confirmed, exact DELETE replay operations/task/cleanup DTO stable",
+      "startedAt": "2026-11-22T04:49:49.333684Z",
+      "endedAt": "2026-11-22T04:55:37.051753Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/events.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/result.json"
+      ],
+      "recordedAt": "2026-11-22T04:55:37.051753Z"
+    },
+    {
+      "caseID": "T03-L07",
+      "result": "pass",
+      "title": "Controller 离线时到期关闭新旧连接",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "create45s authorization",
+        "open expiring and retained CONNECT streams",
+        "normal Controller stop",
+        "wait actual expiry without clock changes",
+        "actual new and existing connection rejection",
+        "other identity stream survives",
+        "restore worker and assert download404"
+      ],
+      "expected": "enforcement within existing12-second bound",
+      "actual": "new and established connections denied at measured2.984179s; other identity established stream live",
+      "startedAt": "2026-11-22T04:49:49.333684Z",
+      "endedAt": "2026-11-22T04:55:37.051753Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/expiry.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/events.json"
+      ],
+      "expires_at": "2026-11-22T04:54:19.786994Z",
+      "rejection_observed_at": "2026-11-22T04:54:22.771207Z",
+      "latency_seconds": 2.984179,
+      "bound_seconds": 12,
+      "recordedAt": "2026-11-22T04:55:37.051753Z"
+    },
+    {
+      "caseID": "T03-L08",
+      "result": "blocked",
+      "title": "正常重启前后原任务/摘要/结果不变",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "capture real original task DTO",
+        "open authorized CONNECT stream",
+        "normal Controller and Agent restart",
+        "real new request and retained stream",
+        "compare exact original task DTO",
+        "repeat delete and bind released port"
+      ],
+      "expected": "same task ID/digest/results; traffic continues; no duplicate cleanup",
+      "actual": "blocked before restart: subscription remained prepared for90s; original task comparison was not reached",
+      "startedAt": "2026-11-22T05:04:06.887213Z",
+      "endedAt": "2026-11-22T05:06:15.863758Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r11/result.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r11/error.txt"
+      ],
+      "recordedAt": "2026-11-22T05:06:15.863758Z"
+    },
+    {
+      "caseID": "T03-O02",
+      "result": "fail",
+      "title": "已发布 Node Default 线路后的订阅收敛超时",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal enrollment and current real observation",
+        "Node Default route publication succeeded",
+        "normal subscription create",
+        "wait90s actual confirmation"
+      ],
+      "expected": "subscription becomes confirmed",
+      "actual": "subscription stayed prepared without accepted task within90s; later restart/digest comparison not reached",
+      "startedAt": "2026-11-22T05:04:06.887213Z",
+      "endedAt": "2026-11-22T05:06:15.863758Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r11/events.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r11/error.txt",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r11/result.json"
+      ],
+      "recordedAt": "2026-11-22T05:06:15.863758Z"
+    },
+    {
+      "caseID": "T03-H01",
+      "result": "pass",
+      "title": "有限 HTTP 认证/CSRF/CAS/敏感路径边界",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "unauthenticated admin GET401",
+        "missing Origin/CSRF POST403",
+        "legal stale positive preparation revision409",
+        "identical preparation replay",
+        "sensitive malformed/method/query variants",
+        "download no-store/no-referrer/no redirect/token echo"
+      ],
+      "expected": "strict deny and safe headers",
+      "actual": "all bounded assertions passed; r1 invalid-zero test expectation is retained as a harness error",
+      "startedAt": "2026-11-22T04:39:22.996894Z",
+      "endedAt": "2026-11-22T04:55:37.051753Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r2/result.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r6/result.json",
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/result.json"
+      ],
+      "recordedAt": "2026-11-22T04:55:37.051753Z"
+    },
+    {
+      "caseID": "T03-U01",
+      "result": "not_run",
+      "title": "GUI 原生完整 URL 导入",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "not executed",
+      "steps": [],
+      "expected": "dedicated actual environment evidence",
+      "actual": "no GUI/client environment was exercised; trusted CLI download/file load is separate",
+      "startedAt": null,
+      "endedAt": null,
+      "privateEvidence": [],
+      "recordedAt": "2026-11-22T05:07:53.587680Z"
+    },
+    {
+      "caseID": "T03-U02",
+      "result": "not_run",
+      "title": "实际默认 TUN",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "not executed",
+      "steps": [],
+      "expected": "dedicated actual environment evidence",
+      "actual": "no dedicated isolated client environment supplied; no host default network changed",
+      "startedAt": null,
+      "endedAt": null,
+      "privateEvidence": [],
+      "recordedAt": "2026-11-22T05:07:53.587680Z"
+    },
+    {
+      "caseID": "T03-U03",
+      "result": "not_run",
+      "title": "公网 DNS / 原始域名到末端 / 三层 DNS 同源",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "not executed",
+      "steps": [],
+      "expected": "dedicated actual environment evidence",
+      "actual": "explicit test.local hosts mapping; numeric business target/canary; loopback numeric node DNS. Bootstrap and public business DNS not exercised",
+      "startedAt": null,
+      "endedAt": null,
+      "privateEvidence": [],
+      "recordedAt": "2026-11-22T05:07:53.587680Z"
+    },
+    {
+      "caseID": "T03-U04",
+      "result": "not_run",
+      "title": "IPv6 / 双栈边界",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "not executed",
+      "steps": [],
+      "expected": "dedicated actual environment evidence",
+      "actual": "IPv4-only configured and exercised; no IPv6 result inferred",
+      "startedAt": null,
+      "endedAt": null,
+      "privateEvidence": [],
+      "recordedAt": "2026-11-22T05:07:53.587680Z"
+    },
+    {
+      "caseID": "T03-U05",
+      "result": "not_run",
+      "title": "V2 业务 UDP",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "not executed",
+      "steps": [],
+      "expected": "dedicated actual environment evidence",
+      "actual": "not fully supported/evidenced; availability remains not_checked; Hy2 outer UDP does not prove business UDP",
+      "startedAt": null,
+      "endedAt": null,
+      "privateEvidence": [],
+      "recordedAt": "2026-11-22T05:07:53.587680Z"
+    },
+    {
+      "caseID": "T03-U06",
+      "result": "not_run",
+      "title": "指定接口真实绑定",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "not executed",
+      "steps": [],
+      "expected": "dedicated actual environment evidence",
+      "actual": "not executed with independent binding evidence; no route changes or new tunnel created",
+      "startedAt": null,
+      "endedAt": null,
+      "privateEvidence": [],
+      "recordedAt": "2026-11-22T05:07:53.587680Z"
+    },
+    {
+      "caseID": "T03-U07",
+      "result": "not_run",
+      "title": "正式 systemd/OpenRC 安装生命周期",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "not executed",
+      "steps": [],
+      "expected": "dedicated actual environment evidence",
+      "actual": "outside T03; reserved for T07; foreground ordinary binaries only",
+      "startedAt": null,
+      "endedAt": null,
+      "privateEvidence": [],
+      "recordedAt": "2026-11-22T05:07:53.587680Z"
+    },
+    {
+      "caseID": "T03-U08",
+      "result": "pass",
+      "title": "下载配置默认业务 UDP 拒绝规则",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "inspect full config after explicit rule adoption"
+      ],
+      "expected": "NETWORK,udp,REJECT first and business_udp false/not_checked",
+      "actual": "configuration guard verified only; independent V2 UDP traffic remains not_run",
+      "startedAt": "2026-11-22T04:49:49.333684Z",
+      "endedAt": "2026-11-22T04:55:37.051753Z",
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/r7/events.json"
+      ],
+      "recordedAt": "2026-11-22T04:55:37.051753Z"
+    },
+    {
+      "caseID": "T03-D01",
+      "result": "deferred",
+      "title": "205+完整分页、100+离线积压、帧容量与大规模压力",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "not executed",
+      "steps": [],
+      "expected": "future authorized independent acceptance",
+      "actual": "explicitly deferred; no previous T02 conclusion changed",
+      "startedAt": null,
+      "endedAt": null,
+      "privateEvidence": [],
+      "recordedAt": "2026-11-22T05:07:53.587680Z"
+    },
+    {
+      "caseID": "T03-D02",
+      "result": "deferred",
+      "title": "硬件断电、时钟修改、坏 key/checkpoint、SIGKILL完整矩阵",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "not executed",
+      "steps": [],
+      "expected": "future authorized independent acceptance",
+      "actual": "explicitly deferred; no previous T02 conclusion changed",
+      "startedAt": null,
+      "endedAt": null,
+      "privateEvidence": [],
+      "recordedAt": "2026-11-22T05:07:53.587680Z"
+    },
+    {
+      "caseID": "T03-Z01",
+      "result": "pass",
+      "title": "聚合秘密扫描后私有日志留证",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "aggregate generated secrets from every phase",
+        "inspect remote private material and JSON secrets locally on each host",
+        "scan literal/JSON/base64/hex forms after all process shutdown",
+        "repeat scan before private archive copy"
+      ],
+      "expected": "no generated secret in process logs copied",
+      "actual": "all scanned logs clean; archives private; silent third-party and platform logs both covered",
+      "startedAt": null,
+      "endedAt": null,
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/final-log-scan.json"
+      ],
+      "logScan": [
+        {
+          "host": "A",
+          "log_files": 108,
+          "secret_patterns": 561,
+          "findings": 0,
+          "private_archive_saved": true
+        },
+        {
+          "host": "B",
+          "log_files": 64,
+          "secret_patterns": 510,
+          "findings": 0,
+          "private_archive_saved": true
+        }
+      ],
+      "recordedAt": "2026-11-22T05:07:53.587680Z"
+    },
+    {
+      "caseID": "T03-Z02",
+      "result": "pass",
+      "title": "精确安全收尾与原服务保持",
+      "productCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+      "artifactSHA256": {
+        "controller": "4163808b66b1689c09ffd576e6c671092b62a3d40d9654e813eae5e9cee70993",
+        "agent": "49311892f0d6374e9a0ef4c1d25d47789ea8df5bb18e50944ace87a4909b0bc4",
+        "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+      },
+      "environment": {
+        "A": "Ubuntu 24.04.1/systemd",
+        "B": "Alpine 3.23.7/OpenRC"
+      },
+      "normalProductEntry": "ordinary precompiled CLI + HTTPS admin/Origin/CSRF + mTLS observations + durable worker + fixed Mihomo",
+      "steps": [
+        "normal Controller/Agent stop",
+        "normal stop-runtime",
+        "remove only inactive owned socket files",
+        "all nine artifact hashes again",
+        "compare original listeners/PIDs and OOM",
+        "exact owned remote root removal"
+      ],
+      "expected": "no owned processes/sockets/listeners; original host services unchanged",
+      "actual": "both hosts original listeners/PIDs match; OOM unchanged; no active run resources and exact remote roots removed",
+      "startedAt": null,
+      "endedAt": null,
+      "privateEvidence": [
+        "/root/meshstrata/.local/meshstrata-t03-20261122-042737/final-audit.json"
+      ],
+      "hostAudit": [
+        {
+          "host": "A",
+          "artifact_sha256_checks": 9,
+          "original_listeners_unchanged": true,
+          "before_listener_count": 14,
+          "after_listener_count": 14,
+          "run_executables_absent": true,
+          "run_sockets_absent": true,
+          "oom_kill_before": 0,
+          "oom_kill_after": 0,
+          "owned_root_removed": true
+        },
+        {
+          "host": "B",
+          "artifact_sha256_checks": 9,
+          "original_listeners_unchanged": true,
+          "before_listener_count": 2,
+          "after_listener_count": 2,
+          "run_executables_absent": true,
+          "run_sockets_absent": true,
+          "oom_kill_before": 0,
+          "oom_kill_after": 0,
+          "owned_root_removed": true
+        }
+      ],
+      "recordedAt": "2026-11-22T05:07:53.587680Z"
+    }
+  ],
+  "unresolvedIssues": [
+    {
+      "id": "F01",
+      "cases": [
+        "T03-O01"
+      ],
+      "status": "unresolved intermittent; later independent positive runs do not erase failure"
+    },
+    {
+      "id": "F02",
+      "cases": [
+        "T03-E04"
+      ],
+      "status": "unresolved observation/review failure; root cause unproven"
+    },
+    {
+      "id": "F03",
+      "cases": [
+        "T03-E03"
+      ],
+      "status": "fresh correct-first SOCKS5 observation failed as well; no positive business forwarding claimed"
+    },
+    {
+      "id": "F04",
+      "cases": [
+        "T03-O02",
+        "T03-L08"
+      ],
+      "status": "subscription prepared did not converge within90s; original task restart comparison blocked"
+    }
+  ],
+  "harnessFailures": [
+    {
+      "run": "r0",
+      "reason": "port check did not tolerate own TCP probe TIME_WAIT; fixed helper SO_REUSEADDR, active listeners still protected"
+    },
+    {
+      "run": "r1",
+      "reason": "zero revision is invalid input400 rather than a legal stale-CAS409; fixed test input"
+    }
+  ],
+  "unchangedBoundaries": [
+    "T02 partial/interrupted",
+    "no R03 or stage4/other thread started",
+    "frontend demo",
+    "migrations001-011 frozen;012-021 reserved",
+    "T07 install lifecycle not claimed"
+  ],
+  "testSourceSHA256": {
+    "scripts/integration/t03/collect.py": "600e2fb65f0ee827b332272a6d2e6ca2ce15308c28db3f4cfff8a9a1a57c2b8e",
+    "scripts/integration/t03/preflight.py": "f180838c85712171cd260cd97899290f853259ccbb1be21dfae0d51380566e86",
+    "scripts/integration/t03/README.md": "7634dae8f560ae46a0cb4a416319bf5edd3fea57373e588f47eb650de0b48756",
+    "scripts/integration/t03/network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+    "scripts/integration/t03/socks.py": "34ea65cb7e05e16532228a2c8fdcad04976dac924f044d5cac1ade01cdeb57f4",
+    "scripts/integration/t03/audit.py": "b234be57475719a1d03dede869101d57e98412103e322983f551bb51835f46a7",
+    "scripts/integration/t03/diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+    "scripts/integration/t03/worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+    "scripts/integration/t03/prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+    "scripts/integration/t03/transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+    "scripts/integration/t03/sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+    "scripts/integration/t03/run.py": "d28ba4dcae90c893705a0f6dd4ce5b3f455127d40d0512c54897153984eb5d07",
+    "scripts/integration/t03/restart.py": "7d8b37b7f4c991296cc08124487f3f7c8960609f3d495ccacc39623eb18e13f0"
+  },
+  "i03cDriverSHA256": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e",
+  "completedAt": "2026-11-22T05:07:53.587680Z"
+}

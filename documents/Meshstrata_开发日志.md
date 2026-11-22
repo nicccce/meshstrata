@@ -411,3 +411,8 @@ Controller 网关增加双格式 artifact 分派、不可变 V2 密文、真实�
 显式配置普通 Controller/Agent 的 V2、可信本地材料/拓扑、mTLS 库存与出口观察，组合真实 B06/B07/B08 和可恢复业务 worker；安全 DTO、CAS/幂等、有限分页/归档引用、线路/规则/出口/订阅 HTTP 与外层敏感下载同步 OpenAPI。正式新增 011，001–010 保持冻结。修复策略预览 slice/排序、发布后出口观察刷新，以及多入口共享下游时重复 fence 的事务失败；凭据版本和重放回执同事务。
 
 本地普通 CLI/Mihomo 验收、完整门禁和实际模式边界详见 [I03-C](backend-delivery/I03-C.md)。前端仅 wire 类型和阶段四对接说明，仍为 demo。T03 仅[计划](backend-delivery/T03计划.md)，未派发或执行；T02 partial/interrupted 与 R02 真机待证项不改变。没有子代理、worktree、SSH 或宿主网络配置变更，原 T02 草稿与缓存未触碰。最终提交、推送和带完整 commit 的静态产物以报告/最终回复为准。
+
+
+## 2026-11-22 T03 独立 Ubuntu / Alpine 多机验收
+
+固定 I03-C 产品 `b71ee3a094265a91d1e671f8a89ffa45df30c35d`，九项哈希和双CLI完整版本绑定后，在授权两主机经普通CLI/HTTPS/mTLS/真实worker测试。双方向四入口、混合两/三跳、共享后缀和策略修订隔离/真实回收、provider原生拉取刷新及主要授权生命周期通过；离线到期新旧连接实测约2.98秒，另一存量身份保持。保留观察/订阅收敛及SOCKS5失败，精确原任务比较受阻；未验TUN/GUI/IPv6/公网三层DNS/业务UDP/接口绑定。细节、失败重试和收尾见 [T03](backend-delivery/T03.md)。仅测试和文档提交，产品未改；T02历史不变，不开启修复/阶段四，交付后停止。
