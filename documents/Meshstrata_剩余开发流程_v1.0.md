@@ -150,3 +150,9 @@ I03 后续拆分：B 完成认证 V2 协商、Agent 双格式执行/恢复、受
 原T03失败计数及T02 partial/interrupted不变。F01/F03/F04原跨机根因尚未唯一证实，F02已有同症状确定性归因但仍须跨机确认。下一步由主协调另派T03-R01专门测试会话，按R03最小Ubuntu/Alpine矩阵核验最终完整commit/双CLI/锁定Mihomo，不由开发会话自动运行。001–011冻结、012–021预留，前端demo及TUN/GUI/IPv6/DNS/业务UDP/容量/断电未验边界保持；本轮提交推送和构建后停止。
 
 R03补充：完整make check/页面门禁通过，但完整I03-C CLI在到期后的删除cleanup90秒未收敛，另记R03-L01并保留失败。不能签完整本地业务回归通过；独立T03-R01需包含有前置发布/续期历史的此路径及安全DTO/task对照，不以定点阳性覆盖它。
+
+## 2026-11-22｜T03-R01 R03后独立双平台复验
+
+固定产品`a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8`；报告提交以本轮最终回复/Git另记。13阶段按验收性质5pass/5fail/3blocked（runner原始5pass/8fail）。双方向冷库存及Node Default精确原task/artifact跨正常双端重启通过；Ubuntu fresh SOCKS5及正向共享/Pin隔离/最后引用回收通过。Alpine出口观察有三次持久化INVALID_ARGUMENT/负age_ms；Ubuntu HTTP清理后SOCKS5观察仍失败；正向完整历史HTTP入口task验证RELEASE_FAILED。额外Ubuntu TCP29443–29445/UDP29443本机成功而Alpine→Ubuntu超时，阻断反向三跳/共享；未改网络、未重跑失败。r11助手变量错误只以r13单次新状态补证，原记录保留。
+
+F01本轮冷首次观察通过、原根因未唯一证明；F02完整顺序阻断、F03仍失败；F04本轮精确路径双方向通过、原根因未唯一证明；R03-L01在前置失败/网络阻塞处未到达，保留未关闭，不用短lifecycle替代。报告也明确重连新鲜采样及初始管理员会话字面秘密扫描的助手覆盖缺口。260份远端+32份本地日志对记录秘密模式零匹配；两端九项摘要复核，原监听/PID/服务/路由/DNS/OOM保持，远端唯一私有根已精确删除，本地原始证据保留。只提交测试助手/脱敏报告与登记，原T03/R03四文件不变，T02 partial/interrupted及保护草稿不动；001–011冻结、012–021预留，前端demo。交付后停止，不自动派修复或阶段四。详见[T03-R01报告](backend-delivery/T03-R01.md)及[证据](backend-delivery/T03-R01-evidence.json)。

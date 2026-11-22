@@ -1,0 +1,3065 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-22",
+  "timezone": "Asia/Shanghai",
+  "session": "01a202cc-5c7e-7013-bc20-d69fae65fc8c",
+  "productCommit": "a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8",
+  "reportCommitBinding": "Git commit containing this report; full report commit recorded in final reply and private delivery.json, separately from productCommit",
+  "branch": "codex/bootstrap-controller-agent",
+  "overall": "partial_failed_and_blocked_not_complete_acceptance",
+  "phaseCounts": {
+    "pass": 5,
+    "fail": 5,
+    "blocked": 3
+  },
+  "rawRunnerCounts": {
+    "pass": 5,
+    "fail": 8
+  },
+  "artifactSHA256": {
+    "controller": "6df648908febaa0e3cc61f8bd449f2867c1d28c010ee35f9ec1b99837792b8ab",
+    "agent": "37024e12624a356af4258abf716714829b743454c43a82c4c97493e0b2c2eb47",
+    "mihomo": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+  },
+  "artifactVerification": {
+    "localAndEachRemoteNineEntries": true,
+    "fullCLIVersionsBeforeTransferAndAfterUpload": true,
+    "finalRemoteNineEntries": true,
+    "rebuilt": false,
+    "manifestSHA256": "6cdab5fa0512a96e7bb608f1196577d5865ceabfcc8e83a3cdf2f45f092f883c"
+  },
+  "environment": [
+    {
+      "host": "A",
+      "ssh_exit": 0,
+      "os": "Ubuntu 24.04.1 LTS",
+      "mem_kib": 4009844,
+      "inventory": "private saved"
+    },
+    {
+      "host": "B",
+      "ssh_exit": 0,
+      "os": "Alpine Linux v3.23",
+      "mem_kib": 445420,
+      "inventory": "private saved"
+    }
+  ],
+  "coldInventory": {
+    "count": 23,
+    "allPassed": true,
+    "maxElapsedSeconds": 7.635,
+    "boundSeconds": 55
+  },
+  "limits": {
+    "firstInventorySeconds": 55,
+    "routeReviewSeconds": 50,
+    "egressAdmissionAndCurrentTotalSeconds": 30,
+    "taskSubscriptionCleanupSeconds": 90,
+    "offlineExpiryRefusalSeconds": 12,
+    "clientTrafficSeconds": 24,
+    "notExtended": true,
+    "checkDurationsNote": "Some checks include target/auth/API setup before the inner original30s deadline; total check duration is not a changed deadline."
+  },
+  "normalProductEntry": "fixed precompiled CLI + trusted admin HTTPS/Origin/CSRF + mTLS + persistent worker + fixed Mihomo -f, TUN off, explicit test.local hosts, numeric target/canary; no SQL writes or fabricated observations",
+  "topology": "three logical nodes across two hosts; extra instance always Ubuntu; Alpine at most one node kernel; all cases serial",
+  "historyDifferences": [
+    "same key order and retained four published routes / two+three-hop subscriptions / retained HTTP then SOCKS5 planned",
+    "cross-host roles/port pools differ from local all: normal TCP28443-45/Hy2UDP28446, extra Ubuntu29443-45 (Hy2 actualUDP29443)",
+    "extra pool connectivity was not checked before r10/r12; diagnosed afterwards, failed branches preserved and not replayed",
+    "r09 failed before first HTTP subscription completed; no SOCKS5/lifecycle suffix invented",
+    "r10 failed at three-hop before exit/lifecycle suffix"
+  ],
+  "phases": [
+    {
+      "caseID": "r01-observe",
+      "result": "pass",
+      "observedRunnerResult": "pass",
+      "productCommit": "a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8",
+      "controllerPlatform": "Alpine3.23.7/OpenRC",
+      "initialAgentPlatform": "Ubuntu24.04.1/systemd",
+      "scenario": "observe",
+      "startedAt": "2026-11-22T10:36:17.058860Z",
+      "endedAt": "2026-11-22T10:37:13.762699Z",
+      "actual": "冷库存1.149s；wrong→new correct SOCKS5 Pin/current、64-byte独立回显、负认证、后台库存刷新通过；正常Agent重连在线且既有观察仍current，未证明新session重新采样。",
+      "checks": [
+        {
+          "id": "cold-current-inventory-0",
+          "started": "2026-11-22T10:36:27.271624Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:36:28.420507Z",
+          "elapsed_seconds": 1.149,
+          "bound_seconds": 55
+        },
+        {
+          "id": "failure-and-new-pin-recovery",
+          "started": "2026-11-22T10:36:28.463643Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:36:29.183527Z",
+          "elapsed_seconds": 0.72
+        }
+      ],
+      "toolSHA256": {
+        "scripts/integration/t03_r01/preflight.py": "3652d862b45d8acdd933d32ddb7728f02d9b9008fbcf8ca77e44b7a103dad2ab",
+        "scripts/integration/t03_r01/remote.py": "29e950d228cbe28a0b1abe82d71b37e06f4bd954c605dc22ee2dec2d20920c94",
+        "scripts/integration/t03_r01/audit.py": "4d09a4f85b9c9b5fc767323f98332d3fef85d29da0a42822faac2fae52f95c13",
+        "scripts/integration/t03_r01/run.py": "8974b7c753d5701380c817e4787f6f78d34894ea71da389fd8ffae84b4f687a2",
+        "scripts/integration/t03_r01/host_state.py": "bc6519226e949ad612141fc6469b9d8f8919ada595778a12f528773fb9490fa6",
+        "scripts/integration/t03/collect.py": "600e2fb65f0ee827b332272a6d2e6ca2ce15308c28db3f4cfff8a9a1a57c2b8e",
+        "scripts/integration/t03/preflight.py": "1085d1a52397de88de7700e03258d1af9cc26d8d5eff54385cf021d4ac7b596b",
+        "scripts/integration/t03/network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "scripts/integration/t03/socks.py": "5091722a68cdb7a4f7597f0574af732254fe361b1a85e4541f0a69ed8c636103",
+        "scripts/integration/t03/audit.py": "b234be57475719a1d03dede869101d57e98412103e322983f551bb51835f46a7",
+        "scripts/integration/t03/diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "scripts/integration/t03/worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "scripts/integration/t03/prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "scripts/integration/t03/transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "scripts/integration/t03/sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "scripts/integration/t03/run.py": "811e81350fe617db036e0f9afaad271d5a228f6ebd8bf9252caf761aa189c6d7",
+        "scripts/integration/t03/restart.py": "ea2768cc221de290caeac9f062c54a846b2b83cb4e3c7770105dd0d203ac3a5e",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      },
+      "normalShutdown": {
+        "A": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        },
+        "B": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        }
+      },
+      "safeObservationSummary": {
+        "events": 9,
+        "request_ids": 4,
+        "sent": 4,
+        "recorded": 3,
+        "stages": {
+          "sent": 4,
+          "persist": 3,
+          "collect": 2
+        },
+        "codes": {
+          "OBSERVATION_UNAVAILABLE": 3
+        },
+        "safe_timeline_sha256": "e26c3cca069a334fe2141f6fae39c92594f2b6fc4f2d61372d3ee9fc1b535057"
+      },
+      "privateEvidence": [
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r01-observe/api-timeline.json",
+          "sha256": "a3d81a5e0a125efeface765b52eaea971ecf3af871576f3c203b2d00eebebd48"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r01-observe/checks.json",
+          "sha256": "ffcd0282679ad8eb6bd8d7837db161b2b4ec59e2817e13135140e4e9de905fed"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r01-observe/events.json",
+          "sha256": "80d080a6b1feaa385f6aa1a5ba34e8af93ceaf93a76310f545c91e1fb69f323a"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r01-observe/observation-safe-timeline.json",
+          "sha256": "e26c3cca069a334fe2141f6fae39c92594f2b6fc4f2d61372d3ee9fc1b535057"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r01-observe/preparation-final-dto.json",
+          "sha256": "54b01563648393d6b1c10c7aa779bab388210797ef2967eed78b60ee411b4a34"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r01-observe/result.json",
+          "sha256": "2322f07b3685b78b2af0cf5db1f25aa9fc43595e57612aedf54987c52a12ba65"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r01-observe/snapshot-final-0.json",
+          "sha256": "0625fa1e8c18af6128e37b09b672f3bc6483f87f8e94a528786a8639dd6a86a2"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r01-observe/snapshot-final-1.json",
+          "sha256": "7ba38db1b0b72b85b544bd3213ad6b74ee36e494120cd5999a3e0289ca2b4784"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r01-observe/socks5-current.json",
+          "sha256": "a365e711a53179938ef28ba938f16193a0a034fa00a9da800628ff0020e08731"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r01-observe/target-final-target_79678687a5aa2a7debf3c1a11137a27b.json",
+          "sha256": "8f321e89234968aaf50f5613b6c07a10d26e78fa9641d6f5930ee5cb9f636a05"
+        }
+      ]
+    },
+    {
+      "caseID": "r02-observe",
+      "result": "fail",
+      "observedRunnerResult": "fail",
+      "productCommit": "a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8",
+      "controllerPlatform": "Ubuntu24.04.1/systemd",
+      "initialAgentPlatform": "Alpine3.23.7/OpenRC",
+      "scenario": "observe",
+      "startedAt": "2026-11-22T10:37:48.889751Z",
+      "endedAt": "2026-11-22T10:38:45.434784Z",
+      "actual": "冷库存3.811s通过；错误认证拒绝；新正确Pin已接纳validate202，但30s无current。持久化INVALID_ARGUMENT，age_ms=-5，TTL60005。",
+      "checks": [
+        {
+          "id": "cold-current-inventory-1",
+          "started": "2026-11-22T10:38:04.981391Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:38:08.792413Z",
+          "elapsed_seconds": 3.811,
+          "bound_seconds": 55
+        },
+        {
+          "id": "failure-and-new-pin-recovery",
+          "started": "2026-11-22T10:38:09.071570Z",
+          "result": "fail",
+          "ended": "2026-11-22T10:38:41.725645Z",
+          "elapsed_seconds": 32.654
+        }
+      ],
+      "toolSHA256": {
+        "scripts/integration/t03_r01/preflight.py": "3652d862b45d8acdd933d32ddb7728f02d9b9008fbcf8ca77e44b7a103dad2ab",
+        "scripts/integration/t03_r01/suite.py": "78d2c45201746e23c466fe9857006087f2895d8e5a7fce78c42c64986a92a460",
+        "scripts/integration/t03_r01/remote.py": "29e950d228cbe28a0b1abe82d71b37e06f4bd954c605dc22ee2dec2d20920c94",
+        "scripts/integration/t03_r01/audit.py": "4d09a4f85b9c9b5fc767323f98332d3fef85d29da0a42822faac2fae52f95c13",
+        "scripts/integration/t03_r01/run.py": "0969178fd6ccbcb4f1cc2d8af3aa0e8a1875f5533aab6c44f5b471a73e53361d",
+        "scripts/integration/t03_r01/host_state.py": "bc6519226e949ad612141fc6469b9d8f8919ada595778a12f528773fb9490fa6",
+        "scripts/integration/t03/collect.py": "600e2fb65f0ee827b332272a6d2e6ca2ce15308c28db3f4cfff8a9a1a57c2b8e",
+        "scripts/integration/t03/preflight.py": "1085d1a52397de88de7700e03258d1af9cc26d8d5eff54385cf021d4ac7b596b",
+        "scripts/integration/t03/network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "scripts/integration/t03/socks.py": "5091722a68cdb7a4f7597f0574af732254fe361b1a85e4541f0a69ed8c636103",
+        "scripts/integration/t03/audit.py": "b234be57475719a1d03dede869101d57e98412103e322983f551bb51835f46a7",
+        "scripts/integration/t03/diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "scripts/integration/t03/worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "scripts/integration/t03/prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "scripts/integration/t03/transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "scripts/integration/t03/sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "scripts/integration/t03/run.py": "811e81350fe617db036e0f9afaad271d5a228f6ebd8bf9252caf761aa189c6d7",
+        "scripts/integration/t03/restart.py": "ea2768cc221de290caeac9f062c54a846b2b83cb4e3c7770105dd0d203ac3a5e",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      },
+      "normalShutdown": {
+        "A": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        }
+      },
+      "safeObservationSummary": {
+        "events": 8,
+        "request_ids": 4,
+        "sent": 3,
+        "recorded": 1,
+        "stages": {
+          "connection": 1,
+          "sent": 3,
+          "persist": 2,
+          "collect": 2
+        },
+        "codes": {
+          "OBSERVATION_UNAVAILABLE": 5,
+          "INVALID_ARGUMENT": 1
+        },
+        "safe_timeline_sha256": "45d98303c18c445e808d67f313509301cb9f67753377b211b834a8975047e887"
+      },
+      "privateEvidence": [
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r02-observe/api-timeline.json",
+          "sha256": "97f51c4f562980214d31b0a9d8afc65347ecf392331850db838294a3cc221db1"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r02-observe/checks.json",
+          "sha256": "407005900ca5feee2e8397ae9f4bceb536ede3a5f5d0fdf189d5b62621d2e8fe"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r02-observe/error.txt",
+          "sha256": "7396af3feba2fa3caf9da7f9498d6f0d6c6fe7b8a49f7e526bc205d37acf1c73"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r02-observe/events.json",
+          "sha256": "cf92cd611b6b5e510ffedaa888d1f3dab285446d3a6f5dc497f9aa343bcb0d54"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r02-observe/observation-safe-timeline.json",
+          "sha256": "45d98303c18c445e808d67f313509301cb9f67753377b211b834a8975047e887"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r02-observe/preparation-final-dto.json",
+          "sha256": "c87b0d6aedb209d8da67fbaf52f0ab98715e38435da1897cafb724eb883c61b5"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r02-observe/result.json",
+          "sha256": "31a32302caab0720cab990a2e32f6f6c20ee13df4bf355c26b71543a18fb56fd"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r02-observe/snapshot-final-0.json",
+          "sha256": "0065999dc5a87365e158c899df079250638bd53e302a7b4e61f33de1e19fb2d3"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r02-observe/snapshot-final-1.json",
+          "sha256": "1f6f1bca17efc48b398b23f00bca072c420a790dacd0ebd4d6e2d92895fac1fe"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r02-observe/target-final-target_6146113b1c981fa54a6ca616c702ae92.json",
+          "sha256": "d9e0a9f8bd4c1ddd95a9fe05beaf0c8156977f7872e71964829a1770658848ea"
+        }
+      ]
+    },
+    {
+      "caseID": "r03-correct",
+      "result": "pass",
+      "observedRunnerResult": "pass",
+      "productCommit": "a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8",
+      "controllerPlatform": "Alpine3.23.7/OpenRC",
+      "initialAgentPlatform": "Ubuntu24.04.1/systemd",
+      "scenario": "correct-first",
+      "startedAt": "2026-11-22T10:38:45.705757Z",
+      "endedAt": "2026-11-22T10:39:10.924111Z",
+      "actual": "Ubuntu Agent fresh correct-first SOCKS5精确Pin/current、独立回显/产品负认证、实际转发、停出口拒绝且canary存活、真实cleanup/归档通过。",
+      "checks": [
+        {
+          "id": "cold-current-inventory-0",
+          "started": "2026-11-22T10:38:53.838542Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:38:55.192136Z",
+          "elapsed_seconds": 1.353,
+          "bound_seconds": 55
+        },
+        {
+          "id": "socks5-observation",
+          "started": "2026-11-22T10:38:55.235702Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:38:55.979951Z",
+          "elapsed_seconds": 0.744,
+          "bound_seconds": 30
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:38:57.763926Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:39:00.922208Z",
+          "elapsed_seconds": 3.158,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_d98bd0a67ee7bfbd49820a98719916e9",
+          "started": "2026-11-22T10:39:04.993442Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:39:07.640430Z",
+          "elapsed_seconds": 2.647,
+          "bound_seconds": 90
+        }
+      ],
+      "toolSHA256": {
+        "scripts/integration/t03_r01/preflight.py": "3652d862b45d8acdd933d32ddb7728f02d9b9008fbcf8ca77e44b7a103dad2ab",
+        "scripts/integration/t03_r01/suite.py": "78d2c45201746e23c466fe9857006087f2895d8e5a7fce78c42c64986a92a460",
+        "scripts/integration/t03_r01/remote.py": "29e950d228cbe28a0b1abe82d71b37e06f4bd954c605dc22ee2dec2d20920c94",
+        "scripts/integration/t03_r01/audit.py": "4d09a4f85b9c9b5fc767323f98332d3fef85d29da0a42822faac2fae52f95c13",
+        "scripts/integration/t03_r01/run.py": "0969178fd6ccbcb4f1cc2d8af3aa0e8a1875f5533aab6c44f5b471a73e53361d",
+        "scripts/integration/t03_r01/host_state.py": "bc6519226e949ad612141fc6469b9d8f8919ada595778a12f528773fb9490fa6",
+        "scripts/integration/t03/collect.py": "600e2fb65f0ee827b332272a6d2e6ca2ce15308c28db3f4cfff8a9a1a57c2b8e",
+        "scripts/integration/t03/preflight.py": "1085d1a52397de88de7700e03258d1af9cc26d8d5eff54385cf021d4ac7b596b",
+        "scripts/integration/t03/network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "scripts/integration/t03/socks.py": "5091722a68cdb7a4f7597f0574af732254fe361b1a85e4541f0a69ed8c636103",
+        "scripts/integration/t03/audit.py": "b234be57475719a1d03dede869101d57e98412103e322983f551bb51835f46a7",
+        "scripts/integration/t03/diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "scripts/integration/t03/worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "scripts/integration/t03/prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "scripts/integration/t03/transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "scripts/integration/t03/sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "scripts/integration/t03/run.py": "811e81350fe617db036e0f9afaad271d5a228f6ebd8bf9252caf761aa189c6d7",
+        "scripts/integration/t03/restart.py": "ea2768cc221de290caeac9f062c54a846b2b83cb4e3c7770105dd0d203ac3a5e",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      },
+      "normalShutdown": {
+        "A": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r03-correct/n0/s/runtime/api/m.sock"
+          ]
+        },
+        "B": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        }
+      },
+      "safeObservationSummary": {
+        "events": 14,
+        "request_ids": 8,
+        "sent": 7,
+        "recorded": 6,
+        "stages": {
+          "sent": 7,
+          "persist": 6,
+          "connection": 1
+        },
+        "codes": {
+          "OBSERVATION_BUSY": 1,
+          "OBSERVATION_UNAVAILABLE": 2
+        },
+        "safe_timeline_sha256": "b3e6e33b1c7b927dde4b13df6f5c5f39f88dce74fd053a002278af2b78103c6b"
+      },
+      "privateEvidence": [
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r03-correct/api-timeline.json",
+          "sha256": "dc3fffbad23fa5cd82115739deacbe9b55aeeeef71f0baadcd702a2732501598"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r03-correct/checks.json",
+          "sha256": "851e919e231d9e614c38d300e13bec72b22922c782b96f3a3408f832e9badc32"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r03-correct/cleanup-sub_d98bd0a67ee7bfbd49820a98719916e9.json",
+          "sha256": "40a53fabb6b72dc45768fab64ed3bb2cbf2719226e1e9d5dd7301b3f8561cdc4"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r03-correct/events.json",
+          "sha256": "625cafdc20d7052bb642b0f3c4a1afce529e87c7892047b8eba864f41ff964cf"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r03-correct/observation-safe-timeline.json",
+          "sha256": "b3e6e33b1c7b927dde4b13df6f5c5f39f88dce74fd053a002278af2b78103c6b"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r03-correct/preparation-final-dto.json",
+          "sha256": "955dcb146781190027460aa7067160e4af6669522c7914252b96deafc3c19581"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r03-correct/result.json",
+          "sha256": "e0d8de6ea35a1e844cd8e5ab2ab99eb1330e24d677012b1e359b5abc761420e4"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r03-correct/snapshot-final-0.json",
+          "sha256": "1dd6bd7220dd2469ea892bbc4704ba79cd392fc075b1c22cb7f3e2dd8c80ae60"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r03-correct/snapshot-final-1.json",
+          "sha256": "afb4e2a517c87727eb9e17cc7d9f1e1c3366f32428812da06d225a639d2a9e5f"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r03-correct/socks5-current.json",
+          "sha256": "ef2db4802d1263658f4af04278de09465c02314034ae2e576f6b07c8c403a2af"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r03-correct/subscription-final-sub_d98bd0a67ee7bfbd49820a98719916e9.json",
+          "sha256": "40a53fabb6b72dc45768fab64ed3bb2cbf2719226e1e9d5dd7301b3f8561cdc4"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r03-correct/target-final-target_04f4e4cc473ccbb6440077ac59643e22.json",
+          "sha256": "e053940e0902305dd29dc6dbf509eb142250a9fd9ba90304747009a96a356a5a"
+        }
+      ]
+    },
+    {
+      "caseID": "r04-correct",
+      "result": "fail",
+      "observedRunnerResult": "fail",
+      "productCommit": "a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8",
+      "controllerPlatform": "Ubuntu24.04.1/systemd",
+      "initialAgentPlatform": "Alpine3.23.7/OpenRC",
+      "scenario": "correct-first",
+      "startedAt": "2026-11-22T10:39:11.200943Z",
+      "endedAt": "2026-11-22T10:40:01.942335Z",
+      "actual": "Alpine Agent fresh correct-first SOCKS5 validate202后30s无current；同request持久化INVALID_ARGUMENT，age_ms=-5。未执行发布/业务流量。",
+      "checks": [
+        {
+          "id": "cold-current-inventory-1",
+          "started": "2026-11-22T10:39:22.589707Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:39:26.583405Z",
+          "elapsed_seconds": 3.994,
+          "bound_seconds": 55
+        },
+        {
+          "id": "socks5-observation",
+          "started": "2026-11-22T10:39:26.801512Z",
+          "result": "fail",
+          "ended": "2026-11-22T10:39:57.945343Z",
+          "elapsed_seconds": 31.144,
+          "bound_seconds": 30
+        }
+      ],
+      "toolSHA256": {
+        "scripts/integration/t03_r01/preflight.py": "3652d862b45d8acdd933d32ddb7728f02d9b9008fbcf8ca77e44b7a103dad2ab",
+        "scripts/integration/t03_r01/suite.py": "78d2c45201746e23c466fe9857006087f2895d8e5a7fce78c42c64986a92a460",
+        "scripts/integration/t03_r01/remote.py": "29e950d228cbe28a0b1abe82d71b37e06f4bd954c605dc22ee2dec2d20920c94",
+        "scripts/integration/t03_r01/audit.py": "4d09a4f85b9c9b5fc767323f98332d3fef85d29da0a42822faac2fae52f95c13",
+        "scripts/integration/t03_r01/run.py": "0969178fd6ccbcb4f1cc2d8af3aa0e8a1875f5533aab6c44f5b471a73e53361d",
+        "scripts/integration/t03_r01/host_state.py": "bc6519226e949ad612141fc6469b9d8f8919ada595778a12f528773fb9490fa6",
+        "scripts/integration/t03/collect.py": "600e2fb65f0ee827b332272a6d2e6ca2ce15308c28db3f4cfff8a9a1a57c2b8e",
+        "scripts/integration/t03/preflight.py": "1085d1a52397de88de7700e03258d1af9cc26d8d5eff54385cf021d4ac7b596b",
+        "scripts/integration/t03/network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "scripts/integration/t03/socks.py": "5091722a68cdb7a4f7597f0574af732254fe361b1a85e4541f0a69ed8c636103",
+        "scripts/integration/t03/audit.py": "b234be57475719a1d03dede869101d57e98412103e322983f551bb51835f46a7",
+        "scripts/integration/t03/diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "scripts/integration/t03/worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "scripts/integration/t03/prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "scripts/integration/t03/transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "scripts/integration/t03/sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "scripts/integration/t03/run.py": "811e81350fe617db036e0f9afaad271d5a228f6ebd8bf9252caf761aa189c6d7",
+        "scripts/integration/t03/restart.py": "ea2768cc221de290caeac9f062c54a846b2b83cb4e3c7770105dd0d203ac3a5e",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      },
+      "normalShutdown": {
+        "A": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        }
+      },
+      "safeObservationSummary": {
+        "events": 5,
+        "request_ids": 3,
+        "sent": 2,
+        "recorded": 1,
+        "stages": {
+          "connection": 1,
+          "sent": 2,
+          "persist": 2
+        },
+        "codes": {
+          "OBSERVATION_UNAVAILABLE": 2,
+          "INVALID_ARGUMENT": 1
+        },
+        "safe_timeline_sha256": "f240aa932002ccc05a232e1b11d085d9ff8f5db8f9aeaf2ee9cfef03ca0f661c"
+      },
+      "privateEvidence": [
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r04-correct/api-timeline.json",
+          "sha256": "716f15cf6d6d580a83932b85f09d62cffbdc8fc4afef6b7121f6da1f26c302f7"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r04-correct/checks.json",
+          "sha256": "e87483386c4455a784986b9fdf1578fca1d84db32ea03efe9774f2849c1db1e3"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r04-correct/error.txt",
+          "sha256": "4889156d2fabdf4181c6aa2534c85929d808686104d2e8ee62b6ef0c952e1e22"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r04-correct/events.json",
+          "sha256": "56598bc252790ad71b7b91d0201a2c292b76e9de83c725ef5db1d0bc89294a1c"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r04-correct/observation-safe-timeline.json",
+          "sha256": "f240aa932002ccc05a232e1b11d085d9ff8f5db8f9aeaf2ee9cfef03ca0f661c"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r04-correct/preparation-final-dto.json",
+          "sha256": "89c3fade9629ca92166d56d6710d3fe4a3320845f85fb6a470ad53d1c8339388"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r04-correct/result.json",
+          "sha256": "51b0da4ccd70b5c10612f4f7bbf3a9da3d367641212b01c9ed30360a89a31cb2"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r04-correct/snapshot-final-0.json",
+          "sha256": "dc393e420c52fd1ded6afbd884a8fa821ef6f8ee6281b08eecdbe3d7bba0dfe6"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r04-correct/snapshot-final-1.json",
+          "sha256": "fc2d2dac8e81afad96b932dc9eb6df6fd28e097c7aedc5549beb70e004e4f945"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r04-correct/target-final-target_7284b19da1793b7afcfc7c97545f5c34.json",
+          "sha256": "4f5a5fe1a02ba9241c72bc6c91760267691c36125519bae9f4f3244ff47de689"
+        }
+      ]
+    },
+    {
+      "caseID": "r05-sequence",
+      "result": "fail",
+      "observedRunnerResult": "fail",
+      "productCommit": "a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8",
+      "controllerPlatform": "Alpine3.23.7/OpenRC",
+      "initialAgentPlatform": "Ubuntu24.04.1/systemd",
+      "scenario": "sequence",
+      "startedAt": "2026-11-22T10:40:02.209266Z",
+      "endedAt": "2026-11-22T10:40:59.316691Z",
+      "actual": "Ubuntu Agent HTTP current/转发/停出口拒绝/cleanup确认/归档通过；SOCKS5错误认证明确拒绝；换正确Pin后30s无current，含REVISION_CONFLICT及后续collect失败/退避。未到新候选旧策略过滤断言。",
+      "checks": [
+        {
+          "id": "cold-current-inventory-0",
+          "started": "2026-11-22T10:40:11.375868Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:40:12.221681Z",
+          "elapsed_seconds": 0.846,
+          "bound_seconds": 55
+        },
+        {
+          "id": "http-observation",
+          "started": "2026-11-22T10:40:12.271070Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:40:12.776852Z",
+          "elapsed_seconds": 0.506,
+          "bound_seconds": 30
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:40:13.689216Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:40:18.866368Z",
+          "elapsed_seconds": 5.177,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_aac9cbc8e5944f9cfe9646f335e1ab39",
+          "started": "2026-11-22T10:40:22.516144Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:40:24.855141Z",
+          "elapsed_seconds": 2.339,
+          "bound_seconds": 90
+        },
+        {
+          "id": "socks5-observation",
+          "started": "2026-11-22T10:40:25.059576Z",
+          "result": "fail",
+          "ended": "2026-11-22T10:40:55.623188Z",
+          "elapsed_seconds": 30.563
+        }
+      ],
+      "toolSHA256": {
+        "scripts/integration/t03_r01/preflight.py": "3652d862b45d8acdd933d32ddb7728f02d9b9008fbcf8ca77e44b7a103dad2ab",
+        "scripts/integration/t03_r01/suite.py": "78d2c45201746e23c466fe9857006087f2895d8e5a7fce78c42c64986a92a460",
+        "scripts/integration/t03_r01/remote.py": "65ae626f8935d1c69e8014aa5e92d0446ad2543036ce4a8c1fec5555b05272ac",
+        "scripts/integration/t03_r01/audit.py": "4d09a4f85b9c9b5fc767323f98332d3fef85d29da0a42822faac2fae52f95c13",
+        "scripts/integration/t03_r01/run.py": "59b28b48e65d15b392bc84d853d367587e3c794015a382a12d1f0a57238d27a4",
+        "scripts/integration/t03_r01/host_state.py": "bc6519226e949ad612141fc6469b9d8f8919ada595778a12f528773fb9490fa6",
+        "scripts/integration/t03/collect.py": "600e2fb65f0ee827b332272a6d2e6ca2ce15308c28db3f4cfff8a9a1a57c2b8e",
+        "scripts/integration/t03/preflight.py": "1085d1a52397de88de7700e03258d1af9cc26d8d5eff54385cf021d4ac7b596b",
+        "scripts/integration/t03/network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "scripts/integration/t03/socks.py": "5091722a68cdb7a4f7597f0574af732254fe361b1a85e4541f0a69ed8c636103",
+        "scripts/integration/t03/audit.py": "b234be57475719a1d03dede869101d57e98412103e322983f551bb51835f46a7",
+        "scripts/integration/t03/diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "scripts/integration/t03/worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "scripts/integration/t03/prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "scripts/integration/t03/transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "scripts/integration/t03/sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "scripts/integration/t03/run.py": "811e81350fe617db036e0f9afaad271d5a228f6ebd8bf9252caf761aa189c6d7",
+        "scripts/integration/t03/restart.py": "ea2768cc221de290caeac9f062c54a846b2b83cb4e3c7770105dd0d203ac3a5e",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      },
+      "normalShutdown": {
+        "A": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r05-sequence/n0/s/runtime/api/m.sock"
+          ]
+        },
+        "B": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        }
+      },
+      "safeObservationSummary": {
+        "events": 31,
+        "request_ids": 15,
+        "sent": 13,
+        "recorded": 7,
+        "stages": {
+          "sent": 13,
+          "persist": 8,
+          "connection": 2,
+          "collect": 8
+        },
+        "codes": {
+          "OBSERVATION_UNAVAILABLE": 16,
+          "NOT_FOUND": 1,
+          "REVISION_CONFLICT": 1,
+          "OBSERVATION_BACKOFF": 3
+        },
+        "safe_timeline_sha256": "035db43a5694be9ed8cc4f97eb3f71b3a4a028475e29d524e96bebed3d1361dc"
+      },
+      "privateEvidence": [
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/api-timeline.json",
+          "sha256": "43c7e72c8de9db3cf355fc9210a78975d174fdf32ae2ffc8132ebe44cd1046bf"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/checks.json",
+          "sha256": "2d0f3df683819a3b1811456b8287344b7278f19095c31e59fc70485900ee65bf"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/cleanup-sub_aac9cbc8e5944f9cfe9646f335e1ab39.json",
+          "sha256": "1b686495e921d607f42ef7adbda51cf6a2ceefcd4a2f2739e9fc5b1c69a6b680"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/error.txt",
+          "sha256": "45a1bb0cfc722e57775b7b1ee5c3a343f80a4b98fd1f6b35d49c948750d7ae57"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/events.json",
+          "sha256": "62dd7555634a1e73c1e79d7c23e9d4224191331325ca11eca2cf0dd3d9ef0934"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/http-current.json",
+          "sha256": "efbca0c352dfa6de1e7adbfc003f21cfe39041369107ab7f01730c108ab95fd7"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/observation-safe-timeline.json",
+          "sha256": "035db43a5694be9ed8cc4f97eb3f71b3a4a028475e29d524e96bebed3d1361dc"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/preparation-final-dto.json",
+          "sha256": "8536aa76892fae93461c36814f72a4ef23108298f64c92259166ced2402c7995"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/preparation-final-node_57eb438784f615f47872652a0043440f.json",
+          "sha256": "049feb385ba2c21bef52ac7e7eeca02e8830f8950a59778c5243333388b1e13d"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/result.json",
+          "sha256": "658aa90cac4ec64847f30f76141d9a7022d4cd9372fd5afe3b03effdaabddaae"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/snapshot-final-0.json",
+          "sha256": "3f97c4e40b2ef700e83932b4fcdf67300539a3a3fef676910f0e64bea2db93d8"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/snapshot-final-1.json",
+          "sha256": "7f874c5ad849199617d109a657b71f97e49a7aae7114a6c82c732f30714dbeb3"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/subscription-final-sub_aac9cbc8e5944f9cfe9646f335e1ab39.json",
+          "sha256": "1b686495e921d607f42ef7adbda51cf6a2ceefcd4a2f2739e9fc5b1c69a6b680"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/target-final-target_7dcae82c6e0427a4a60b2bcc87af37c9.json",
+          "sha256": "cb851885959e2eb088ef02f8ff0e787e368c692e167285fdb0e436fa4d73e311"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/target-final-target_de94d77a304135e1cce5a16d1761d8a9.json",
+          "sha256": "818f81f3e60453f0e0ab5e4e19db63fe3b2b1c1fc19d4894e9beb57de0dfbb5b"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/task-final-task_05f743e648cb79fb8407d5d24942d72a.json",
+          "sha256": "bf29cc74280448d7b3663028e88caaf98d988a2f23abf154f78d555214b531fa"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/task-final-task_219714e5a68022954abcc3bae55a4b09.json",
+          "sha256": "770b646af8fb86c406c32fc05c64ffffb1ed25d3771d15769ca915fadf4de8ae"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r05-sequence/task-final-task_429c55d1007ae0eecb0a5b5f8bc683de.json",
+          "sha256": "8f52b61856d5176436e8840e23b39fd98ae1256052286360f3d8180472a7340c"
+        }
+      ]
+    },
+    {
+      "caseID": "r06-sequence",
+      "result": "fail",
+      "observedRunnerResult": "fail",
+      "productCommit": "a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8",
+      "controllerPlatform": "Ubuntu24.04.1/systemd",
+      "initialAgentPlatform": "Alpine3.23.7/OpenRC",
+      "scenario": "sequence",
+      "startedAt": "2026-11-22T10:40:59.585110Z",
+      "endedAt": "2026-11-22T10:41:53.549524Z",
+      "actual": "Alpine Agent前置HTTP正确凭据validate202后30s无current；持久化INVALID_ARGUMENT，age_ms=-3。后续顺序分支阻断。",
+      "checks": [
+        {
+          "id": "cold-current-inventory-1",
+          "started": "2026-11-22T10:41:13.184457Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:41:17.785452Z",
+          "elapsed_seconds": 4.601,
+          "bound_seconds": 55
+        },
+        {
+          "id": "http-observation",
+          "started": "2026-11-22T10:41:18.079337Z",
+          "result": "fail",
+          "ended": "2026-11-22T10:41:49.623942Z",
+          "elapsed_seconds": 31.544,
+          "bound_seconds": 30
+        }
+      ],
+      "toolSHA256": {
+        "scripts/integration/t03_r01/preflight.py": "3652d862b45d8acdd933d32ddb7728f02d9b9008fbcf8ca77e44b7a103dad2ab",
+        "scripts/integration/t03_r01/suite.py": "78d2c45201746e23c466fe9857006087f2895d8e5a7fce78c42c64986a92a460",
+        "scripts/integration/t03_r01/remote.py": "b5811e28951e05849e3a20f054e44244006a201f076370af9dde41ebd6950f45",
+        "scripts/integration/t03_r01/audit.py": "4d09a4f85b9c9b5fc767323f98332d3fef85d29da0a42822faac2fae52f95c13",
+        "scripts/integration/t03_r01/run.py": "37aff6ec5d30bf1fb0ec62199f391c3ba359479cdf092b76b599c1cc43fde5dc",
+        "scripts/integration/t03_r01/host_state.py": "bc6519226e949ad612141fc6469b9d8f8919ada595778a12f528773fb9490fa6",
+        "scripts/integration/t03/collect.py": "600e2fb65f0ee827b332272a6d2e6ca2ce15308c28db3f4cfff8a9a1a57c2b8e",
+        "scripts/integration/t03/preflight.py": "1085d1a52397de88de7700e03258d1af9cc26d8d5eff54385cf021d4ac7b596b",
+        "scripts/integration/t03/network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "scripts/integration/t03/socks.py": "5091722a68cdb7a4f7597f0574af732254fe361b1a85e4541f0a69ed8c636103",
+        "scripts/integration/t03/audit.py": "b234be57475719a1d03dede869101d57e98412103e322983f551bb51835f46a7",
+        "scripts/integration/t03/diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "scripts/integration/t03/worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "scripts/integration/t03/prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "scripts/integration/t03/transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "scripts/integration/t03/sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "scripts/integration/t03/run.py": "811e81350fe617db036e0f9afaad271d5a228f6ebd8bf9252caf761aa189c6d7",
+        "scripts/integration/t03/restart.py": "ea2768cc221de290caeac9f062c54a846b2b83cb4e3c7770105dd0d203ac3a5e",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      },
+      "normalShutdown": {
+        "A": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        }
+      },
+      "safeObservationSummary": {
+        "events": 5,
+        "request_ids": 3,
+        "sent": 2,
+        "recorded": 1,
+        "stages": {
+          "connection": 1,
+          "sent": 2,
+          "persist": 2
+        },
+        "codes": {
+          "OBSERVATION_UNAVAILABLE": 2,
+          "INVALID_ARGUMENT": 1
+        },
+        "safe_timeline_sha256": "f249a97feefa50b55bf679b7b0a64c412284b7a70d793bbd91abd00d3a75c1c7"
+      },
+      "privateEvidence": [
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r06-sequence/api-timeline.json",
+          "sha256": "b9f88d3661e2f2ea588ffbf5c207d5c0ef44459ef0893c79cfbbdcf12bca2aee"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r06-sequence/checks.json",
+          "sha256": "edae8e10e439f7c8b60c44708dda9cdd66d989163b6c902686545a2cf177777d"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r06-sequence/error.txt",
+          "sha256": "f8b43ee5824d886052ba30ee020d6b8884d9cff841a43f59416dd3e3be7a75dd"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r06-sequence/events.json",
+          "sha256": "549109223b732d9edd7c110b0c953407901a01fe93647d6fe3847ec9e0fe9999"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r06-sequence/observation-safe-timeline.json",
+          "sha256": "f249a97feefa50b55bf679b7b0a64c412284b7a70d793bbd91abd00d3a75c1c7"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r06-sequence/preparation-final-dto.json",
+          "sha256": "569112862b35e78003cb40235e63dbc7d0826caf685cac9c95ef214c6b707584"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r06-sequence/preparation-final-node_b7df47d7b2b032e4f0d02d2fa4bd5fb3.json",
+          "sha256": "569112862b35e78003cb40235e63dbc7d0826caf685cac9c95ef214c6b707584"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r06-sequence/result.json",
+          "sha256": "9e29d4766070ed8c0fe16e118e1bf01db88fa796452a96579917d03b81682a64"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r06-sequence/snapshot-final-0.json",
+          "sha256": "2a5b57c4d069ce7dcb7878cb2bd1b0b87f5c3821f4a89794d3095e78e53ce057"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r06-sequence/snapshot-final-1.json",
+          "sha256": "ff890414a97fb31899fa1a26e968281abde41e06d2286b492f559a7b7b6c5ca2"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r06-sequence/target-final-target_84ccbb3317be330d1ed9e7d259acbf59.json",
+          "sha256": "bf7065c06ff108f36a4ec64b1d9413c9d662a84f93e67968d530a25daebbc315"
+        }
+      ]
+    },
+    {
+      "caseID": "r07-restart",
+      "result": "pass",
+      "observedRunnerResult": "pass",
+      "productCommit": "a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8",
+      "controllerPlatform": "Alpine3.23.7/OpenRC",
+      "initialAgentPlatform": "Ubuntu24.04.1/systemd",
+      "scenario": "restart",
+      "startedAt": "2026-11-22T10:41:53.781324Z",
+      "endedAt": "2026-11-22T10:42:17.229258Z",
+      "actual": "Alpine Controller/Ubuntu Agent Node Default新订阅prepared→真实task确认；双方正常重启后原task/artifact/确认事实相等，既有TCP和新流量继续；cleanup及端口重绑通过。",
+      "checks": [
+        {
+          "id": "cold-current-inventory-0",
+          "started": "2026-11-22T10:42:02.666776Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:42:03.593746Z",
+          "elapsed_seconds": 0.927,
+          "bound_seconds": 55
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:42:05.184079Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:42:08.300347Z",
+          "elapsed_seconds": 3.116,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_27a87c27800e6ff8b1161f9eceb17357",
+          "started": "2026-11-22T10:42:10.617960Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:42:12.359112Z",
+          "elapsed_seconds": 1.741,
+          "bound_seconds": 90
+        }
+      ],
+      "toolSHA256": {
+        "scripts/integration/t03_r01/preflight.py": "3652d862b45d8acdd933d32ddb7728f02d9b9008fbcf8ca77e44b7a103dad2ab",
+        "scripts/integration/t03_r01/suite.py": "78d2c45201746e23c466fe9857006087f2895d8e5a7fce78c42c64986a92a460",
+        "scripts/integration/t03_r01/remote.py": "b5811e28951e05849e3a20f054e44244006a201f076370af9dde41ebd6950f45",
+        "scripts/integration/t03_r01/audit.py": "4d09a4f85b9c9b5fc767323f98332d3fef85d29da0a42822faac2fae52f95c13",
+        "scripts/integration/t03_r01/run.py": "37aff6ec5d30bf1fb0ec62199f391c3ba359479cdf092b76b599c1cc43fde5dc",
+        "scripts/integration/t03_r01/host_state.py": "bc6519226e949ad612141fc6469b9d8f8919ada595778a12f528773fb9490fa6",
+        "scripts/integration/t03/collect.py": "600e2fb65f0ee827b332272a6d2e6ca2ce15308c28db3f4cfff8a9a1a57c2b8e",
+        "scripts/integration/t03/preflight.py": "1085d1a52397de88de7700e03258d1af9cc26d8d5eff54385cf021d4ac7b596b",
+        "scripts/integration/t03/network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "scripts/integration/t03/socks.py": "5091722a68cdb7a4f7597f0574af732254fe361b1a85e4541f0a69ed8c636103",
+        "scripts/integration/t03/audit.py": "b234be57475719a1d03dede869101d57e98412103e322983f551bb51835f46a7",
+        "scripts/integration/t03/diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "scripts/integration/t03/worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "scripts/integration/t03/prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "scripts/integration/t03/transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "scripts/integration/t03/sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "scripts/integration/t03/run.py": "811e81350fe617db036e0f9afaad271d5a228f6ebd8bf9252caf761aa189c6d7",
+        "scripts/integration/t03/restart.py": "ea2768cc221de290caeac9f062c54a846b2b83cb4e3c7770105dd0d203ac3a5e",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      },
+      "normalShutdown": {
+        "A": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r07-restart/n0/s/runtime/api/m.sock"
+          ]
+        },
+        "B": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        }
+      },
+      "safeObservationSummary": {
+        "events": 10,
+        "request_ids": 6,
+        "sent": 4,
+        "recorded": 3,
+        "stages": {
+          "sent": 4,
+          "persist": 3,
+          "collect": 1,
+          "connection": 2
+        },
+        "codes": {
+          "OBSERVATION_UNAVAILABLE": 5,
+          "OBSERVATION_BUSY": 1
+        },
+        "safe_timeline_sha256": "0e28e4a55e5f65db4fba26040c937e1925734670d77d7326cecb395fdd35399e"
+      },
+      "privateEvidence": [
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/api-timeline.json",
+          "sha256": "213e18f53373f8b5f7ae9b492bceee0bbd7d8ab0bbfa10fb7f7e7847b4da3701"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/checks.json",
+          "sha256": "10230c158dd26a08ada97b9f8bdaa1e70dddc9da8b2210cc61f82d96298ca323"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/cleanup-sub_27a87c27800e6ff8b1161f9eceb17357.json",
+          "sha256": "d7b27bd69d526ab6c62b763a20b8422a95c7aa4aa165ee74b3b07117b9d2222d"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/events.json",
+          "sha256": "a05f8c2a217b23f373af84cface35b4b5427d1b0beb19fbca839fb289915c027"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/immutable-task-after.json",
+          "sha256": "c305f02763050f67d1d372dabe6ce26e57faf5262d8a3483012a4d1b03ba3fd6"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/immutable-task-before.json",
+          "sha256": "c305f02763050f67d1d372dabe6ce26e57faf5262d8a3483012a4d1b03ba3fd6"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/observation-safe-timeline.json",
+          "sha256": "0e28e4a55e5f65db4fba26040c937e1925734670d77d7326cecb395fdd35399e"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/preparation-final-dto.json",
+          "sha256": "d8f554a207000994e76af0aaba9052960e6ac1df654a46647c12c7cf252c262e"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/preparation-final-node_72a5b3f989d3b351db9c9a4c826027f2.json",
+          "sha256": "98b5eef82460109f4467f5b6f487a19d509698fd15e81813dacb19708bd82e1c"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/result.json",
+          "sha256": "036965385bd66de2cf6040cb9aae0d47675d361ff502c923cdc05fbf944a74c2"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/snapshot-final-0.json",
+          "sha256": "8133359c00a2ff43188ac850958d700565a935e3b76b6b9999df063ca2ea2abe"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/snapshot-final-1.json",
+          "sha256": "1665e5af15fa6827d013811b0be991cee26c56effaa3023864f02c44e3920c07"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/subscription-final-sub_27a87c27800e6ff8b1161f9eceb17357.json",
+          "sha256": "d7b27bd69d526ab6c62b763a20b8422a95c7aa4aa165ee74b3b07117b9d2222d"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/task-final-task_019b02f01c80bd1b94f38b3446410f2c.json",
+          "sha256": "f97176f5ff7334c909494f8dfbbfc203f5db424c885b5de097bc3c9b13beddb6"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/task-final-task_155b200faa99738282eebb986674ef4b.json",
+          "sha256": "f1da7bdd0e9f228346627cdaccdc615f21c8bc008325f5e9411c59de8ffa3b37"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r07-restart/task-final-task_97c559b8baab5a0ea4c0c7c793f82f81.json",
+          "sha256": "c29a89a15e283e0528720be9eb61653c3a5ccd75c0fba2814b57b157aa7d1fbe"
+        }
+      ]
+    },
+    {
+      "caseID": "r08-restart",
+      "result": "pass",
+      "observedRunnerResult": "pass",
+      "productCommit": "a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8",
+      "controllerPlatform": "Ubuntu24.04.1/systemd",
+      "initialAgentPlatform": "Alpine3.23.7/OpenRC",
+      "scenario": "restart",
+      "startedAt": "2026-11-22T10:42:17.583872Z",
+      "endedAt": "2026-11-22T10:43:10.399233Z",
+      "actual": "Ubuntu Controller/Alpine Agent同一精确原任务重启路径通过；不覆盖原r11根因。",
+      "checks": [
+        {
+          "id": "cold-current-inventory-1",
+          "started": "2026-11-22T10:42:31.482934Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:42:38.619389Z",
+          "elapsed_seconds": 7.136,
+          "bound_seconds": 55
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:42:44.167752Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:42:49.376021Z",
+          "elapsed_seconds": 5.208,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_8f042a9f299671ba966e2660069e3dbb",
+          "started": "2026-11-22T10:42:56.978432Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:43:03.472537Z",
+          "elapsed_seconds": 6.494,
+          "bound_seconds": 90
+        }
+      ],
+      "toolSHA256": {
+        "scripts/integration/t03_r01/preflight.py": "3652d862b45d8acdd933d32ddb7728f02d9b9008fbcf8ca77e44b7a103dad2ab",
+        "scripts/integration/t03_r01/suite.py": "78d2c45201746e23c466fe9857006087f2895d8e5a7fce78c42c64986a92a460",
+        "scripts/integration/t03_r01/remote.py": "b5811e28951e05849e3a20f054e44244006a201f076370af9dde41ebd6950f45",
+        "scripts/integration/t03_r01/audit.py": "4d09a4f85b9c9b5fc767323f98332d3fef85d29da0a42822faac2fae52f95c13",
+        "scripts/integration/t03_r01/run.py": "37aff6ec5d30bf1fb0ec62199f391c3ba359479cdf092b76b599c1cc43fde5dc",
+        "scripts/integration/t03_r01/host_state.py": "bc6519226e949ad612141fc6469b9d8f8919ada595778a12f528773fb9490fa6",
+        "scripts/integration/t03/collect.py": "600e2fb65f0ee827b332272a6d2e6ca2ce15308c28db3f4cfff8a9a1a57c2b8e",
+        "scripts/integration/t03/preflight.py": "1085d1a52397de88de7700e03258d1af9cc26d8d5eff54385cf021d4ac7b596b",
+        "scripts/integration/t03/network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "scripts/integration/t03/socks.py": "5091722a68cdb7a4f7597f0574af732254fe361b1a85e4541f0a69ed8c636103",
+        "scripts/integration/t03/audit.py": "b234be57475719a1d03dede869101d57e98412103e322983f551bb51835f46a7",
+        "scripts/integration/t03/diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "scripts/integration/t03/worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "scripts/integration/t03/prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "scripts/integration/t03/transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "scripts/integration/t03/sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "scripts/integration/t03/run.py": "811e81350fe617db036e0f9afaad271d5a228f6ebd8bf9252caf761aa189c6d7",
+        "scripts/integration/t03/restart.py": "ea2768cc221de290caeac9f062c54a846b2b83cb4e3c7770105dd0d203ac3a5e",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      },
+      "normalShutdown": {
+        "A": {
+          "stop_runtime_exits": [],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": []
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r08-restart/n0/s/runtime/api/m.sock"
+          ]
+        }
+      },
+      "safeObservationSummary": {
+        "events": 19,
+        "request_ids": 11,
+        "sent": 9,
+        "recorded": 3,
+        "stages": {
+          "connection": 2,
+          "sent": 9,
+          "persist": 8
+        },
+        "codes": {
+          "OBSERVATION_UNAVAILABLE": 4,
+          "INVALID_ARGUMENT": 5,
+          "OBSERVATION_BUSY": 1
+        },
+        "safe_timeline_sha256": "4e26f9555e654ce1d94bebeec7014eca32cc05a143cb3607dcd43403fd78006d"
+      },
+      "privateEvidence": [
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/api-timeline.json",
+          "sha256": "2ba4269d62b46fd904f79a7b5c2ad71c956fe7b5bc199e761f704967979a94ad"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/checks.json",
+          "sha256": "048d17b258a985199db6009521f002df93f890a9610df5a05afeca7b6972612d"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/cleanup-sub_8f042a9f299671ba966e2660069e3dbb.json",
+          "sha256": "46c7f2a1f4dec4d54c4abb30db4fb2bb4f69508b4694dceeb21706d3b603cd40"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/events.json",
+          "sha256": "c5e23d292d4f75fd46a06acdd57c0c8ae3bb659c249a32b66cb299120ed53af7"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/immutable-task-after.json",
+          "sha256": "9c67692c42dd2713d0c7d775311bdb225b35e96d6df196422464e621525c2067"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/immutable-task-before.json",
+          "sha256": "9c67692c42dd2713d0c7d775311bdb225b35e96d6df196422464e621525c2067"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/observation-safe-timeline.json",
+          "sha256": "4e26f9555e654ce1d94bebeec7014eca32cc05a143cb3607dcd43403fd78006d"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/preparation-final-dto.json",
+          "sha256": "afb204783a6b02f32a9cdfa628f2a320f63917282e4d8825e66276acf95d96ad"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/preparation-final-node_510a3e1bfc5e93a9870d1b4c05300954.json",
+          "sha256": "c3a98ae42d9c66f07662fe14ab1896884b9a34697fb0b8e63d44a82f7949938e"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/result.json",
+          "sha256": "a9d8af946bc860618851c40f59d2b2ddec62dbe57cfae5e155b06861b08e7985"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/snapshot-final-0.json",
+          "sha256": "d9001ffc59d96d23c654c07b0762915ba31c188c6cc11b46d872cb7a6198fa3a"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/snapshot-final-1.json",
+          "sha256": "700c40005a3ede674ad0d6cff2373754919d045e0f4e5aaa34089e9e092f5c39"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/subscription-final-sub_8f042a9f299671ba966e2660069e3dbb.json",
+          "sha256": "46c7f2a1f4dec4d54c4abb30db4fb2bb4f69508b4694dceeb21706d3b603cd40"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/task-final-task_a2f5d6080993e2792c3e58248fca0f88.json",
+          "sha256": "e094abc0d41a68fd590c0474d678603163fdb1babade23dbafef1bb730005ada"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/task-final-task_bcee61405c9651568409932a242bc38d.json",
+          "sha256": "247a94516342c23a5750754aad0cdf399a7cbc599409443a7503bc6de7c0a8cf"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r08-restart/task-final-task_d4a45053d07bb5df6a3d357091a06d0d.json",
+          "sha256": "fd42b800106167a54cc85a814d1cc4d96a4e600a39525e88f0e8dfdbb44fad3f"
+        }
+      ]
+    },
+    {
+      "caseID": "r09-history",
+      "result": "fail",
+      "observedRunnerResult": "fail",
+      "productCommit": "a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8",
+      "controllerPlatform": "Ubuntu24.04.1/systemd",
+      "initialAgentPlatform": "Alpine3.23.7/OpenRC",
+      "scenario": "history",
+      "startedAt": "2026-11-22T10:43:32.632197Z",
+      "endedAt": "2026-11-22T10:47:04.667868Z",
+      "actual": "Alpine首节点：四协议+三种wrongpin、两/三跳通过；保留路线/多跳订阅后HTTP精确current通过，新HTTP订阅入口task applied=true/verification=failed/RELEASE_FAILED；自动回滚cleanup confirmed；停止分支。未到离线到期/删除。",
+      "checks": [
+        {
+          "id": "cold-current-inventory-1",
+          "started": "2026-11-22T10:43:46.611613Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:43:53.883941Z",
+          "elapsed_seconds": 7.272,
+          "bound_seconds": 55
+        },
+        {
+          "id": "cold-current-inventory-0",
+          "started": "2026-11-22T10:43:59.075024Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:44:03.114854Z",
+          "elapsed_seconds": 4.04,
+          "bound_seconds": 55
+        },
+        {
+          "id": "cold-current-inventory-0",
+          "started": "2026-11-22T10:44:07.066433Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:44:13.414645Z",
+          "elapsed_seconds": 6.348,
+          "bound_seconds": 55
+        },
+        {
+          "id": "history-entry-ss2022",
+          "started": "2026-11-22T10:44:13.415050Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:44:28.981242Z",
+          "elapsed_seconds": 15.566
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:44:18.270423Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:44:24.101204Z",
+          "elapsed_seconds": 5.831,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_3191d06379a048ff7bd4dc0ceb2e981f",
+          "started": "2026-11-22T10:44:24.675220Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:44:28.979846Z",
+          "elapsed_seconds": 4.304,
+          "bound_seconds": 90
+        },
+        {
+          "id": "history-entry-trojan",
+          "started": "2026-11-22T10:44:28.981511Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:44:48.868612Z",
+          "elapsed_seconds": 19.886
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:44:35.970953Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:44:41.566357Z",
+          "elapsed_seconds": 5.595,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_a1fb0cb8734f0ab812f0a0ada2cd560b",
+          "started": "2026-11-22T10:44:42.772998Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:44:48.867576Z",
+          "elapsed_seconds": 6.094,
+          "bound_seconds": 90
+        },
+        {
+          "id": "history-entry-vless",
+          "started": "2026-11-22T10:44:48.868965Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:45:09.778102Z",
+          "elapsed_seconds": 20.908
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:44:55.268210Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:45:02.173980Z",
+          "elapsed_seconds": 6.906,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_b8e3eee833024069ddf19f7de7e36f22",
+          "started": "2026-11-22T10:45:06.374526Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:45:09.777306Z",
+          "elapsed_seconds": 3.402,
+          "bound_seconds": 90
+        },
+        {
+          "id": "history-entry-hysteria2",
+          "started": "2026-11-22T10:45:09.778294Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:45:36.470470Z",
+          "elapsed_seconds": 26.691
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:45:18.468828Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:45:27.466378Z",
+          "elapsed_seconds": 8.997,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_8b110d142474e202a9483a9fe9ae650f",
+          "started": "2026-11-22T10:45:32.172741Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:45:36.469758Z",
+          "elapsed_seconds": 4.297,
+          "bound_seconds": 90
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:45:44.079463Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:45:55.467787Z",
+          "elapsed_seconds": 11.388,
+          "bound_seconds": 90
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:46:09.270375Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:46:21.776055Z",
+          "elapsed_seconds": 12.505,
+          "bound_seconds": 90
+        },
+        {
+          "id": "http-observation",
+          "started": "2026-11-22T10:46:22.966847Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:46:25.600084Z",
+          "elapsed_seconds": 2.633,
+          "bound_seconds": 30
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:46:33.775478Z",
+          "result": "fail",
+          "ended": "2026-11-22T10:46:42.574193Z",
+          "elapsed_seconds": 8.798,
+          "bound_seconds": 90
+        }
+      ],
+      "toolSHA256": {
+        "scripts/integration/t03_r01/preflight.py": "3652d862b45d8acdd933d32ddb7728f02d9b9008fbcf8ca77e44b7a103dad2ab",
+        "scripts/integration/t03_r01/suite.py": "78d2c45201746e23c466fe9857006087f2895d8e5a7fce78c42c64986a92a460",
+        "scripts/integration/t03_r01/remote.py": "b5811e28951e05849e3a20f054e44244006a201f076370af9dde41ebd6950f45",
+        "scripts/integration/t03_r01/audit.py": "4d09a4f85b9c9b5fc767323f98332d3fef85d29da0a42822faac2fae52f95c13",
+        "scripts/integration/t03_r01/run.py": "37aff6ec5d30bf1fb0ec62199f391c3ba359479cdf092b76b599c1cc43fde5dc",
+        "scripts/integration/t03_r01/host_state.py": "bc6519226e949ad612141fc6469b9d8f8919ada595778a12f528773fb9490fa6",
+        "scripts/integration/t03/collect.py": "600e2fb65f0ee827b332272a6d2e6ca2ce15308c28db3f4cfff8a9a1a57c2b8e",
+        "scripts/integration/t03/preflight.py": "1085d1a52397de88de7700e03258d1af9cc26d8d5eff54385cf021d4ac7b596b",
+        "scripts/integration/t03/network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "scripts/integration/t03/socks.py": "5091722a68cdb7a4f7597f0574af732254fe361b1a85e4541f0a69ed8c636103",
+        "scripts/integration/t03/audit.py": "b234be57475719a1d03dede869101d57e98412103e322983f551bb51835f46a7",
+        "scripts/integration/t03/diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "scripts/integration/t03/worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "scripts/integration/t03/prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "scripts/integration/t03/transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "scripts/integration/t03/sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "scripts/integration/t03/run.py": "811e81350fe617db036e0f9afaad271d5a228f6ebd8bf9252caf761aa189c6d7",
+        "scripts/integration/t03/restart.py": "ea2768cc221de290caeac9f062c54a846b2b83cb4e3c7770105dd0d203ac3a5e",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      },
+      "normalShutdown": {
+        "A": {
+          "stop_runtime_exits": [
+            0,
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r09-history/n1/s/runtime/api/m.sock",
+            "r09-history/n2/s/runtime/api/m.sock"
+          ]
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r09-history/n0/s/runtime/api/m.sock"
+          ]
+        }
+      },
+      "safeObservationSummary": {
+        "events": 164,
+        "request_ids": 87,
+        "sent": 79,
+        "recorded": 38,
+        "stages": {
+          "connection": 8,
+          "sent": 79,
+          "persist": 75,
+          "collect": 2
+        },
+        "codes": {
+          "OBSERVATION_UNAVAILABLE": 15,
+          "INVALID_ARGUMENT": 37,
+          "OBSERVATION_BUSY": 10,
+          "REVISION_CONFLICT": 1,
+          "OBSERVATION_CANCELLED": 4
+        },
+        "safe_timeline_sha256": "54f8015d80db52f30bbb2c0809de8d03d2a0b9155ae34873fef7d64bcc8e444f"
+      },
+      "privateEvidence": [
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/api-timeline.json",
+          "sha256": "9eca950d05b2823044b5540854ca7187cad139ed15746d7e4adf1a44d6e8ffdd"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/checks.json",
+          "sha256": "f644a4020574f2e8b322994058369807cfd77a14e00420beab4584641d0dc6fd"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/cleanup-sub_3191d06379a048ff7bd4dc0ceb2e981f.json",
+          "sha256": "d163dce2a7594ad45adb069939fe01c65c91c29c6c0e7b9c6f5b3e2a8b020a68"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/cleanup-sub_8b110d142474e202a9483a9fe9ae650f.json",
+          "sha256": "f3bc10cd1d19b7107440a799f1210afef04afe989f212dac8f668a976a5881db"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/cleanup-sub_a1fb0cb8734f0ab812f0a0ada2cd560b.json",
+          "sha256": "0d7d990cf1fae55cefc3b7e7448708327c9c30b54a06f543c874d4d2ccd58137"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/cleanup-sub_b8e3eee833024069ddf19f7de7e36f22.json",
+          "sha256": "457652da6da03c8275ecae904148e8868aaa9c27e996f26f6ca6351be12d8cbb"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/error.txt",
+          "sha256": "5e5a1b5453c648f8c6524e017afa4675f3247517cd9e2f2962e579967b858280"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/events.json",
+          "sha256": "abb51b6cebdc7e65d7295e0b387f8dbf017d03296414b1fd7c9d46afbe2e544c"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/http-current.json",
+          "sha256": "01b15dbb31de896063e64b9e4f44687eed0877d47d928909b001009fbf90358d"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/observation-safe-timeline.json",
+          "sha256": "54f8015d80db52f30bbb2c0809de8d03d2a0b9155ae34873fef7d64bcc8e444f"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/preparation-final-dto.json",
+          "sha256": "c9d51aa2d7d06c2fb179fe2245f2fd16a7b4773f218c5282bdb88b8c42711b20"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/preparation-final-node_3ef4307a9eced6340605b92adc4f959b.json",
+          "sha256": "386bcf4a722613a90d43fb83573dede50bc7f49b5a18fd446d07f3b003f29a19"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/preparation-final-node_82f2afa80cc53931230c0726dd4cf5d4.json",
+          "sha256": "8042ae757d30ef1c815c1ad1c4fe09abe8a9001288673538ea6e048d2647116e"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/preparation-final-node_8f7ff636cde37a8b2c289678c4125a90.json",
+          "sha256": "cfcbb5807fbc3dbabc4a93789fcf10d10dd117af366575c62c3beb7e8cec69b5"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/result.json",
+          "sha256": "b4e3fe8cf410d09b74ec00829820101fbd9511e5caf59edfac1b1a2b8b0a1887"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/snapshot-final-0.json",
+          "sha256": "705cf958bd87dccc080f34ee6955b9fd06481963ec272143d0a228760b0d9260"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/snapshot-final-1.json",
+          "sha256": "68862de04ddc896228f52edc09984d970ee1ddded688cbb0f32f55df2b3f69aa"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/subscription-final-sub_3191d06379a048ff7bd4dc0ceb2e981f.json",
+          "sha256": "d163dce2a7594ad45adb069939fe01c65c91c29c6c0e7b9c6f5b3e2a8b020a68"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/subscription-final-sub_4459557aca617bc569a632bd7138983d.json",
+          "sha256": "0234bd91466b7170656568543000d2f4f28bbf0ad10b6b6c5a9a3d4a9d3f80b7"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/subscription-final-sub_4a684cc366c2498b554ebb06842f5c40.json",
+          "sha256": "2014dc21206363bdc7fc11b41286247edfc808166e6f0793b642d339a1fab681"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/subscription-final-sub_64958d83804698cbb02eec67eaea62dd.json",
+          "sha256": "5736b98ecd099fd5872924a9d71863024e13a79eb6f2984d1e777db149b03804"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/subscription-final-sub_8b110d142474e202a9483a9fe9ae650f.json",
+          "sha256": "f3bc10cd1d19b7107440a799f1210afef04afe989f212dac8f668a976a5881db"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/subscription-final-sub_a1fb0cb8734f0ab812f0a0ada2cd560b.json",
+          "sha256": "0d7d990cf1fae55cefc3b7e7448708327c9c30b54a06f543c874d4d2ccd58137"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/subscription-final-sub_b8e3eee833024069ddf19f7de7e36f22.json",
+          "sha256": "457652da6da03c8275ecae904148e8868aaa9c27e996f26f6ca6351be12d8cbb"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/target-final-target_fed991467bc499bba0ef6f48cff1b6a5.json",
+          "sha256": "e0f841b12cb4472136a6519e6c4df469f446875976706f4e397caba202d171f7"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_053eae90dca24356023ccfa241051beb.json",
+          "sha256": "67b353f06584a41049544b317e88b3b1053123db60f33e21f8825a4d1b1581e0"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_15ba5dfdd21141b220beba82ab52eac9.json",
+          "sha256": "c5d167c63d9a3a8e0748e6d3aeeb95f476ff9776767a4d9174c5c3dbe44270ea"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_33214dca64eea397677ad52790028ad7.json",
+          "sha256": "3f5d4ad2e727ec6b63d80d7e855b6aca7385efa3f014da964a6365d18cb931ba"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_3d77a0c6da140a24cb7805ddd301ca3d.json",
+          "sha256": "04af9fc1d43c617f324554867aa360a362bd30361a00a823ff07c567ca66d864"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_423da83952d84a31123bb41f1e7e0bfe.json",
+          "sha256": "a5a65e53b5cb37ac13b52b189afa7ea4ac58f75e9ddfc9f0cee3297238b4819d"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_5b0599ad0443a3b47938b82dd099a529.json",
+          "sha256": "1f2bc1a09b4266f5bde206a21bf1888f0e850eb6aa3ee7d9660bc0cec1f91ca5"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_714df6c88483d0aaebdba2b72ace70bd.json",
+          "sha256": "8656994a3729402869d913de1d4e148a26215a4c519cf144bb4562c20006532d"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_78f574945efa4b325659d6179f54a048.json",
+          "sha256": "58cba015502ae4a2426038a270b08d554c91f63430381ad8a2595cd141325159"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_87767da82e4dfbd3f828bd9401f28049.json",
+          "sha256": "61efb441cd3965b12e41eabbfab852ce8d28cbaa0383efae003a2e37f999b7c9"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_95f58810c2c7057182337a8c82933535.json",
+          "sha256": "75bd8da5dffa29ccef4f01bcd8eb83655883dcfdc3702a85084cb52f7ab5394b"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_9d6ea88e9c42f68206c8280e8d0563fb.json",
+          "sha256": "95581352f73ed7f11bba7ab8d453cd852b99040852f1dc5a62f277304f8d909d"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_a3221a1fe2f9e6cc48932a6a03377143.json",
+          "sha256": "9d91fb047d5b0ffca7e94ce179f4992bedd86994b7122bafca65f04ca9f71378"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_b6c15c50b65a414eb2dff57ac2e52e53.json",
+          "sha256": "7f270efc3b8c16fe5a6d2b13aa274357ed075daf8baa740fd03f0ce551432263"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_d64aba7d834f9170d8615a52391b7fa5.json",
+          "sha256": "793e7564880023ca337f4cf4667e09fb983baf7fee6a980cab2dab5c8b723b65"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_e5148399d894e0075ff9e5090022288e.json",
+          "sha256": "7c67f54607831953cec0c646ffa613e68e2dc67098e608b011055976ed2e7501"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_e83fd2534e288ee9c138a1fb57efb049.json",
+          "sha256": "2e4976704c5e1be57dd219d4c283e9103919a638076c3cd5e81f5a0de51c8658"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_e84074bf4d53c7e2b8a17765444d3e84.json",
+          "sha256": "503c2d28a040646b4250693c40e3e36e0047a979ee5e7a17e8981a570e014399"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r09-history/task-final-task_e96f22898b36e5b606576cb5b5d8cda3.json",
+          "sha256": "0b817a334baab22b630a21a0faf1ea7acc82cddec904d92ec5cb7f96ea22a97d"
+        }
+      ]
+    },
+    {
+      "caseID": "r10-history",
+      "result": "blocked",
+      "observedRunnerResult": "fail",
+      "productCommit": "a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8",
+      "controllerPlatform": "Alpine3.23.7/OpenRC",
+      "initialAgentPlatform": "Ubuntu24.04.1/systemd",
+      "scenario": "history",
+      "startedAt": "2026-11-22T10:47:04.985490Z",
+      "endedAt": "2026-11-22T10:48:23.180757Z",
+      "actual": "Ubuntu首节点：四协议+三种wrongpin、两跳通过；三跳中Alpine节点verification failed/RELEASE_FAILED。末端Ubuntu UDP29443已监听；随后独立预检证明Alpine→该端口超时。环境阻塞，其他产品原因未排除，未归为确定产品缺陷。",
+      "checks": [
+        {
+          "id": "cold-current-inventory-0",
+          "started": "2026-11-22T10:47:11.970273Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:13.114629Z",
+          "elapsed_seconds": 1.144,
+          "bound_seconds": 55
+        },
+        {
+          "id": "cold-current-inventory-1",
+          "started": "2026-11-22T10:47:13.794102Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:15.384584Z",
+          "elapsed_seconds": 1.59,
+          "bound_seconds": 55
+        },
+        {
+          "id": "cold-current-inventory-0",
+          "started": "2026-11-22T10:47:16.668709Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:20.141828Z",
+          "elapsed_seconds": 3.473,
+          "bound_seconds": 55
+        },
+        {
+          "id": "history-entry-ss2022",
+          "started": "2026-11-22T10:47:20.142245Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:26.893878Z",
+          "elapsed_seconds": 6.751
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:47:21.660197Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:24.789203Z",
+          "elapsed_seconds": 3.129,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_a85129dff1292220d099c7dbd5744e35",
+          "started": "2026-11-22T10:47:25.142913Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:26.893018Z",
+          "elapsed_seconds": 1.75,
+          "bound_seconds": 90
+        },
+        {
+          "id": "history-entry-trojan",
+          "started": "2026-11-22T10:47:26.894470Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:35.830415Z",
+          "elapsed_seconds": 8.935
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:47:30.784458Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:33.923701Z",
+          "elapsed_seconds": 3.139,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_dbd2e16762afc4980b8973249aa84d0c",
+          "started": "2026-11-22T10:47:34.363542Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:35.829686Z",
+          "elapsed_seconds": 1.466,
+          "bound_seconds": 90
+        },
+        {
+          "id": "history-entry-vless",
+          "started": "2026-11-22T10:47:35.830946Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:45.979906Z",
+          "elapsed_seconds": 10.148
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:47:39.741550Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:42.879394Z",
+          "elapsed_seconds": 3.138,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_2be892a5243c66e9b09d6dff130a6939",
+          "started": "2026-11-22T10:47:43.356936Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:45.979199Z",
+          "elapsed_seconds": 2.622,
+          "bound_seconds": 90
+        },
+        {
+          "id": "history-entry-hysteria2",
+          "started": "2026-11-22T10:47:45.980058Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:58.013337Z",
+          "elapsed_seconds": 12.032
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:47:48.698254Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:54.887440Z",
+          "elapsed_seconds": 6.189,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_5bc5940990319791f020ccd8c4728014",
+          "started": "2026-11-22T10:47:55.367115Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:47:58.012599Z",
+          "elapsed_seconds": 2.645,
+          "bound_seconds": 90
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:48:00.817599Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:48:05.038966Z",
+          "elapsed_seconds": 4.221,
+          "bound_seconds": 90
+        }
+      ],
+      "toolSHA256": {
+        "scripts/integration/t03_r01/collect.py": "474295741ed45647af766b4771ff0003d8b13bfe52a26818dbf42f25603a45a3",
+        "scripts/integration/t03_r01/preflight.py": "3652d862b45d8acdd933d32ddb7728f02d9b9008fbcf8ca77e44b7a103dad2ab",
+        "scripts/integration/t03_r01/suite.py": "78d2c45201746e23c466fe9857006087f2895d8e5a7fce78c42c64986a92a460",
+        "scripts/integration/t03_r01/remote.py": "b5811e28951e05849e3a20f054e44244006a201f076370af9dde41ebd6950f45",
+        "scripts/integration/t03_r01/audit.py": "4d09a4f85b9c9b5fc767323f98332d3fef85d29da0a42822faac2fae52f95c13",
+        "scripts/integration/t03_r01/run.py": "a0902d8dabfb6aa113d3a634b87fdb4067f200b670afaca022cacccb8ce110b9",
+        "scripts/integration/t03_r01/host_state.py": "bc6519226e949ad612141fc6469b9d8f8919ada595778a12f528773fb9490fa6",
+        "scripts/integration/t03/collect.py": "600e2fb65f0ee827b332272a6d2e6ca2ce15308c28db3f4cfff8a9a1a57c2b8e",
+        "scripts/integration/t03/preflight.py": "1085d1a52397de88de7700e03258d1af9cc26d8d5eff54385cf021d4ac7b596b",
+        "scripts/integration/t03/network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "scripts/integration/t03/socks.py": "5091722a68cdb7a4f7597f0574af732254fe361b1a85e4541f0a69ed8c636103",
+        "scripts/integration/t03/audit.py": "b234be57475719a1d03dede869101d57e98412103e322983f551bb51835f46a7",
+        "scripts/integration/t03/diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "scripts/integration/t03/worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "scripts/integration/t03/prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "scripts/integration/t03/transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "scripts/integration/t03/sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "scripts/integration/t03/run.py": "811e81350fe617db036e0f9afaad271d5a228f6ebd8bf9252caf761aa189c6d7",
+        "scripts/integration/t03/restart.py": "ea2768cc221de290caeac9f062c54a846b2b83cb4e3c7770105dd0d203ac3a5e",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      },
+      "normalShutdown": {
+        "A": {
+          "stop_runtime_exits": [
+            0,
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r10-history/n0/s/runtime/api/m.sock",
+            "r10-history/n2/s/runtime/api/m.sock"
+          ]
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r10-history/n1/s/runtime/api/m.sock"
+          ]
+        }
+      },
+      "safeObservationSummary": {
+        "events": 57,
+        "request_ids": 31,
+        "sent": 27,
+        "recorded": 24,
+        "stages": {
+          "sent": 27,
+          "persist": 24,
+          "connection": 4,
+          "collect": 2
+        },
+        "codes": {
+          "OBSERVATION_UNAVAILABLE": 10,
+          "OBSERVATION_CANCELLED": 2,
+          "OBSERVATION_BUSY": 7
+        },
+        "safe_timeline_sha256": "c9f69e3a1fd7753ef44cac15e9585fe733b7d3931947a3ba9a85b5c754526a75"
+      },
+      "privateEvidence": [
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/api-timeline.json",
+          "sha256": "28d7ec31ba79e64986ac5e9cea4ef927f9657718c41df8cb4344e6f69edf8c25"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/checks.json",
+          "sha256": "0a90eaa484e33c306a9654c86814f46c03ff736956f71ccf483a3b18274ad203"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/cleanup-sub_2be892a5243c66e9b09d6dff130a6939.json",
+          "sha256": "260b3fb024ccdd310e7bec1f9bae25aa35479b2b1286edd9e654485522c0ce5f"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/cleanup-sub_5bc5940990319791f020ccd8c4728014.json",
+          "sha256": "127692ea9179e8c9b1d82a5156d638cf9227f28c4c49de50733b7c8e8025c4f5"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/cleanup-sub_a85129dff1292220d099c7dbd5744e35.json",
+          "sha256": "e9d5d0abec17d458223ccc90f8fb10f9d0188c9836f7086c64c4c838037f9ffd"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/cleanup-sub_dbd2e16762afc4980b8973249aa84d0c.json",
+          "sha256": "d51b64cf567e7058ac523dc9227b62ec8b0e8af10e078694c12b70a2e36b55eb"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/error.txt",
+          "sha256": "02ac1ec7d58ff04458eaaaa1e99ac12f4aea9f407a99d1739a7f9cbc6fdaa0d1"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/events.json",
+          "sha256": "8118f707ef1842bbcd2c121d944cd520e0a5d4be22d09c53d297d179fa7de771"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/observation-safe-timeline.json",
+          "sha256": "c9f69e3a1fd7753ef44cac15e9585fe733b7d3931947a3ba9a85b5c754526a75"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/preparation-final-dto.json",
+          "sha256": "43733f79d951ee418a684b4ea6e64c4a52ce83254f9f5a827282e484701c12bb"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/preparation-final-node_5b412d8846652876dd97174349b4654d.json",
+          "sha256": "a547db739462a92e5a0fb20c8a4b503f1479b445e43aa2b763b96dfa714ea1d0"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/preparation-final-node_697ff7af87baf87e757f25379af96d9c.json",
+          "sha256": "8a3ac1d4b2065e74d22b3b236e95a52b7a09f8309f56ace8f7c4c661998d9e48"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/preparation-final-node_6c193a19913da648952ecb20fd728887.json",
+          "sha256": "ced260601cfa39079c2f8ef16ef2ebd466e1ae72d5f2c98fcb91e82f8775836c"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/result.json",
+          "sha256": "0712a86c8e96c641f1d8735850526c4430826d9f2e4ab5ccf626d24b073c0641"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/snapshot-final-0.json",
+          "sha256": "89faf4f7f83fe13800a28a003b9900fa7787f718060d00aa33f62c05833767ea"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/snapshot-final-1.json",
+          "sha256": "a2f5de168d825f128e40de4de261faee7c215261d5ceac601b8290d8668a7662"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/subscription-final-sub_0e86dd56bde60574cc2de812de44f7f0.json",
+          "sha256": "bfcad1a42cb0634458f878c5b4e5429cc4867245d3264dade62440b457ec4c0c"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/subscription-final-sub_2be892a5243c66e9b09d6dff130a6939.json",
+          "sha256": "260b3fb024ccdd310e7bec1f9bae25aa35479b2b1286edd9e654485522c0ce5f"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/subscription-final-sub_5bc5940990319791f020ccd8c4728014.json",
+          "sha256": "127692ea9179e8c9b1d82a5156d638cf9227f28c4c49de50733b7c8e8025c4f5"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/subscription-final-sub_a85129dff1292220d099c7dbd5744e35.json",
+          "sha256": "e9d5d0abec17d458223ccc90f8fb10f9d0188c9836f7086c64c4c838037f9ffd"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/subscription-final-sub_dbd2e16762afc4980b8973249aa84d0c.json",
+          "sha256": "d51b64cf567e7058ac523dc9227b62ec8b0e8af10e078694c12b70a2e36b55eb"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_33e827bbb0bb41a9b032debe0fd6c101.json",
+          "sha256": "3d0b0d12fea763bbbdd76057b7c30f8441a9619b68485eb921953ae88a73b165"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_39ebe90d29e3e1fc509cc5d3e20bff8c.json",
+          "sha256": "68d62408186096d4a269771f72983e3bc106f0c741c6cb8bf9b0fdce872ef398"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_3ca49742fe5cd917205454112d6099f8.json",
+          "sha256": "af5be747638c742438709fad68c87706cb1725356d97f634bdcb2bfc2f0bd0ab"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_48adeec5079c5311b32228e3cf60d5ba.json",
+          "sha256": "b545c6cf83bd280feb025b6fdcb80e9b653779c434fd6850bec481395d01a05c"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_493e3fa9a30c3feb3d23f6f942c21ebc.json",
+          "sha256": "9d0c8610155ff8dd01ecd6f53525dbe1d890a2b73c7b6ed6dcead6072c4de46e"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_5232f902c7a4b4083af46849965c2340.json",
+          "sha256": "fd1f79f0ab2fd22db947cf1b4e9e6aa25c0499f91c4980e3ebb8a29b71c1a6b1"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_52d88c0823e06d172ebdea73e40f74b0.json",
+          "sha256": "6708d809cbec4dd7257c17654c0138f06ec86229a612cd4837649dbf0ac8cea3"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_58426056df5660d6ecf626e334dd6630.json",
+          "sha256": "1de30bfdca3377719da304bd90e88a79ae266a375826b3ffef42d8dfff76e167"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_8100ee20ef533031dea0364b7008b2f0.json",
+          "sha256": "c67db71741cab5bd89c895339929fc2dbf61159831e950ccbe85910bde7f5fff"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_94846ea99879cece20f7123485942b08.json",
+          "sha256": "e1395614abb54e6eeecf80aca2cb3d98bbf19020b0f8b53e2642cc55b4cc8390"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_9e3f7516c1941975d56df2f93906341c.json",
+          "sha256": "63ff06fef96ad25695c2875042d3cb68d75976043fb44db0adb7cb831eefc401"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_e269200ef834697ccf5781f487a11a2f.json",
+          "sha256": "e7b04f0ff6fec53603ac5f927ab55fc2a537204fcccf34c3f0af1f0fff05840b"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_ec731a12aa4ea60b608c95a6e8da9b13.json",
+          "sha256": "497b225ce4271cc571a795b63351fdbcb5d838fe2ba0d5083b90fdabfd4bf810"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_f04b2fa27206d03c42ab97780bd179db.json",
+          "sha256": "c8189edede18f6af2071bf254a1080eec0224932453b112cdbf8974af14381a5"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r10-history/task-final-task_fc9de7ff0bce78f42dcf11b89f06490e.json",
+          "sha256": "072276ccd5acb41aff917606b258e0dc1797ebd9e30e653498b9a6e1d33a6bce"
+        }
+      ]
+    },
+    {
+      "caseID": "r11-sharing",
+      "result": "blocked",
+      "observedRunnerResult": "fail",
+      "productCommit": "a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8",
+      "controllerPlatform": "Ubuntu24.04.1/systemd",
+      "initialAgentPlatform": "Alpine3.23.7/OpenRC",
+      "scenario": "sharing",
+      "startedAt": "2026-11-22T10:48:23.417139Z",
+      "endedAt": "2026-11-22T10:50:14.126279Z",
+      "actual": "已证明共享单监听、不同策略Pin双监听、清理新Pin不伤旧流量；随后驱动变量覆盖订阅对象造成TypeError，剩余检查无效。已收尾，保留原轮；只以r13补助手错误。",
+      "checks": [
+        {
+          "id": "cold-current-inventory-1",
+          "started": "2026-11-22T10:48:39.282033Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:48:44.916459Z",
+          "elapsed_seconds": 5.634,
+          "bound_seconds": 55
+        },
+        {
+          "id": "cold-current-inventory-0",
+          "started": "2026-11-22T10:48:48.866075Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:48:52.584259Z",
+          "elapsed_seconds": 3.718,
+          "bound_seconds": 55
+        },
+        {
+          "id": "cold-current-inventory-0",
+          "started": "2026-11-22T10:48:56.769038Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:49:00.313720Z",
+          "elapsed_seconds": 3.544,
+          "bound_seconds": 55
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:49:08.275190Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:49:17.094184Z",
+          "elapsed_seconds": 8.819,
+          "bound_seconds": 90
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:49:17.394332Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:49:25.587190Z",
+          "elapsed_seconds": 8.193,
+          "bound_seconds": 90
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:49:37.172851Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:49:54.499093Z",
+          "elapsed_seconds": 17.326,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_64fe586edb0c4bcbe4fa3dff60e5c969",
+          "started": "2026-11-22T10:49:55.968822Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:50:01.975992Z",
+          "elapsed_seconds": 6.007,
+          "bound_seconds": 90
+        }
+      ],
+      "toolSHA256": {
+        "scripts/integration/t03_r01/collect.py": "474295741ed45647af766b4771ff0003d8b13bfe52a26818dbf42f25603a45a3",
+        "scripts/integration/t03_r01/preflight.py": "3652d862b45d8acdd933d32ddb7728f02d9b9008fbcf8ca77e44b7a103dad2ab",
+        "scripts/integration/t03_r01/suite.py": "78d2c45201746e23c466fe9857006087f2895d8e5a7fce78c42c64986a92a460",
+        "scripts/integration/t03_r01/remote.py": "b5811e28951e05849e3a20f054e44244006a201f076370af9dde41ebd6950f45",
+        "scripts/integration/t03_r01/audit.py": "4d09a4f85b9c9b5fc767323f98332d3fef85d29da0a42822faac2fae52f95c13",
+        "scripts/integration/t03_r01/run.py": "a0902d8dabfb6aa113d3a634b87fdb4067f200b670afaca022cacccb8ce110b9",
+        "scripts/integration/t03_r01/host_state.py": "bc6519226e949ad612141fc6469b9d8f8919ada595778a12f528773fb9490fa6",
+        "scripts/integration/t03/collect.py": "600e2fb65f0ee827b332272a6d2e6ca2ce15308c28db3f4cfff8a9a1a57c2b8e",
+        "scripts/integration/t03/preflight.py": "1085d1a52397de88de7700e03258d1af9cc26d8d5eff54385cf021d4ac7b596b",
+        "scripts/integration/t03/network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "scripts/integration/t03/socks.py": "5091722a68cdb7a4f7597f0574af732254fe361b1a85e4541f0a69ed8c636103",
+        "scripts/integration/t03/audit.py": "b234be57475719a1d03dede869101d57e98412103e322983f551bb51835f46a7",
+        "scripts/integration/t03/diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "scripts/integration/t03/worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "scripts/integration/t03/prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "scripts/integration/t03/transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "scripts/integration/t03/sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "scripts/integration/t03/run.py": "811e81350fe617db036e0f9afaad271d5a228f6ebd8bf9252caf761aa189c6d7",
+        "scripts/integration/t03/restart.py": "ea2768cc221de290caeac9f062c54a846b2b83cb4e3c7770105dd0d203ac3a5e",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      },
+      "normalShutdown": {
+        "A": {
+          "stop_runtime_exits": [
+            0,
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r11-sharing/n1/s/runtime/api/m.sock",
+            "r11-sharing/n2/s/runtime/api/m.sock"
+          ]
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r11-sharing/n0/s/runtime/api/m.sock"
+          ]
+        }
+      },
+      "safeObservationSummary": {
+        "events": 95,
+        "request_ids": 51,
+        "sent": 46,
+        "recorded": 21,
+        "stages": {
+          "connection": 5,
+          "sent": 46,
+          "persist": 43,
+          "collect": 1
+        },
+        "codes": {
+          "OBSERVATION_UNAVAILABLE": 10,
+          "INVALID_ARGUMENT": 22,
+          "OBSERVATION_BUSY": 6,
+          "REVISION_CONFLICT": 1,
+          "OBSERVATION_CANCELLED": 2
+        },
+        "safe_timeline_sha256": "1fe5275f8ae8769415439704c5f746b897d62b2db41675606564fa03d7b25ff2"
+      },
+      "privateEvidence": [
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/api-timeline.json",
+          "sha256": "8d45adfe8bf81940749180fb7eef6954d2e54dd4781f6b2b7c6826a4067cc15d"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/checks.json",
+          "sha256": "746c85e0ce602af1cacf64851b28c684aa985e4483df01717c15803f7c2a59ad"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/cleanup-sub_64fe586edb0c4bcbe4fa3dff60e5c969.json",
+          "sha256": "4f2e39d703dc467df267ac032cd7d51655a111f9568d4a7baee902d4369a66d6"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/error.txt",
+          "sha256": "66b8b145030ff3ec8d9edba886120b24fdc6d2a09b0b25923782804369d6f489"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/events.json",
+          "sha256": "475403e0f2b71031a85585018ca86bdb69840aa4327ab0f05cd78658adada2a9"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/observation-safe-timeline.json",
+          "sha256": "1fe5275f8ae8769415439704c5f746b897d62b2db41675606564fa03d7b25ff2"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/preparation-final-dto.json",
+          "sha256": "daa70868fa02a0eca45b6ffc7ef68f2ffc684edcbf8cc0dee495e982a6937e01"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/preparation-final-node_3f67d1f01fa0e046d38ac7bc2777442c.json",
+          "sha256": "b2f27f48ed96eec9edbca32d448a441333b17b289f50f05764b7ffc207ed2cf4"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/preparation-final-node_90702838acd9da0de5af3980e0d00032.json",
+          "sha256": "2fc5321e01593d83dbdb4feffb1fffa3232f360c9382a1f699b83846094f3f90"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/preparation-final-node_b11b976b10152ed32b7a280a626d92ed.json",
+          "sha256": "c994fde4e09932eb0321e591aa9132f12f93e77f61c645e8a2cab1d8c3338c6f"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/result.json",
+          "sha256": "0d6a07d26a24b7253b659e06a5a0364a1bc3d5bfc036a14210ff2010fef0dbf8"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/snapshot-final-0.json",
+          "sha256": "2453b543a0c7c0cc025ccd253ff659385b322287f6414bf8103a5b4c50f8cc3c"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/snapshot-final-1.json",
+          "sha256": "c3246f479dd84fba223571ae031b4978d2bafa0b412798500b3f088695f6b2dc"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/subscription-final-sub_64fe586edb0c4bcbe4fa3dff60e5c969.json",
+          "sha256": "4f2e39d703dc467df267ac032cd7d51655a111f9568d4a7baee902d4369a66d6"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/subscription-final-sub_7a83e8d5271ade0b5b101ee4e7186076.json",
+          "sha256": "2cb2bfb870726f47c243d56f0b5322417eb0a23e01f0561380160fbee7957b3d"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/subscription-final-sub_a68299a1356de8c0ad95714578d52179.json",
+          "sha256": "3d1e6c497d6f7125734db4f83332c90ab47a5a9b19df1c5c2e8bc1d0af4bb254"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/task-final-task_1d38134c097e116571bc07039484df50.json",
+          "sha256": "26e644029eea5d6d8726a56690333d6e2f02f9168afc7e28c26692b7d56a286c"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/task-final-task_52692f381a52f46c35ca3ec776cbafe9.json",
+          "sha256": "5d70e5cf7e1c968a180a8a895e48655245df7cf89a9c6b805dd052c857c51426"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/task-final-task_53ef7d680c685182cb7a633625cc3a5b.json",
+          "sha256": "38e8c6ea4af6b25ea3a3430cc153685a52a76694226eb4269ff179e5bd08cffa"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/task-final-task_84c50a6020b341f360c071922c73825b.json",
+          "sha256": "b953f7abf70b9ebd78b28af3d114e43873a345fcb39584708a30f6465a279c81"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/task-final-task_d702e0d43bab084d469fd1ac24799be9.json",
+          "sha256": "6bcd9a1d196fbf1b5d948da454280407f7ca565767f522f2d66ecfde4849b1a4"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r11-sharing/task-final-task_f275c589f125bf893c65ed5b38b680a4.json",
+          "sha256": "438fd83d619c088cc14f22e01c64c63ebbf5729055e0144ec858c307bcbb8311"
+        }
+      ]
+    },
+    {
+      "caseID": "r12-sharing",
+      "result": "blocked",
+      "observedRunnerResult": "fail",
+      "productCommit": "a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8",
+      "controllerPlatform": "Alpine3.23.7/OpenRC",
+      "initialAgentPlatform": "Ubuntu24.04.1/systemd",
+      "scenario": "sharing",
+      "startedAt": "2026-11-22T10:50:14.395875Z",
+      "endedAt": "2026-11-22T10:51:14.071852Z",
+      "actual": "三节点路线/新订阅已确认，但Alpine客户端到Ubuntu额外入口29443实际流量24s失败，早于驱动变量错误；后续端口预检证实TCP29443-29445跨机超时。未重跑。",
+      "checks": [
+        {
+          "id": "cold-current-inventory-0",
+          "started": "2026-11-22T10:50:24.677699Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:50:27.320414Z",
+          "elapsed_seconds": 2.643,
+          "bound_seconds": 55
+        },
+        {
+          "id": "cold-current-inventory-1",
+          "started": "2026-11-22T10:50:27.995961Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:50:29.421084Z",
+          "elapsed_seconds": 1.425,
+          "bound_seconds": 55
+        },
+        {
+          "id": "cold-current-inventory-0",
+          "started": "2026-11-22T10:50:32.374416Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:50:33.294521Z",
+          "elapsed_seconds": 0.92,
+          "bound_seconds": 55
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:50:37.000264Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:50:43.195281Z",
+          "elapsed_seconds": 6.195,
+          "bound_seconds": 90
+        }
+      ],
+      "toolSHA256": {
+        "scripts/integration/t03_r01/collect.py": "474295741ed45647af766b4771ff0003d8b13bfe52a26818dbf42f25603a45a3",
+        "scripts/integration/t03_r01/preflight.py": "3652d862b45d8acdd933d32ddb7728f02d9b9008fbcf8ca77e44b7a103dad2ab",
+        "scripts/integration/t03_r01/suite.py": "78d2c45201746e23c466fe9857006087f2895d8e5a7fce78c42c64986a92a460",
+        "scripts/integration/t03_r01/remote.py": "b5811e28951e05849e3a20f054e44244006a201f076370af9dde41ebd6950f45",
+        "scripts/integration/t03_r01/audit.py": "4d09a4f85b9c9b5fc767323f98332d3fef85d29da0a42822faac2fae52f95c13",
+        "scripts/integration/t03_r01/proofs.py": "c2e275b33622530b6ce3f245b65fbfbee8804575c635cf0e613db03e10804e85",
+        "scripts/integration/t03_r01/run.py": "a0902d8dabfb6aa113d3a634b87fdb4067f200b670afaca022cacccb8ce110b9",
+        "scripts/integration/t03_r01/host_state.py": "bc6519226e949ad612141fc6469b9d8f8919ada595778a12f528773fb9490fa6",
+        "scripts/integration/t03/collect.py": "600e2fb65f0ee827b332272a6d2e6ca2ce15308c28db3f4cfff8a9a1a57c2b8e",
+        "scripts/integration/t03/preflight.py": "1085d1a52397de88de7700e03258d1af9cc26d8d5eff54385cf021d4ac7b596b",
+        "scripts/integration/t03/network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "scripts/integration/t03/socks.py": "5091722a68cdb7a4f7597f0574af732254fe361b1a85e4541f0a69ed8c636103",
+        "scripts/integration/t03/audit.py": "b234be57475719a1d03dede869101d57e98412103e322983f551bb51835f46a7",
+        "scripts/integration/t03/diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "scripts/integration/t03/worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "scripts/integration/t03/prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "scripts/integration/t03/transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "scripts/integration/t03/sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "scripts/integration/t03/run.py": "811e81350fe617db036e0f9afaad271d5a228f6ebd8bf9252caf761aa189c6d7",
+        "scripts/integration/t03/restart.py": "ea2768cc221de290caeac9f062c54a846b2b83cb4e3c7770105dd0d203ac3a5e",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      },
+      "normalShutdown": {
+        "A": {
+          "stop_runtime_exits": [
+            0,
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r12-sharing/n0/s/runtime/api/m.sock",
+            "r12-sharing/n2/s/runtime/api/m.sock"
+          ]
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r12-sharing/n1/s/runtime/api/m.sock"
+          ]
+        }
+      },
+      "safeObservationSummary": {
+        "events": 19,
+        "request_ids": 10,
+        "sent": 9,
+        "recorded": 9,
+        "stages": {
+          "connection": 1,
+          "sent": 9,
+          "persist": 9
+        },
+        "codes": {
+          "OBSERVATION_UNAVAILABLE": 2,
+          "OBSERVATION_BUSY": 2
+        },
+        "safe_timeline_sha256": "0f1154ba260bfbe626564d2349b2f5a8d32a444963ae231ebd4c52f251206391"
+      },
+      "privateEvidence": [
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/api-timeline.json",
+          "sha256": "f919bd514020d431111706d20383709064990566001b978904c8acf31be5213e"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/checks.json",
+          "sha256": "88b59189e9975082f4b312ed002f723c40f40546b91234a4ff2771ec6c100852"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/error.txt",
+          "sha256": "f8c806ee0a797fc6d8d406e9e72496612c5b8181805a6010bc2c8feeede95abd"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/events.json",
+          "sha256": "7b5b3c4a7e24e4ec085721dd93efa5a6f5a90e1528321c082115376dac20d34c"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/observation-safe-timeline.json",
+          "sha256": "0f1154ba260bfbe626564d2349b2f5a8d32a444963ae231ebd4c52f251206391"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/preparation-final-dto.json",
+          "sha256": "a88534203837c73e60c3964be6fd245f90eb46b0fd793cb435f8c3b2c72fbc23"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/preparation-final-node_0dbe98324747e40e1409ffd4ec9d025a.json",
+          "sha256": "18cd000d8048f06fadf9bc6868f002bf97e77ecc43a6569c621e695f82d327dd"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/preparation-final-node_213c3c63c294fddb246c33e7765fe226.json",
+          "sha256": "f7a36279047593a7b2f244faf15886b89d342380401914f5730e45848780f37b"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/preparation-final-node_cf0d5fb620294b1e408c84587b1248d0.json",
+          "sha256": "9aedc8ac7b166fb2c102b1c31e41c3c2a4d25a1edd9b5c6a6e0e435d0b20fff0"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/result.json",
+          "sha256": "a430fd2fb853ac37ec012f8ce0fa7e59623264c9b9d17a3cd0a79413dcbbf761"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/snapshot-final-0.json",
+          "sha256": "e779854179d1609b7b3e74bb67518726f9a8d9d56be3e1f1d4e80e89a61eea2c"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/snapshot-final-1.json",
+          "sha256": "06be494a979fd9829ce3e6bdfa8bd58051208749110153d8f8f983a427ac41cd"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/subscription-final-sub_c8c27fce3b0b5f537465696bbb56b197.json",
+          "sha256": "c2b3c40c1e62c0ec4a34c73bcd4b5337fc686033d88fb6105ad967bee5c0934b"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/task-final-task_1296f44d1b620c3995be5ae733795cc5.json",
+          "sha256": "d8a67c06a4922947cd1a36e5b3b2d5d5525ff3d35624dee9cd1b568347a8a35c"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r12-sharing/task-final-task_df802bae14ecbc5c897e820666b494ce.json",
+          "sha256": "91122d957e7f6ab1d285497f2a75cba9612d1407bd9dd24aaced3bb35271ab49"
+        }
+      ]
+    },
+    {
+      "caseID": "r13-sharing-fixed",
+      "result": "pass",
+      "observedRunnerResult": "pass",
+      "productCommit": "a9398959b19cc5ffa0ab71e8a03efbe73aa14aa8",
+      "controllerPlatform": "Ubuntu24.04.1/systemd",
+      "initialAgentPlatform": "Alpine3.23.7/OpenRC",
+      "scenario": "sharing",
+      "startedAt": "2026-11-22T10:53:46.549232Z",
+      "endedAt": "2026-11-22T10:56:20.060526Z",
+      "actual": "仅修助手变量名后的全新正向共享轮完整通过：同后缀共享、不同精确策略Pin隔离、新Pin独立回收、移除一身份另一存量TCP继续、最后引用cleanup/归档及端口重绑。",
+      "checks": [
+        {
+          "id": "cold-current-inventory-1",
+          "started": "2026-11-22T10:54:02.889746Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:54:10.524481Z",
+          "elapsed_seconds": 7.635,
+          "bound_seconds": 55
+        },
+        {
+          "id": "cold-current-inventory-0",
+          "started": "2026-11-22T10:54:16.876161Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:54:21.690207Z",
+          "elapsed_seconds": 4.814,
+          "bound_seconds": 55
+        },
+        {
+          "id": "cold-current-inventory-0",
+          "started": "2026-11-22T10:54:26.475878Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:54:29.919770Z",
+          "elapsed_seconds": 3.444,
+          "bound_seconds": 55
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:54:39.597188Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:54:46.176506Z",
+          "elapsed_seconds": 6.579,
+          "bound_seconds": 90
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:54:47.083723Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:55:14.976936Z",
+          "elapsed_seconds": 27.893,
+          "bound_seconds": 90
+        },
+        {
+          "id": "prepared-confirmed-subscription",
+          "started": "2026-11-22T10:55:27.970890Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:55:36.570362Z",
+          "elapsed_seconds": 8.599,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_93f8ebbbd040116a7e09a7aac437f398",
+          "started": "2026-11-22T10:55:37.677739Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:55:43.984465Z",
+          "elapsed_seconds": 6.306,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_033122cae9ae2e5a76f165d421bd79cd",
+          "started": "2026-11-22T10:55:52.492145Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:55:59.369915Z",
+          "elapsed_seconds": 6.878,
+          "bound_seconds": 90
+        },
+        {
+          "id": "delete-cleanup-sub_b6839749515e3af95acae7066db354b5",
+          "started": "2026-11-22T10:55:59.982252Z",
+          "result": "pass",
+          "ended": "2026-11-22T10:56:05.875555Z",
+          "elapsed_seconds": 5.893,
+          "bound_seconds": 90
+        }
+      ],
+      "toolSHA256": {
+        "scripts/integration/t03_r01/collect.py": "474295741ed45647af766b4771ff0003d8b13bfe52a26818dbf42f25603a45a3",
+        "scripts/integration/t03_r01/preflight.py": "3652d862b45d8acdd933d32ddb7728f02d9b9008fbcf8ca77e44b7a103dad2ab",
+        "scripts/integration/t03_r01/network_extra_udp.py": "e0b7b42afd5a37d490e9c9aec42b4e4647574c5058d213443f23bf3f7bc127c2",
+        "scripts/integration/t03_r01/suite.py": "7cf1eecac55211cc0cf6deaf154585c066891383c719324c2eb2fb87565b4d8c",
+        "scripts/integration/t03_r01/remote.py": "b5811e28951e05849e3a20f054e44244006a201f076370af9dde41ebd6950f45",
+        "scripts/integration/t03_r01/network_extra.py": "6d225fcabf1337e1bf7a419c24a493f613938e58a7af0337a8e9a26f80600b21",
+        "scripts/integration/t03_r01/audit.py": "4d09a4f85b9c9b5fc767323f98332d3fef85d29da0a42822faac2fae52f95c13",
+        "scripts/integration/t03_r01/proofs.py": "c2e275b33622530b6ce3f245b65fbfbee8804575c635cf0e613db03e10804e85",
+        "scripts/integration/t03_r01/run.py": "caac953e4d679ce8b923f67d0db982fd5f6e779458959494fff99595911d29df",
+        "scripts/integration/t03_r01/host_state.py": "bc6519226e949ad612141fc6469b9d8f8919ada595778a12f528773fb9490fa6",
+        "scripts/integration/t03/collect.py": "600e2fb65f0ee827b332272a6d2e6ca2ce15308c28db3f4cfff8a9a1a57c2b8e",
+        "scripts/integration/t03/preflight.py": "1085d1a52397de88de7700e03258d1af9cc26d8d5eff54385cf021d4ac7b596b",
+        "scripts/integration/t03/network.py": "6dc3f11de98f912d1e71cb1151620d1cca40f1fd9bea361774b208234e704f0a",
+        "scripts/integration/t03/socks.py": "5091722a68cdb7a4f7597f0574af732254fe361b1a85e4541f0a69ed8c636103",
+        "scripts/integration/t03/audit.py": "b234be57475719a1d03dede869101d57e98412103e322983f551bb51835f46a7",
+        "scripts/integration/t03/diagnose.py": "7e1cd0fac9b2e61aee2a67db35ae669f779d0ebea328900126ebee727453ea72",
+        "scripts/integration/t03/worker.py": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+        "scripts/integration/t03/prepare.py": "6634e5dc53ad4273977a69e36edef0b8e8f8dbfddb3b7626b15281ddc07a0512",
+        "scripts/integration/t03/transport.py": "f4025f16dec0bd3871cafc98c395c67a1ae85689c8297be41c45ebe10a8d4c61",
+        "scripts/integration/t03/sharing.py": "8e9e020c00651f6efcfc4e7094f4b08bf6ac519cf1002026c76a224fbcace7c3",
+        "scripts/integration/t03/run.py": "811e81350fe617db036e0f9afaad271d5a228f6ebd8bf9252caf761aa189c6d7",
+        "scripts/integration/t03/restart.py": "ea2768cc221de290caeac9f062c54a846b2b83cb4e3c7770105dd0d203ac3a5e",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      },
+      "normalShutdown": {
+        "A": {
+          "stop_runtime_exits": [
+            0,
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r13-sharing-fixed/n1/s/runtime/api/m.sock",
+            "r13-sharing-fixed/n2/s/runtime/api/m.sock"
+          ]
+        },
+        "B": {
+          "stop_runtime_exits": [
+            0
+          ],
+          "live_recorded_pids": [],
+          "sockets": [],
+          "stale_socket_files_removed": [
+            "r13-sharing-fixed/n0/s/runtime/api/m.sock"
+          ]
+        }
+      },
+      "safeObservationSummary": {
+        "events": 125,
+        "request_ids": 68,
+        "sent": 61,
+        "recorded": 25,
+        "stages": {
+          "connection": 7,
+          "sent": 61,
+          "persist": 56,
+          "collect": 1
+        },
+        "codes": {
+          "OBSERVATION_CANCELLED": 2,
+          "OBSERVATION_UNAVAILABLE": 13,
+          "INVALID_ARGUMENT": 31,
+          "OBSERVATION_BUSY": 9,
+          "REVISION_CONFLICT": 3
+        },
+        "safe_timeline_sha256": "d1ba1fb8d628609034b95023c59708cf1d810460f05372143d309635ccb6020d"
+      },
+      "privateEvidence": [
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/api-timeline.json",
+          "sha256": "7a0a3686e87917e500bb92adedf7d29cc657c71f186e468635f91b62feb7920e"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/checks.json",
+          "sha256": "4784264b2b06fc42373c67a01e246e35279ad5d8a1ae1298253e6001ddcf51a4"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/cleanup-sub_033122cae9ae2e5a76f165d421bd79cd.json",
+          "sha256": "2ccc958ef7419442aad93c17b69bc21e6d9a8531866280368b811edc95230105"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/cleanup-sub_93f8ebbbd040116a7e09a7aac437f398.json",
+          "sha256": "7f856dd5c14348d3b799dbe2dbdba1b8726603c931a0d7f3be26e640c0944c05"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/cleanup-sub_b6839749515e3af95acae7066db354b5.json",
+          "sha256": "039ec2c21ca91b3c4811b358bdeb09704196072c7051219a6e256ddeaae7e3ab"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/events.json",
+          "sha256": "edeb1db19d8353d9d133407f19b03ee7a64de8766005f6a1505c13b6115154a2"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/observation-safe-timeline.json",
+          "sha256": "d1ba1fb8d628609034b95023c59708cf1d810460f05372143d309635ccb6020d"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/preparation-final-dto.json",
+          "sha256": "dd367da66940c557fd186fbc98b51090dbd2f522436b7a8f05befc97547b16c3"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/preparation-final-node_0da999caf5a317eb09cb1c3637c40854.json",
+          "sha256": "6234d1992caab26131b02c403fe982b55cd4bd1a50842e3dd97801ec3dc47d15"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/preparation-final-node_480d7799b1a23ff32db9eb382941ffb7.json",
+          "sha256": "8f56a237d2f0ab9a788dc2c8c0474509db98e4d0ebb091bddbb97bf5e4952b26"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/preparation-final-node_c59dbc374ac50bb957a82898d1a7ae35.json",
+          "sha256": "ca04b0313206671a8ce44077a1afd1cc839b1d06c06b118043b438d78e8110a1"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/result.json",
+          "sha256": "9343c0e370663e765139099d8cb67b55a6c394a3e225bccb76f1d42a68ea04c6"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/sharing-summary.json",
+          "sha256": "3565a4f36006768d096bd2dbbf79e0c1e474128778ee37d5b1a8f4edd31b25b8"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/snapshot-final-0.json",
+          "sha256": "b1a45fe7467abef3fb47bdf1fa4461c5d5da2525cddb8905a7decaa0156d7398"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/snapshot-final-1.json",
+          "sha256": "b0e274650dd68a3a69a42151ee7a4336aeb91dd42fdaf675f0ece561623ad54f"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/subscription-final-sub_033122cae9ae2e5a76f165d421bd79cd.json",
+          "sha256": "2ccc958ef7419442aad93c17b69bc21e6d9a8531866280368b811edc95230105"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/subscription-final-sub_93f8ebbbd040116a7e09a7aac437f398.json",
+          "sha256": "7f856dd5c14348d3b799dbe2dbdba1b8726603c931a0d7f3be26e640c0944c05"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/subscription-final-sub_b6839749515e3af95acae7066db354b5.json",
+          "sha256": "039ec2c21ca91b3c4811b358bdeb09704196072c7051219a6e256ddeaae7e3ab"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/task-final-task_21c0ebbbb7439e3f3f1fa4e6449f11fa.json",
+          "sha256": "93be1c31312d8708eaaf66b4703c01be44497b420a941aec090f960925fb37e8"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/task-final-task_512def05faa9113965b96383ac839a21.json",
+          "sha256": "5320dd889162bd40ac1df0bccb64a9ba35a44df9238a79f9f150805bcbd122ca"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/task-final-task_53556ce253e20686bc0be65839609b45.json",
+          "sha256": "dec30b3171fdb4b93c661e1493053588b03f720ab5f3a4a7f9bb31e1fc6e916f"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/task-final-task_5af468c184eaa81a248108b1a8569880.json",
+          "sha256": "affcb8f8170abb600d11374f840ae0652904a69e4c6d97adeb36c3276be7ec0c"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/task-final-task_6269337aa40b04615781c69b744c859a.json",
+          "sha256": "05b6ef35d2d416b017d2828cf70f758981191a403bdde2df25de1024d8a690b4"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/task-final-task_7d05b83858c60e53c4f5608574eedf5f.json",
+          "sha256": "2e5d5e0f6aac9019f76ca88fd51b7fb3c77b021fcedb9e618f076698df7ad38c"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/task-final-task_7e03ca07923c1004da0ba350beb690b0.json",
+          "sha256": "b69057654b26548f0eb654faffcdfa39b97bec06d5b6a97d46186aa46cd6ad9e"
+        },
+        {
+          "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/r13-sharing-fixed/task-final-task_f936fa2c0ea4a21abf5465975e6cef07.json",
+          "sha256": "273f48c4eb5931aeaf49d5113a9e3ade36308e2ae9e8d168036979b6923aebbf"
+        }
+      ]
+    }
+  ],
+  "issueMapping": [
+    {
+      "id": "F01",
+      "result": "pass",
+      "scope": "本轮双方向冷状态首次库存门槛通过；原r3根因仍未唯一证明",
+      "phases": [
+        "r01-observe",
+        "r02-observe"
+      ],
+      "limitations": [
+        "自然迟到/替代报告没有跨机触发，确定性覆盖仅来自原R03本地",
+        "r01重连只见在线与既有current；未将其计为新session新鲜观察",
+        "同session失败隔离有安全request/session事件，后续正确请求不被整连接失败阻断"
+      ]
+    },
+    {
+      "id": "F02",
+      "result": "blocked",
+      "scope": "原顺序验收未完成；r05后半SOCKS5 current失败，r06前置HTTP current失败；不得宣称新候选旧HTTP策略过滤已通过跨机复验",
+      "phases": [
+        "r05-sequence",
+        "r06-sequence"
+      ],
+      "activeExactPinProtection": "r13共享/不同策略修订/局部回收/旧流量保留通过；不是无引用旧HTTP策略过滤的替代证据"
+    },
+    {
+      "id": "F03",
+      "result": "fail",
+      "scope": "Ubuntu Agent fresh correct-first此轮通过；Alpine fresh correct-first和Ubuntu HTTP后wrong→correct此轮失败；原r8/r10根因仍不统一",
+      "phases": [
+        "r02-observe",
+        "r03-correct",
+        "r04-correct",
+        "r05-sequence"
+      ],
+      "newEvidence": "r02/r04/r06的负age_ms证明ObservedAt仍在Controller当前时刻之后；固定源码RecordEgressObservation首先拒绝ObservedAt.After(now)，该门为这三次INVALID_ARGUMENT的充分触发条件。未据此归并全部原始故障或r05。"
+    },
+    {
+      "id": "F04",
+      "result": "pass",
+      "scope": "两方向本轮Node Default prepared→task/确认、原task/artifact/确认事实及既有/新TCP跨双方正常重启通过；原r11根因仍未唯一证明",
+      "phases": [
+        "r07-restart",
+        "r08-restart"
+      ]
+    },
+    {
+      "id": "R03-L01",
+      "result": "blocked",
+      "scope": "r09/r10保留原关键发布历史，但分别在HTTP订阅验证失败和三跳网络前置阻塞处停止；离线到期后删除90s路径未到达、未关闭、不延期豁免",
+      "phases": [
+        "r09-history",
+        "r10-history"
+      ],
+      "notRun": [
+        "provider fetch/refresh",
+        "续期/移除重加/规则采用的完整历史后段",
+        "Controller离线到期12s拒绝/另一身份继续",
+        "恢复后删除cleanup90s终态/墓碑/端口释放"
+      ],
+      "noFreshLifecycleSubstitution": true
+    },
+    {
+      "id": "R01-F01",
+      "result": "fail",
+      "scope": "Alpine Agent正常HTTP正确凭据也出现30s无current，持久化INVALID_ARGUMENT/age_ms=-3",
+      "phases": [
+        "r06-sequence"
+      ]
+    },
+    {
+      "id": "R01-F02",
+      "result": "fail",
+      "scope": "完整历史正向HTTP入口发布已applied但业务verification失败；原因为RELEASE_FAILED，尚未唯一定位",
+      "phases": [
+        "r09-history"
+      ],
+      "taskID": "task_714df6c88483d0aaebdba2b72ace70bd",
+      "nodeID": "node_8f7ff636cde37a8b2c289678c4125a90",
+      "targetRevision": 6,
+      "targetDigest": "2b6b39d94ab3243b17b2619e4fcb186fbf894ac8201802e4d57bc0411de867b2"
+    },
+    {
+      "id": "R01-N01",
+      "result": "blocked",
+      "scope": "额外Ubuntu端口本机回显成功，但Alpine→TCP29443-29445及UDP29443均超时；未唯一定位具体网络层",
+      "phases": [
+        "r10-history",
+        "r12-sharing"
+      ],
+      "noFirewallOrSecurityGroupChanges": true
+    }
+  ],
+  "safeObservationSamples": [
+    {
+      "phase": "r02-observe",
+      "host": "A",
+      "message": "Observation not recorded",
+      "time": "2026-11-22T10:38:12Z",
+      "node": "node_4663b744b5b13aa492fcf1d5d1cdaad3",
+      "session": "session_dad858a47fa1f846ae0743176ff8faa7",
+      "request": "observation_6ecec622352af3e23887db8bbef93623",
+      "node_revision": "2",
+      "stage": "persist",
+      "code": "INVALID_ARGUMENT",
+      "age_ms": "-5",
+      "ttl_ms": "60005"
+    },
+    {
+      "phase": "r04-correct",
+      "host": "A",
+      "message": "Observation not recorded",
+      "time": "2026-11-22T10:39:27Z",
+      "node": "node_9dc561d1dde7ed5812f2bbd78b5edf9f",
+      "session": "session_f96f5b7f7a6bb076cf7cd03861f32a78",
+      "request": "observation_cabf3eb11b620fd84c018dd6dc4e09f0",
+      "node_revision": "2",
+      "stage": "persist",
+      "code": "INVALID_ARGUMENT",
+      "age_ms": "-5",
+      "ttl_ms": "60005"
+    },
+    {
+      "phase": "r06-sequence",
+      "host": "A",
+      "message": "Observation not recorded",
+      "time": "2026-11-22T10:41:18Z",
+      "node": "node_b7df47d7b2b032e4f0d02d2fa4bd5fb3",
+      "session": "session_e9de237991145e677c3684ba4fbca810",
+      "request": "observation_9423cd9b06155ae74b3ca87accc5dd3e",
+      "node_revision": "2",
+      "stage": "persist",
+      "code": "INVALID_ARGUMENT",
+      "age_ms": "-3",
+      "ttl_ms": "60003"
+    },
+    {
+      "phase": "r05-sequence",
+      "host": "B",
+      "message": "Observation not recorded",
+      "time": "2026-11-22T10:40:25Z",
+      "node": "node_57eb438784f615f47872652a0043440f",
+      "session": "session_4de40f2b5fc3f1c97672deee09c7871f",
+      "request": "observation_45c01ffa4091fc6c5f3b4663fafde24b",
+      "node_revision": "5",
+      "stage": "persist",
+      "code": "REVISION_CONFLICT",
+      "age_ms": "8",
+      "ttl_ms": "59991"
+    }
+  ],
+  "logScan": [
+    {
+      "host": "A",
+      "log_files": 130,
+      "secret_patterns": 916,
+      "findings": 0,
+      "private_archive_saved": true
+    },
+    {
+      "host": "B",
+      "log_files": 130,
+      "secret_patterns": 849,
+      "findings": 0,
+      "private_archive_saved": true
+    },
+    {
+      "host": "build",
+      "log_files": 32,
+      "secret_patterns": 655,
+      "findings": 0
+    }
+  ],
+  "logScanLimitations": [
+    "All saved product/client/helper .log files scanned after shutdown against recorded capabilities/credentials/private material plus literal/JSON/base64/base64url/hex forms.",
+    "Initial admin cookie/CSRF literals were not persisted by driver versions used for r01-r09; exact-literal coverage for those initial session values is not claimed. Recorded later/API values and r10-r13 sessions are included. No claim that unknown values were reconstructed."
+  ],
+  "hostAudit": [
+    {
+      "host": "A",
+      "artifact_sha256_checks": 9,
+      "original_listeners_unchanged": true,
+      "before_listener_count": 14,
+      "after_listener_count": 14,
+      "run_executables_absent": true,
+      "run_sockets_absent": true,
+      "oom_kill_before": 0,
+      "oom_kill_after": 0,
+      "owned_root_removed": true
+    },
+    {
+      "host": "B",
+      "artifact_sha256_checks": 9,
+      "original_listeners_unchanged": true,
+      "before_listener_count": 2,
+      "after_listener_count": 2,
+      "run_executables_absent": true,
+      "run_sockets_absent": true,
+      "oom_kill_before": 0,
+      "oom_kill_after": 0,
+      "owned_root_removed": true
+    }
+  ],
+  "hostPreservation": [
+    {
+      "host": "A",
+      "unchanged": {
+        "processes": true,
+        "route_sha256": true,
+        "resolver_sha256": true,
+        "services_sha256": true
+      }
+    },
+    {
+      "host": "B",
+      "unchanged": {
+        "processes": true,
+        "route_sha256": true,
+        "resolver_sha256": true,
+        "services_sha256": true
+      }
+    }
+  ],
+  "privateEvidenceRoot": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004",
+  "privateEvidenceIndex": [
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/preflight.json",
+      "sha256": "b314b1ee2a116ea6ff293bd13a9ecefed76a14258c3699791973bdec4949e224"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/mapping.json",
+      "sha256": "e58a0353eece56289b9f949efe30ed9a7bf68c6dfe9f9d4d72f44d93f2692b9d"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/artifact-0.txt",
+      "sha256": "28a4bff3248bb7593ab296de62fc67071b39da84956ae004622e44d37974ef8c"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/artifact-1.txt",
+      "sha256": "28a4bff3248bb7593ab296de62fc67071b39da84956ae004622e44d37974ef8c"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/network.json",
+      "sha256": "29766a6e62d98f03ca98fe245db5e4169fbbaae8703255c29891e8b67f9251e5"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/extra-pool-network.json",
+      "sha256": "69e687b4871cdbb558bb299a543ac467b4f7847941a12ef82f9493fcb66b6951"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/extra-pool-udp.json",
+      "sha256": "6b0d9075fa694189720689c5760b9c0bdf9641ed857181c9264dc48b77def130"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/case-plan.md",
+      "sha256": "1f444a5752897db38e0b328a4514f194d5add8ba800fe8f0e46c31c4e666ea23"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/case-plan-addendum.md",
+      "sha256": "187717e1525dd3c2024b60fef1e5f8b24febcb921167f82282d398443d3cf507"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/case-plan-addendum-2.md",
+      "sha256": "27335f33e5d350c6ac174728d05a8aa70e7dae9a784d16785b11ae09e8a67f09"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/final-log-scan.json",
+      "sha256": "332e3fda39713f771e89b62182a52c8ea92501c37aa00630297e269603a3fba1"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/final-scan-0.json",
+      "sha256": "a46fdd9d3b3320c9cbd70529ad1f424b380c128750cfa3cc919c355d1864b5ab"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/final-scan-1.json",
+      "sha256": "d42451b17804eb27aa3cdc632a1c3916d3cc56f69e779e964f2b04a61789e7bf"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/host0-logs.tar.gz",
+      "sha256": "73954de88213b6c302b6ccd807bdf575e3e4ae275986db75e67989ae3643e65e"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/host1-logs.tar.gz",
+      "sha256": "16ae1ff6a2a3361c3abf331d77f7ee71092fe03efe308bc0691d426b6a67a0a6"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/host-preservation.json",
+      "sha256": "57b67182147c3ab28c6adbce167ec87e74b138651ee40ff0e01f0de2cd41959d"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/final-audit.json",
+      "sha256": "66fe5fc967631c18a51bf94eb5fb91c34a67ab36975c052411997b632104113d"
+    },
+    {
+      "path": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-103004/clock-readonly-final.json",
+      "sha256": "28a7fa10aa7f933dc994a76574771ddd7566e9d040b7ca43d787fd631f6eb614"
+    }
+  ],
+  "testToolProblems": [
+    {
+      "id": "H01",
+      "phase": "r11-sharing",
+      "result": "blocked",
+      "reason": "for n,a,b zip loop overwrote subscription objects; TypeError before remaining cleanup checks",
+      "beforeSHA256": "a0902d8dabfb6aa113d3a634b87fdb4067f200b670afaca022cacccb8ce110b9",
+      "afterSHA256": "caac953e4d679ce8b923f67d0db982fd5f6e779458959494fff99595911d29df",
+      "repair": "only r13 fresh state; original r11 retained; r12 failed before this error and was not rerun"
+    },
+    {
+      "id": "H02",
+      "reason": "extra Ubuntu pool lacked initial peer preflight; later TCP/UDP diagnosis establishes environment block without replay"
+    },
+    {
+      "id": "H03",
+      "reason": "safe log exporter initially expected msg= format; fixed offline standard Go prefix and verified per-host +0000/+0800 offset normalization; no product rerun"
+    },
+    {
+      "id": "H04",
+      "reason": "initial session literal recording/reconnect fresh-observation coverage gaps are explicit limitations; no invented evidence"
+    },
+    {
+      "id": "H00",
+      "reason": "two --help import-path errors corrected before any product run; first SSH inventory denied by local sandbox then normally approved; no automatic approval rejection or bypass"
+    }
+  ],
+  "testSourceSHA256": {
+    "scripts/integration/t03_r01/README.md": "0d52ed91dc3041b8316973d3d573411389a27b31b67d144e3789d20926c7deaf",
+    "scripts/integration/t03_r01/audit.py": "4d09a4f85b9c9b5fc767323f98332d3fef85d29da0a42822faac2fae52f95c13",
+    "scripts/integration/t03_r01/collect.py": "474295741ed45647af766b4771ff0003d8b13bfe52a26818dbf42f25603a45a3",
+    "scripts/integration/t03_r01/host_state.py": "bc6519226e949ad612141fc6469b9d8f8919ada595778a12f528773fb9490fa6",
+    "scripts/integration/t03_r01/network_extra.py": "6d225fcabf1337e1bf7a419c24a493f613938e58a7af0337a8e9a26f80600b21",
+    "scripts/integration/t03_r01/network_extra_udp.py": "e0b7b42afd5a37d490e9c9aec42b4e4647574c5058d213443f23bf3f7bc127c2",
+    "scripts/integration/t03_r01/preflight.py": "3652d862b45d8acdd933d32ddb7728f02d9b9008fbcf8ca77e44b7a103dad2ab",
+    "scripts/integration/t03_r01/proofs.py": "630d6772ae7bdacb75e332fe2504230d3acbb7e97482cf856e37124380e026ec",
+    "scripts/integration/t03_r01/remote.py": "b5811e28951e05849e3a20f054e44244006a201f076370af9dde41ebd6950f45",
+    "scripts/integration/t03_r01/run.py": "caac953e4d679ce8b923f67d0db982fd5f6e779458959494fff99595911d29df",
+    "scripts/integration/t03_r01/suite.py": "7cf1eecac55211cc0cf6deaf154585c066891383c719324c2eb2fb87565b4d8c"
+  },
+  "originalReportsSHA256": {
+    "T03.md": "6570a4cfa7d68c587a74287ce96f27c65ceba63c9769d5f8d459fd565a0e299c",
+    "T03-evidence.json": "641883fd309a231eecb47a2536d9ad01c14882697ddda5736d9d66471177e1be",
+    "R03.md": "ff5f4100e5789b2a21ffe1f53badcedf5287cd715429aca5949d07f6c7331cb8",
+    "R03-evidence.json": "8f18acfb9ce1335c37b2fd54e3f470bcf1855d8e40624b2c422f442cc430f884"
+  },
+  "originalT03CountsUnchanged": {
+    "pass": 29,
+    "fail": 4,
+    "blocked": 1,
+    "not_run": 7,
+    "deferred": 2
+  },
+  "boundaries": [
+    {
+      "title": "GUI URL导入",
+      "result": "not_run"
+    },
+    {
+      "title": "真实默认TUN",
+      "result": "not_run"
+    },
+    {
+      "title": "IPv6",
+      "result": "not_run"
+    },
+    {
+      "title": "公网/原始域名/三层DNS同源",
+      "result": "not_run"
+    },
+    {
+      "title": "指定接口绑定",
+      "result": "not_run"
+    },
+    {
+      "title": "V2业务UDP（Hy2外层UDP另列）",
+      "result": "not_run"
+    },
+    {
+      "title": "T07 systemd/OpenRC安装升级",
+      "result": "not_run"
+    },
+    {
+      "title": "全部格式/Origin故障恢复扩展矩阵",
+      "result": "not_run"
+    },
+    {
+      "title": "容量/100+分页积压",
+      "result": "deferred"
+    },
+    {
+      "title": "断电/时钟修改/坏key完整矩阵",
+      "result": "deferred"
+    }
+  ],
+  "preserved": [
+    "T02 partial/interrupted; protected untracked paths untouched",
+    "product/protocol/migrations/frontend unchanged",
+    "migrations001-011 frozen;012-021 reserved",
+    "no subagents/new chats/cross-chat messages/worktrees",
+    "no Go/Node installed or product rebuild",
+    "no host route/DNS/firewall/clock/SSH changes; no service unit installation"
+  ],
+  "nextRepairSuggestions": [
+    "Use r02/r04/r06 safe exact node/session/request and negative age_ms to reproduce timestamp acceptance with real cross-host millisecond skew. Inspect RecordEgressObservation ObservedAt.After(now); keep request/session/Pin/revision/TTL fences, do not change host clock or enlarge external budgets.",
+    "For r05 inspect exact credential Pin/request binding around revision5 REVISION_CONFLICT followed by 2/4/8s collect failures; current inventory remained valid. Do not attribute it to the unused HTTP terminal policy without candidate evidence.",
+    "Reproduce r09 full retained history and exact failed task/digest; inspect runtime verification and overlapping extra-node protocol pools/actual socket requirements. RELEASE_FAILED alone does not identify the cause.",
+    "Before any new independent multi-host test, verify authorized Alpine→Ubuntu extra TCP29443-45 and UDP29443 connectivity; do not retry blocked r10/r12 until prerequisites change.",
+    "Only after earlier functional blockers are repaired should a new independent full-history case reach original R03-L01 offline-expiry/delete90s endpoint."
+  ],
+  "completedAt": "2026-11-22T11:02:58.192686Z",
+  "clockNormalization": {
+    "A": "+0000",
+    "B": "+0800",
+    "safeTimelines": "normalized UTC after read-only final timezone confirmation; numeric age_ms is product-emitted and independent of log timezone"
+  },
+  "initialSandboxPreflight": {
+    "result": "blocked_before_remote_connection",
+    "privateEvidenceRoot": "/root/meshstrata/.local/meshstrata-t03-r01-20261122-102926",
+    "resolution": "same authorized read-only action approved through normal escalation"
+  },
+  "localValidation": [
+    "all new Python sources syntax parsed",
+    "--help imports corrected before product runs",
+    "actual remote phases and one explicitly repaired harness branch",
+    "known-secret scan of public deliverables",
+    "JSON phase counts/tool hashes/original report immutability checked",
+    "git diff whitespace check"
+  ]
+}
