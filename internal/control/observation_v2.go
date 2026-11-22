@@ -46,9 +46,14 @@ func (p PreparationV2) Valid() bool {
 }
 
 type ObservationReportV2 struct {
-	ID        domain.ID            `json:"id"`
-	Inventory *InventoryV2         `json:"inventory,omitempty"`
-	Egress    *EgressObservationV2 `json:"egress,omitempty"`
+	ID        domain.ID             `json:"id"`
+	Inventory *InventoryV2          `json:"inventory,omitempty"`
+	Egress    *EgressObservationV2  `json:"egress,omitempty"`
+	Failure   *ObservationFailureV2 `json:"failure,omitempty"`
+}
+
+type ObservationFailureV2 struct {
+	Code string `json:"code"`
 }
 type InterfaceObservationV2 struct {
 	Name    string     `json:"name"`
@@ -95,6 +100,16 @@ func (r ObservationRequestV2) Valid() bool {
 	return (r.Preparation == nil || r.Preparation.Valid()) && r.ID.Valid() && !r.Deadline.IsZero() && (r.Target == nil || r.Target.Valid())
 }
 func (r ObservationReportV2) Valid(node domain.ID) bool {
+	if r.Failure != nil {
+		if !node.Valid() || !r.ID.Valid() || r.Inventory != nil || r.Egress != nil {
+			return false
+		}
+		switch r.Failure.Code {
+		case "OBSERVATION_UNAVAILABLE", "OBSERVATION_EXPIRED", "OBSERVATION_CANCELLED":
+			return true
+		}
+		return false
+	}
 	if !r.ID.Valid() || (r.Inventory == nil) == (r.Egress == nil) {
 		return false
 	}

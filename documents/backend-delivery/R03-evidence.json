@@ -1,0 +1,639 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-22",
+  "timezone": "Asia/Shanghai",
+  "session": "01a20257-2627-7ec0-b61c-373b90c44019",
+  "baseCommit": "a5a07d2ac55f37ad33b84385bb2d032b2b883514",
+  "originalT03ProductCommit": "b71ee3a094265a91d1e671f8a89ffa45df30c35d",
+  "releaseCommitBinding": "Final Git commit and per-full-commit manifest, not candidate buildinfo or a self-referential source field",
+  "scope": "Local evidence analysis, bounded product fixes, normal CLI regressions, checks, commit/push and static artifacts; no SSH/deployment/T03-R01/next phase",
+  "overall": "local_targeted_fixes_verified_cross_host_pending_additional_local_lifecycle_failure",
+  "originalT03": {
+    "caseCounts": {
+      "pass": 29,
+      "fail": 4,
+      "blocked": 1,
+      "not_run": 7,
+      "deferred": 2
+    },
+    "reportSHA256": "6570a4cfa7d68c587a74287ce96f27c65ceba63c9769d5f8d459fd565a0e299c",
+    "evidenceSHA256": "641883fd309a231eecb47a2536d9ad01c14882697ddda5736d9d66471177e1be",
+    "immutable": true
+  },
+  "findings": [
+    {
+      "id": "F01",
+      "originalRuns": [
+        "r3"
+      ],
+      "originalCases": [
+        "T03-O01"
+      ],
+      "evidence": [
+        "r3/result.json",
+        "r3/error.txt",
+        "r3/safe-process-logs-1.txt"
+      ],
+      "trigger": "Fresh Alpine Controller + Ubuntu Agent; no current inventory for 55s",
+      "rootCauseStatus": "original incident not uniquely located; concrete late-report slot and failure-session bugs independently reproduced",
+      "fixes": [
+        "exact request/session/preparation binding and safe slot consumption",
+        "negotiated failure isolation with per-binding bounded retry",
+        "safe correlated diagnostic stages"
+      ],
+      "verification": [
+        "old red and new green control regressions",
+        "normal CLI first inventory and restart"
+      ],
+      "disposition": "pending_cross_host"
+    },
+    {
+      "id": "F02",
+      "originalRuns": [
+        "r4"
+      ],
+      "originalCases": [
+        "T03-E04"
+      ],
+      "evidence": [
+        "r4/events.json",
+        "r4/last-review.json",
+        "r4/error.txt"
+      ],
+      "trigger": "HTTP forward/stop/confirmed cleanup/archive, then SOCKS5 wrong to correct credential Pin; review NOT_FOUND",
+      "rootCauseStatus": "proven reproducible cause: unused prior HTTP terminal policy in mutable baseline still demanded fresh evidence; original incident may also include separate observation failure",
+      "fixes": [
+        "filter only unreferenced terminal policies from new candidate baselines and completed listener removals; keep live exact Pins and immutable history"
+      ],
+      "verification": [
+        "real SQLite/encrypted-artifact B04/B06 joint old-red/new-green",
+        "normal CLI sequence with current SOCKS5 evidence, end-to-end bytes, stopped-exit refusal and confirmed cleanup"
+      ],
+      "disposition": "fixed_locally_cross_host_pending"
+    },
+    {
+      "id": "F03",
+      "originalRuns": [
+        "r8",
+        "r10"
+      ],
+      "originalCases": [
+        "T03-E03"
+      ],
+      "evidence": [
+        "r8/error.txt",
+        "r10/error.txt",
+        "r10/target-final-dto.json",
+        "r10/proxy-stats-1.json",
+        "scanned host log archives"
+      ],
+      "trigger": "Fresh wrong-correct and independent correct-first SOCKS5; no current evidence despite handshake counters",
+      "rootCauseStatus": "original cause not uniquely located; no demonstrated SOCKS5 wire helper violation",
+      "fixes": [
+        "safe failure release and per-binding retry/correlation; no protocol/auth/echo acceptance relaxation"
+      ],
+      "verification": [
+        "unchanged helper greeting/auth/CONNECT/reply/echo/relay inspected",
+        "candidate normal CLI wrong-newPin-correct and fresh correct-first with independent echo/negative auth/current evidence, actual traffic and stopped-exit refusal"
+      ],
+      "disposition": "pending_cross_host"
+    },
+    {
+      "id": "F04",
+      "originalRuns": [
+        "r11"
+      ],
+      "originalCases": [
+        "T03-O02",
+        "T03-L08"
+      ],
+      "evidence": [
+        "r11/events.json",
+        "r11/error.txt",
+        "r11/result.json",
+        "r11/node-final-dto.json",
+        "r11/preparation-final-dto.json",
+        "scanned business worker log"
+      ],
+      "trigger": "Published Node Default followed by prepared subscription without admitted ingress task within90s; original immutable restart comparison never began",
+      "rootCauseStatus": "original REVISION_CONFLICT plus unavailable refresh not uniquely located; no invented task or database repair",
+      "fixes": [
+        "observation recovery improvements; existing durable intent/task reconciliation retained",
+        "restart harness compares immutable artifact/confirmation facts while requiring current real confirmation"
+      ],
+      "verification": [
+        "normal CLI new prepared intent to accepted/confirmed ingress task",
+        "normal Controller/Agent restart keeps original task IDs, target artifact digests and confirmed facts, retained TCP and new requests"
+      ],
+      "disposition": "local_case_passed_original_cross_host_case_pending"
+    }
+  ],
+  "deterministicProofs": [
+    {
+      "defect": "late_reply_consumes_replacement_and_failure_disconnect",
+      "originalCodeExpectedFailure": {
+        "path": "/root/meshstrata/.local/r03/red-tests-final.log",
+        "sha256": "21140b89c6e15bd6ae8db295351f9db7cdfa6d9abddfb9c1ba43889eddd12bb6",
+        "exitCode": 1
+      },
+      "fixedCodePassed": {
+        "path": "/root/meshstrata/.local/r03/control-complete.log",
+        "sha256": "80eb4cac267f65ec6270ab24c7aafc0d927d11c071040cfc12917e45b95026a0"
+      }
+    },
+    {
+      "defect": "unused_prior_http_policy_blocks_new_route",
+      "originalCodeExpectedFailure": {
+        "path": "/root/meshstrata/.local/r03/orphan-policy-red.log",
+        "sha256": "d2a6b82cdcd8db09ef80166f2e5e27a3b8b0d8bf3bf88697b1efe936c3dbe432",
+        "exitCode": 1
+      },
+      "fixedCodePassed": {
+        "path": "/root/meshstrata/.local/r03/orphan-policy-green.log",
+        "sha256": "544ae539e8226007e5f076b8c6c48eeecb603caa3ad61842d8d20e7dcc2c3e1b"
+      }
+    }
+  ],
+  "cliRegressions": [
+    {
+      "privateEvidence": "/root/meshstrata/.local/r03/sequence-budget.json",
+      "sha256": "ef6b4d02ea20694411bf27a7816a0d6a2bc4588aaeb8cc9729c3ae44c4a3f406",
+      "scenario": "sequence",
+      "result": "pass",
+      "network": "loopback IPv4 TCP, TUN off, numeric canary, no SSH",
+      "checks": [
+        "ordinary_controller_https_login_csrf",
+        "normal_agent_mtls_v2_observation",
+        "http_correct_first_exact_pin_current_echo_and_negative_auth",
+        "persistent_route_worker_publication",
+        "standard_https_full_config_download",
+        "pinned_mihomo_isolated_tcp_actual_request",
+        "http_actual_tcp_stopped_selected_exit_no_direct_fallback",
+        "socks5_wrong_auth_rejected_no_current_evidence",
+        "socks5_wrong_then_correct_exact_pin_current_echo_and_negative_auth",
+        "persistent_route_worker_publication",
+        "standard_https_full_config_download",
+        "pinned_mihomo_isolated_tcp_actual_request",
+        "socks5_actual_tcp_stopped_selected_exit_no_direct_fallback"
+      ],
+      "log_scan": {
+        "files": 4,
+        "patterns": 56,
+        "findings": 0
+      },
+      "observation_timings": [
+        {
+          "kind": "http",
+          "mode": "correct-first",
+          "elapsed_ms": 281
+        },
+        {
+          "kind": "socks5",
+          "mode": "wrong-correct",
+          "elapsed_ms": 267
+        }
+      ],
+      "mihomo_sha256": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa",
+      "binary_sha256": {
+        "controller": "3b3da62f322097965c76f54e57edd206016edc3f17f0eeb7fd26acce066e11c8",
+        "agent": "74eee990710d68bc194b6c265e98cb77379684fcfd5c9675396a6c3799c6bac1"
+      },
+      "source_sha256": {
+        "scripts/integration/r03/local.py": "6dc966e20001bca38eb0b4df9cd66ec5a02405045d3fd16d9a110a1a752c0367",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      }
+    },
+    {
+      "privateEvidence": "/root/meshstrata/.local/r03/correct-first-budget.json",
+      "sha256": "99b60623e9689dee2236d20ed674ec08746e743b877562a2c155bad664d2fdf8",
+      "scenario": "correct-first",
+      "result": "pass",
+      "network": "loopback IPv4 TCP, TUN off, numeric canary, no SSH",
+      "checks": [
+        "ordinary_controller_https_login_csrf",
+        "normal_agent_mtls_v2_observation",
+        "socks5_correct_first_exact_pin_current_echo_and_negative_auth",
+        "persistent_route_worker_publication",
+        "standard_https_full_config_download",
+        "pinned_mihomo_isolated_tcp_actual_request",
+        "socks5_actual_tcp_stopped_selected_exit_no_direct_fallback"
+      ],
+      "log_scan": {
+        "files": 3,
+        "patterns": 40,
+        "findings": 0
+      },
+      "observation_timings": [
+        {
+          "kind": "socks5",
+          "mode": "correct-first",
+          "elapsed_ms": 273
+        }
+      ],
+      "mihomo_sha256": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa",
+      "binary_sha256": {
+        "controller": "3b3da62f322097965c76f54e57edd206016edc3f17f0eeb7fd26acce066e11c8",
+        "agent": "74eee990710d68bc194b6c265e98cb77379684fcfd5c9675396a6c3799c6bac1"
+      },
+      "source_sha256": {
+        "scripts/integration/r03/local.py": "6dc966e20001bca38eb0b4df9cd66ec5a02405045d3fd16d9a110a1a752c0367",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      }
+    },
+    {
+      "privateEvidence": "/root/meshstrata/.local/r03/restart-fixed.json",
+      "sha256": "93764e56f3efd8f0f902a6b0af3764886b476663aaade5bc903a8859ae030946",
+      "scenario": "restart",
+      "result": "pass",
+      "network": "loopback IPv4 TCP, TUN off, numeric canary, no SSH",
+      "checks": [
+        "ordinary_controller_https_login_csrf",
+        "normal_agent_mtls_v2_observation",
+        "persistent_route_worker_publication",
+        "standard_https_full_config_download",
+        "pinned_mihomo_isolated_tcp_actual_request",
+        "node_default_prepared_to_exact_confirmed_task_restart_digest_result_and_retained_stream"
+      ],
+      "log_scan": {
+        "files": 5,
+        "patterns": 40,
+        "findings": 0
+      },
+      "mihomo_sha256": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa",
+      "binary_sha256": {
+        "controller": "70e0ad7a83e13211a5d7006882a995ba07eb97d9958ca3e7a89f7c92609fcbe8",
+        "agent": "eb8c482ed4ecf2d07948ac7303bc24e3cc35239ebcb4546cd07116949b485417"
+      },
+      "source_sha256": {
+        "scripts/integration/r03/local.py": "ab3b661ca5e3c1c68666b181da0b80f88893f36a83ce62803ed42288f5725ed6",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      }
+    }
+  ],
+  "retainedFailures": [
+    {
+      "path": "/root/meshstrata/.local/r03/sequence.json",
+      "sha256": "084dc07bb72ea90fe468d86ab9a8a8d0b14543d4a4382ea1a758826faf49dce2",
+      "result": "fail",
+      "purpose": "Intermediate session-retention-only candidate; did not sign acceptance"
+    },
+    {
+      "path": "/root/meshstrata/.local/r03/sequence-final.json",
+      "sha256": "4bb4f02714a1f057f91ae44ab7fa56307efb617c9bfb41ca3c780abf19c84fc2",
+      "result": "fail",
+      "purpose": "Negotiated failure reporting candidate before unused-policy fix; review still blocked"
+    }
+  ],
+  "preliminaryInvalidTest": "Initial late-reply test accidentally reused deterministic helper ID; replaced with distinct IDs before final red/green. Preliminary logs not defect proof.",
+  "controlCompatibility": {
+    "v1": "unchanged",
+    "baseV2": "strict original success wire; failure never sent without negotiation; bounded deadline fallback",
+    "extension": "meshstrata.control.v2.observation-status",
+    "failureCodes": [
+      "OBSERVATION_UNAVAILABLE",
+      "OBSERVATION_EXPIRED",
+      "OBSERVATION_CANCELLED"
+    ],
+    "failureNeverWritesEvidence": true,
+    "retrySeconds": [
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "maxRetryBindingsPerSession": 128,
+    "binding": [
+      "node revision",
+      "DNS Pin",
+      "full target Pin"
+    ],
+    "observationRequestSeconds": 15,
+    "singleProbeMaxSeconds": 5,
+    "persistenceMaxSeconds": 5,
+    "expiryRefusalThresholdSeconds": 12,
+    "businessUDP": "not_checked"
+  },
+  "apiCompatibility": {
+    "DTOShapes": "unchanged",
+    "additional409Codes": [
+      "OBSERVATION_BUSY",
+      "OBSERVATION_BACKOFF"
+    ],
+    "frontend": "demo; no live phase"
+  },
+  "toolHashes": [
+    {
+      "path": "scripts/integration/t03/preflight.py",
+      "oldSHA256": "f180838c85712171cd260cd97899290f853259ccbb1be21dfae0d51380566e86",
+      "newSHA256": "1085d1a52397de88de7700e03258d1af9cc26d8d5eff54385cf021d4ac7b596b",
+      "applicability": "Future explicitly selected runs only; original T03 report/sourceHash immutable. SOCKS5 wire server remains unchanged."
+    },
+    {
+      "path": "scripts/integration/t03/restart.py",
+      "oldSHA256": "7d8b37b7f4c991296cc08124487f3f7c8960609f3d495ccacc39623eb18e13f0",
+      "newSHA256": "ea2768cc221de290caeac9f062c54a846b2b83cb4e3c7770105dd0d203ac3a5e",
+      "applicability": "Future explicitly selected runs only; original T03 report/sourceHash immutable. SOCKS5 wire server remains unchanged."
+    },
+    {
+      "path": "scripts/integration/t03/README.md",
+      "oldSHA256": "7634dae8f560ae46a0cb4a416319bf5edd3fea57373e588f47eb650de0b48756",
+      "newSHA256": "dc602c2820b337d738a8c52729aa3114d278db3814cc62025b6d2b6f4eda8eeb",
+      "applicability": "Future explicitly selected runs only; original T03 report/sourceHash immutable. SOCKS5 wire server remains unchanged."
+    },
+    {
+      "path": "scripts/integration/t03/run.py",
+      "oldSHA256": "d28ba4dcae90c893705a0f6dd4ce5b3f455127d40d0512c54897153984eb5d07",
+      "newSHA256": "811e81350fe617db036e0f9afaad271d5a228f6ebd8bf9252caf761aa189c6d7",
+      "applicability": "Future explicitly selected runs only; original T03 report/sourceHash immutable. SOCKS5 wire server remains unchanged."
+    },
+    {
+      "path": "scripts/integration/t03/socks.py",
+      "oldSHA256": "34ea65cb7e05e16532228a2c8fdcad04976dac924f044d5cac1ade01cdeb57f4",
+      "newSHA256": "5091722a68cdb7a4f7597f0574af732254fe361b1a85e4541f0a69ed8c636103",
+      "applicability": "Future explicitly selected runs only; original T03 report/sourceHash immutable. SOCKS5 wire server remains unchanged."
+    },
+    {
+      "path": "scripts/integration/t03/worker.py",
+      "oldSHA256": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+      "newSHA256": "c33ae6c0e0897dbf5a7d2e7eabeb9a2ff798915529a6757a814446a183dcc5a6",
+      "applicability": "Future explicitly selected runs only; original T03 report/sourceHash immutable. SOCKS5 wire server remains unchanged."
+    },
+    {
+      "path": "scripts/integration/i03c/local.py",
+      "oldSHA256": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e",
+      "newSHA256": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e",
+      "applicability": "Future explicitly selected runs only; original T03 report/sourceHash immutable. SOCKS5 wire server remains unchanged."
+    }
+  ],
+  "newTools": {
+    "scripts/integration/r03/build.sh": "b645123effe948fa1ad45ad0d93bb091fa4d54cdfe8233a33a49f7f9fe133ea5",
+    "scripts/integration/r03/README.md": "95844e53b49083b8a07366f585c8799efc033b931e0d2971d380c264f9790455",
+    "scripts/integration/r03/local.py": "6dc966e20001bca38eb0b4df9cd66ec5a02405045d3fd16d9a110a1a752c0367"
+  },
+  "candidateSourceManifest": {
+    "path": "/root/meshstrata/.local/r03/candidate-source-final.json",
+    "sha256": "675fc87aa1b3c08a903e3a3ddf821113500d7673b13348fb2e80e5c308d3743e",
+    "method": "fixed HEAD archive with23 exact overlays; Go implementation unchanged; final OpenAPI descriptions included; protected T02 drafts excluded"
+  },
+  "checks": {
+    "fullMakeCheckPages": {
+      "result": "pass",
+      "exitCode": 0,
+      "path": "/root/meshstrata/.local/r03/make-check-pages-final.log",
+      "sha256": "e472dd77e0023c654394381fab28e066c93d8a51bbfbacebf568749ee5a5fec6",
+      "checks": [
+        "sqlc generated consistency",
+        "isolated full Go test and vet, -p1 CGO0 GOMAXPROCS1",
+        "B03/B05/B07/I03 real locked-Mihomo env-enabled tests",
+        "normal embedded frontend and dual CLI builds",
+        "standalone CLI persistent SQLite/embedded assets/health/shutdown smoke",
+        "check-pages foundation/flow/data/activity/typecheck/build",
+        "i18n12 modules1990 matching keys/interpolation;19 routes/six scenarios"
+      ],
+      "kernelSHA256": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa"
+    },
+    "i03cNormalCLIAll": {
+      "result": "fail",
+      "exitCode": 1,
+      "path": "/root/meshstrata/.local/r03/i03c-all-final.log",
+      "sha256": "18a41dbcb1d4911eefada48b909c3dfa7c9153fdbb1b89f849a3cf7990ede2d9",
+      "failureStage": "lifecycle deletion cleanup did not converge within unchanged90s after controller-offline expiry and recovery",
+      "passedBeforeFailure": [
+        "four ingress protocols actual TCP",
+        "mixed two/three hops",
+        "HTTP/SOCKS5 positive auth/current evidence/actual TCP",
+        "native HTTPS provider",
+        "two-subscription isolation",
+        "stable/reset download URL",
+        "renew old generation rejected while other live",
+        "remove/re-add identity and explicit profile adoption",
+        "Controller restart intent convergence",
+        "Controller-offline expiry refusal within unchanged12s"
+      ],
+      "rootCause": "not yet located; cannot declare a complete I03-C CLI pass",
+      "processLogs": "private candidate/.local/i03c-last-logs copied only after original driver literal capability/password scan succeeded"
+    },
+    "formatSecretScope": {
+      "status": "pass",
+      "path": "/root/meshstrata/.local/r03/source-secret-scan.json",
+      "files": 35,
+      "privateEvidencePatterns": 38,
+      "findings": 0,
+      "scope": "changed tracked files and exact new R03/control files; protected T02 paths never traversed",
+      "diffCheck": "pass",
+      "pythonAST": "pass",
+      "JSON": "pass",
+      "shellSyntax": "pass",
+      "migrations001To011": "byte-identical to base",
+      "originalT03ReportEvidence": "byte-identical to base",
+      "sha256": "de4a2d0df03a0f8cac74164cd0029393593994e3d767d21fde175e6f09512082"
+    },
+    "firstFullGateFailure": {
+      "result": "fail",
+      "path": "/root/meshstrata/.local/r03/make-check-pages.log",
+      "sha256": "68b17107b4aa8198aff26a58bf1cc5603fc96d9fc0c6e07ae05e9c90e9cae90f",
+      "reason": "Wrapper umask077 transformed the existing deliberate0644 key fixture into0600; product permission checks unchanged. Retried gate with conventional umask022 inside0700 root."
+    },
+    "prematureI03cAll": {
+      "result": "not_run",
+      "path": "/root/meshstrata/.local/r03/i03c-all.log",
+      "reason": "Full gate had stopped before Agent build; attempt failed on missing candidate Agent and did not run the business scenarios."
+    },
+    "i03cFocusedLifecycle": {
+      "result": "pass",
+      "exitCode": 0,
+      "path": "/root/meshstrata/.local/r03/lifecycle-focused.json",
+      "sha256": "8e3a90b58972d35877f0800edfa6660d4dc7f068b2c85a92fe2483f8df28254b",
+      "logPath": "/root/meshstrata/.local/r03/lifecycle-focused.log",
+      "logSHA256": "3cf87bbc0ee2341691cea7d9db1d35e2a84c5c52c4092a6496476575d86b3eca",
+      "driverSHA256": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e",
+      "diagnosticWrapper": {
+        "path": "/root/meshstrata/.local/r03/lifecycle-diagnostic.py",
+        "sha256": "2bbae62e6138798dbd975e0cbde6515f25f6442ba8387202a862cb1edb0adb48",
+        "effect": "whitelisted safe final DTO capture before normal close; no SQL/injected observations/product mutation"
+      },
+      "safeFinalDTOs": {
+        "path": "/root/meshstrata/.local/r03/lifecycle-diagnostic/safe-final-dtos.json",
+        "sha256": "a79039ad6b7c20ddf918fd060261e63fe8a0dce73f626bd38f4f544a36712bbe"
+      },
+      "evidence": {
+        "date": "2026-11-22",
+        "scenario": "lifecycle",
+        "network_mode": "loopback TCP; TUN disabled and explicit test.local hosts mapping for runtime; original default TUN offline validation only",
+        "mihomo_sha256": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa",
+        "checks": [
+          "ordinary_controller_https_login_csrf",
+          "normal_agent_mtls_v2_observation",
+          "normal_agent_mtls_v2_observation",
+          "normal_agent_mtls_v2_observation",
+          "persistent_route_worker_publication",
+          "persistent_route_worker_publication",
+          "standard_https_full_config_download",
+          "pinned_mihomo_isolated_tcp_actual_request",
+          "standard_https_full_config_download",
+          "pinned_mihomo_isolated_tcp_actual_request",
+          "pinned_mihomo_isolated_tcp_actual_request",
+          "independent_provider_native_mihomo_https_fetch_actual_tcp",
+          "two_subscriptions_independent_credentials_ports_actual_tcp",
+          "reset_link_isolated_copy_after_refresh_proxy_identity_unchanged",
+          "pinned_mihomo_isolated_tcp_actual_request",
+          "renew_new_generation_old_client_rejected_other_subscription_live",
+          "pinned_mihomo_isolated_tcp_actual_request",
+          "route_remove_readd_new_identity_history_retained",
+          "reviewed_profile_adoption_next_download_same_entry_identity",
+          "pinned_mihomo_isolated_tcp_actual_request",
+          "controller_restart_persistent_subscription_intent_converges",
+          "standard_https_full_config_download",
+          "pinned_mihomo_isolated_tcp_actual_request",
+          "agent_expiry_with_controller_offline_old_client_rejected",
+          "delete_download_revoked_real_cleanup_confirmed_other_subscription_live",
+          "outer_https_sensitive_malformed_methods_headers_no_redirect_no_token_echo"
+        ]
+      },
+      "applicability": "Focused pass does not erase full all-scenario R03-L01 failure with prior route/protocol history."
+    },
+    "localCleanupAudit": {
+      "result": "pass",
+      "ownedLocalCLIOrKernelPIDs": [],
+      "scope": "/tmp/mr- and /tmp/mc- private CLI roots only; no unrelated process stopped or host networking changed"
+    }
+  },
+  "unchangedBoundaries": [
+    "001-011 frozen, no new migration;012-021 reserved",
+    "T02 partial/interrupted, original untracked files not read/run/deleted/staged",
+    "TUN/GUI/IPv6/public and three-layer DNS/V2 business UDP/interface binding unverified",
+    "capacity/100+ backlog/full pagination/hardware power failure deferred",
+    "Alpine remains required formal platform",
+    "no remote retest or frontend phase started"
+  ],
+  "T03R01": {
+    "status": "not_run_not_dispatched",
+    "prerequisites": [
+      "final full repair commit, matching nine hashes/manifest/COMMIT and both actual CLI versions",
+      "fresh private root and unique phases; explicitly set MESHSTRATA_PRODUCT_COMMIT for each helper",
+      "independent authorized test session; both Ubuntu and Alpine roles; existing host services protected"
+    ],
+    "matrix": [
+      "F01 first inventory and admin/background overlap in both directions",
+      "F03 correct-first with correct echo/negative auth/current evidence and actual traffic/stop refusal",
+      "F02 HTTP-stop-cleanup-archive to SOCKS5 wrong-correct with new Pin and no unused prior policy dependency",
+      "F04 prepared to exact confirmed task then original task/artifact/confirmed facts and retained/new traffic across normal Controller/Agent restart",
+      "necessary four-ingress TLS/REALITY/wrongpin, mixed paths/sharing/cleanup/tombstone/port-release and <=12s offline expiry isolation regressions",
+      "generated-secret log scan, exact owned-process cleanup and original host resource comparison",
+      "R03-L01: after prior four-protocol/mixed-path/renewal history, Controller-offline expiry then deletion within unchanged90s, preserving exact task/confirmed cleanup safe DTOs before teardown"
+    ]
+  },
+  "cliRegressionsBeforeBudgetTightening": [
+    {
+      "privateEvidence": "/root/meshstrata/.local/r03/sequence-fixed.json",
+      "sha256": "3ca5defbbd7bb282b7aa0d1cd49ae011b29532184d1cced06a21d265b96e5adb",
+      "scenario": "sequence",
+      "result": "pass",
+      "network": "loopback IPv4 TCP, TUN off, numeric canary, no SSH",
+      "checks": [
+        "ordinary_controller_https_login_csrf",
+        "normal_agent_mtls_v2_observation",
+        "http_correct_first_exact_pin_current_echo_and_negative_auth",
+        "persistent_route_worker_publication",
+        "standard_https_full_config_download",
+        "pinned_mihomo_isolated_tcp_actual_request",
+        "http_actual_tcp_stopped_selected_exit_no_direct_fallback",
+        "socks5_wrong_auth_rejected_no_current_evidence",
+        "socks5_wrong_then_correct_exact_pin_current_echo_and_negative_auth",
+        "persistent_route_worker_publication",
+        "standard_https_full_config_download",
+        "pinned_mihomo_isolated_tcp_actual_request",
+        "socks5_actual_tcp_stopped_selected_exit_no_direct_fallback"
+      ],
+      "log_scan": {
+        "files": 4,
+        "patterns": 56,
+        "findings": 0
+      },
+      "mihomo_sha256": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa",
+      "binary_sha256": {
+        "controller": "70e0ad7a83e13211a5d7006882a995ba07eb97d9958ca3e7a89f7c92609fcbe8",
+        "agent": "eb8c482ed4ecf2d07948ac7303bc24e3cc35239ebcb4546cd07116949b485417"
+      },
+      "source_sha256": {
+        "scripts/integration/r03/local.py": "ab3b661ca5e3c1c68666b181da0b80f88893f36a83ce62803ed42288f5725ed6",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      }
+    },
+    {
+      "privateEvidence": "/root/meshstrata/.local/r03/correct-first-fixed.json",
+      "sha256": "06bf6e483458df4d1c10b5bf34711c38ce9fa025608c15b297f9099fa2416ace",
+      "scenario": "correct-first",
+      "result": "pass",
+      "network": "loopback IPv4 TCP, TUN off, numeric canary, no SSH",
+      "checks": [
+        "ordinary_controller_https_login_csrf",
+        "normal_agent_mtls_v2_observation",
+        "socks5_correct_first_exact_pin_current_echo_and_negative_auth",
+        "persistent_route_worker_publication",
+        "standard_https_full_config_download",
+        "pinned_mihomo_isolated_tcp_actual_request",
+        "socks5_actual_tcp_stopped_selected_exit_no_direct_fallback"
+      ],
+      "log_scan": {
+        "files": 3,
+        "patterns": 40,
+        "findings": 0
+      },
+      "mihomo_sha256": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa",
+      "binary_sha256": {
+        "controller": "70e0ad7a83e13211a5d7006882a995ba07eb97d9958ca3e7a89f7c92609fcbe8",
+        "agent": "eb8c482ed4ecf2d07948ac7303bc24e3cc35239ebcb4546cd07116949b485417"
+      },
+      "source_sha256": {
+        "scripts/integration/r03/local.py": "ab3b661ca5e3c1c68666b181da0b80f88893f36a83ce62803ed42288f5725ed6",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      }
+    },
+    {
+      "privateEvidence": "/root/meshstrata/.local/r03/restart-fixed.json",
+      "sha256": "93764e56f3efd8f0f902a6b0af3764886b476663aaade5bc903a8859ae030946",
+      "scenario": "restart",
+      "result": "pass",
+      "network": "loopback IPv4 TCP, TUN off, numeric canary, no SSH",
+      "checks": [
+        "ordinary_controller_https_login_csrf",
+        "normal_agent_mtls_v2_observation",
+        "persistent_route_worker_publication",
+        "standard_https_full_config_download",
+        "pinned_mihomo_isolated_tcp_actual_request",
+        "node_default_prepared_to_exact_confirmed_task_restart_digest_result_and_retained_stream"
+      ],
+      "log_scan": {
+        "files": 5,
+        "patterns": 40,
+        "findings": 0
+      },
+      "mihomo_sha256": "19cbe7ba1523a92ed2d0a30716ea093de57db05b7844db23de2b9c21fd7a1afa",
+      "binary_sha256": {
+        "controller": "70e0ad7a83e13211a5d7006882a995ba07eb97d9958ca3e7a89f7c92609fcbe8",
+        "agent": "eb8c482ed4ecf2d07948ac7303bc24e3cc35239ebcb4546cd07116949b485417"
+      },
+      "source_sha256": {
+        "scripts/integration/r03/local.py": "ab3b661ca5e3c1c68666b181da0b80f88893f36a83ce62803ed42288f5725ed6",
+        "scripts/integration/i03c/local.py": "2d6797b4d86896929c64aa650fad2ed61a211a12f4dc3a32e6439ebf9bb37f1e"
+      }
+    }
+  ],
+  "observationTotalBudgetSeconds": 30,
+  "postGateToolChanges": {
+    "scope": "helper-only admission/current evidence share total30s; exact source pin selection, safe known-state retries and immutable restart comparison; no product code change after full gate",
+    "validation": [
+      "Python AST",
+      "actual local sequence-budget and correct-first-budget passed with measured observation elapsed281/267/273ms"
+    ]
+  },
+  "restartProvenance": "restart-fixed executed the identical restart_case AST; later helper-only proxy budget tightening did not change that function. Its recorded full-script and binary hashes remain the actual older candidate values.",
+  "unresolvedLocalRegression": {
+    "id": "R03-L01",
+    "case": "post-expiry deletion cleanup after full CLI route/subscription history",
+    "status": "unlocated intermittent; full all-scenario retained fail, single focused lifecycle passed; no further full rerun",
+    "requiredFollowup": "Independent T03-R01 must include exact task/current-state/cleanup evidence and unchanged90s convergence, plus prior history variant; no green-by-retry"
+  }
+}

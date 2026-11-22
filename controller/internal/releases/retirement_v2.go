@@ -51,6 +51,7 @@ func (s *Service) RetireInternal(ctx context.Context, m domain.Mutation, pin con
 	b.Kind = domain.Cleanup
 	b.TargetRevision = snap.Revision + 1
 	b.Listeners = slices.DeleteFunc(slices.Clone(b.Listeners), func(l control.ListenerV2) bool { return l.Internal != nil && *l.Internal == pin })
+	b.KeepListenerPolicies()
 	b.RetiredLinks = append(slices.Clone(b.RetiredLinks), control.InternalRetirement{Link: pin, Epoch: b.RevocationEpoch})
 	slices.SortFunc(b.RetiredLinks, func(a, b control.InternalRetirement) int {
 		return strings.Compare(string(a.Link.ID), string(b.Link.ID))

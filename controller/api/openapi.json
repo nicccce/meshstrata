@@ -7070,7 +7070,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Observation is asynchronous. 202/pending is not successful evidence. 409 OBSERVATION_BUSY means this node already has one pending observation; OBSERVATION_BACKOFF means a failed binding is not due for retry. Neither changes current evidence. Retry within an application deadline, retaining the exact node/DNS/target Pin."
       }
     },
     "/api/v1/subscriptions": {
@@ -7718,7 +7719,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Observation is asynchronous. 202/pending is not successful evidence. 409 OBSERVATION_BUSY means this node already has one pending observation; OBSERVATION_BACKOFF means a failed binding is not due for retry. Neither changes current evidence. Retry within an application deadline, retaining the exact node/DNS/target Pin."
       }
     },
     "/api/v1/nodes/{node_id}/drain-legacy": {

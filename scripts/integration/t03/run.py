@@ -111,6 +111,19 @@ class Run(lib.Run):
   c,uc,cc=self.subscribe(route,profile,expiry=45);pc,rc=self.client(cc);w=self.workers[self.client_host];w.call('stream-open',key=pc.key,stream='expiring');w.call('stream-open',key=pb.key,stream='retained');assert w.call('stream-request',stream='expiring') and w.call('stream-request',stream='retained');self.cp.stop();expiry=dt.datetime.fromisoformat(c['expires_at'].replace('Z','+00:00'));remaining=max(0,(expiry-dt.datetime.now(dt.timezone.utc)).total_seconds());deadline=time.monotonic()+remaining
   while time.monotonic()<deadline:time.sleep(.25)
   lib.wait_for(lambda:self.denied(rc) and not w.call('stream-request',stream='expiring'),12);assert w.call('stream-request',stream='retained');latency=(dt.datetime.now(dt.timezone.utc)-expiry).total_seconds();write(self.root/'expiry.json',dict(expires_at=c['expires_at'],rejection_observed_at=lib.stamp(),latency_seconds=latency,bound_seconds=12));assert latency<=12;ra();rb();self.record('controller_offline_agent_expiry_rejects_new_and_existing_connections_other_identity_stream_live');self.cp=self.launch(self.controller,self.ccfg,'controller');lib.wait_for(lambda:self.http.api('GET','/readyz'));self.login();self.fetch(uc,(404,));self.cleanup_subscription(b);assert self.denied(rb);ra();self.security(ua);self.cleanup_subscription(a);self.cleanup_subscription(c)
+ def validate_target(self,pin):
+  deadline=time.monotonic()+30
+  # A shared node slot is asynchronous; retry only known scheduling states.
+  # Successful admission is still followed by the original current-evidence gate.
+  def trigger():
+   raw,_,status=self.http.raw('POST','/api/v1/egress-targets/'+pin['id']+'/validate',dict(expected_revision=pin['revision'],idempotency_key=lib.ident('validate'),pin=pin),status=(202,409))
+   if status==409:
+    code=json.loads(raw)['error']['code']
+    if code not in ('OBSERVATION_BUSY','OBSERVATION_BACKOFF','OBSERVATION_UNAVAILABLE'):raise RuntimeError('target validation rejected: '+code)
+    return False
+   return True
+  lib.wait_for(trigger,min(20,max(0,deadline-time.monotonic())))
+  return deadline
  def egress_cases(self,node,profile,selected=None):
   w=self.workers[node['host']]
   for kind,port in [('http',18081),('socks5',18082)]:
@@ -120,12 +133,12 @@ class Run(lib.Run):
    before=w.call('proxy-stats')[kind]['rejected']
    t=self.http.api('POST','/api/v1/egress-targets/'+t['id']+'/credentials',dict(expected_revision=t['revision'],idempotency_key=lib.ident('wrong'),pin=t,username='t03',password='intentional-invalid-'+self.aux_auth))['pin']
    self.passwords.append('intentional-invalid-'+self.aux_auth)
-   self.http.api('POST','/api/v1/egress-targets/'+t['id']+'/validate',dict(expected_revision=t['revision'],idempotency_key=lib.ident('validate'),pin=t))
-   lib.wait_for(lambda:w.call('proxy-stats')[kind]['rejected']>before,20)
+   deadline=self.validate_target(t)
+   lib.wait_for(lambda:w.call('proxy-stats')[kind]['rejected']>before,min(20,max(0,deadline-time.monotonic())))
    negative=self.http.api('GET','/api/v1/egress-targets/'+t['id']);assert negative['verification']!='verified';write(self.root/(kind+'-wrong-auth.json'),negative);self.record(kind+'_wrong_auth_explicit_remote_rejection_no_observation')
    body=dict(expected_revision=t['revision'],idempotency_key=lib.ident('auth'),pin=t,username='t03',password=self.aux_auth);t=self.http.api('POST','/api/v1/egress-targets/'+t['id']+'/credentials',body)['pin'];assert self.http.api('POST','/api/v1/egress-targets/'+t['id']+'/credentials',body)['pin']==t
-   self.http.api('POST','/api/v1/egress-targets/'+t['id']+'/validate',dict(expected_revision=t['revision'],idempotency_key=lib.ident('validate'),pin=t))
-   lib.wait_for(lambda:self.http.api('GET','/api/v1/egress-targets/'+t['id']).get('observation',{}).get('current'),30)
+   deadline=self.validate_target(t)
+   lib.wait_for(lambda:self.http.api('GET','/api/v1/egress-targets/'+t['id']).get('observation',{}).get('current'),max(0,deadline-time.monotonic()))
    policy=self.http.api('POST','/api/v1/egress-policies',dict(expected_revision=0,idempotency_key=lib.ident('policy'),name='T03 fixed '+kind,node_id=node['id'],dns=node['dns']['pin'],targets=[t],rules=[dict(destination='MATCH',target=t,no_resolve=False)]))['pin']
    route=self.route([node],policy=policy);v,url,cfg=self.subscribe(route,profile);client,request=self.client(cfg);self.record(kind+'_normal_mtls_observation_actual_end_to_end_tcp');w.call('proxy-stop',kind=kind);lib.wait_for(lambda:self.denied(request),12);self.record(kind+'_stopped_selected_exit_no_direct_fallback');client.stop();self.cleanup_subscription(v);self.archive(route)
  def cleanup_subscription(self,v):

@@ -2,7 +2,8 @@
 """Private SSH transport and read-only host inventory for T03 (no credentials in output)."""
 import datetime, hashlib, json, os, pathlib, re, subprocess
 ROOT=pathlib.Path(__file__).resolve().parents[3]
-COMMIT='b71ee3a094265a91d1e671f8a89ffa45df30c35d'
+COMMIT=os.environ.get('MESHSTRATA_PRODUCT_COMMIT','b71ee3a094265a91d1e671f8a89ffa45df30c35d')
+assert re.fullmatch(r'[0-9a-f]{40}',COMMIT),'full product commit required'
 ART=ROOT/'.local/stage3-artifacts'/COMMIT
 SERVER_NOTES=(ROOT/'.local/test-servers.md').read_text()
 IPS=list(dict.fromkeys(re.findall(r'\b(?:\d{1,3}\.){3}\d{1,3}\b',SERVER_NOTES)))

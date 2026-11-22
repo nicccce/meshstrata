@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	channel "github.com/nicccce/meshstrata/controller/internal/control"
 	"github.com/nicccce/meshstrata/controller/internal/egress"
 	"github.com/nicccce/meshstrata/controller/internal/stage3"
 	"github.com/nicccce/meshstrata/controller/internal/storage/dbgen"
@@ -225,6 +226,12 @@ func (s *Service) requestObservation(ctx context.Context, node domain.ID, target
 		req.Preparation.Target = prepared
 	}
 	if e = s.Channel.ObserveV2(ctx, node, req); e != nil {
+		if errors.Is(e, channel.ErrObservationBusy) {
+			return nil, problem("OBSERVATION_BUSY")
+		}
+		if errors.Is(e, channel.ErrObservationBackoff) {
+			return nil, problem("OBSERVATION_BACKOFF")
+		}
 		return nil, problem("OBSERVATION_UNAVAILABLE")
 	}
 	return map[string]any{"request_id": key, "state": "pending", "expires_at": req.Deadline}, nil

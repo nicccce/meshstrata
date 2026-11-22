@@ -416,3 +416,11 @@ Controller 网关增加双格式 artifact 分派、不可变 V2 密文、真实�
 ## 2026-11-22 T03 独立 Ubuntu / Alpine 多机验收
 
 固定 I03-C 产品 `b71ee3a094265a91d1e671f8a89ffa45df30c35d`，九项哈希和双CLI完整版本绑定后，在授权两主机经普通CLI/HTTPS/mTLS/真实worker测试。双方向四入口、混合两/三跳、共享后缀和策略修订隔离/真实回收、provider原生拉取刷新及主要授权生命周期通过；离线到期新旧连接实测约2.98秒，另一存量身份保持。保留观察/订阅收敛及SOCKS5失败，精确原任务比较受阻；未验TUN/GUI/IPv6/公网三层DNS/业务UDP/接口绑定。细节、失败重试和收尾见 [T03](backend-delivery/T03.md)。仅测试和文档提交，产品未改；T02历史不变，不开启修复/阶段四，交付后停止。
+
+## 2026-11-22 R03 T03失败定点归因与修复
+
+本地读取已有私有T03安全证据，未SSH或部署。旧代码确定性复现观察迟到清新槽/失败断会话，以及无引用HTTP策略仍要求新观察而阻塞新SOCKS5路线；增加精确槽fence、显式协商的安全失败报告、按node/DNS/完整target Pin的有界退避，并仅在新候选中保留监听引用策略及新审阅策略。旧artifact、目录历史、Origin、永久墓碑和真实cleanup释放顺序保留；001–011未改、不新增迁移。
+
+普通CLI本地HTTP停止cleanup/归档→SOCKS5错误/正确新Pin、correct-first、真实TCP/负认证/current evidence/停出口拒绝，以及Node Default新订阅真实task确认与正常双端重启后的原task/digest/确认和存量TCP通过。中间失败保留；T03原报告/sourceHash和T02中止草稿未改。完整检查、边界、产物及T03-R01最小独立双平台矩阵见[R03](backend-delivery/R03.md)和[证据](backend-delivery/R03-evidence.json)。F01/F03/F04不能据本地通过关闭，F02仍待原环境复验；本轮不启动下一测试会话或前端阶段，交付后停止。
+
+R03检查补充：完整make check与页面/i18n通过；完整I03-C普通CLI在四协议/多跳/授权生命周期阳性之后，离线到期后的删除cleanup90秒未收敛，记R03-L01，原因未唯一定位，保留整轮fail及安全日志。追加单次定点lifecycle诊断只记录其实际结果，不能覆盖该失败；交付保留独立T03-R01的关键复验门槛。

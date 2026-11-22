@@ -67,3 +67,14 @@ See `documents/backend-delivery/T03.md` and `T03-evidence.json` for actual runs,
 failures, skips, evidence roots and cleanup. Do not infer that the availability
 of a scenario means it was executed or passed. T02 remains partial/interrupted;
 formal systemd/OpenRC installation lifecycle remains T07.
+
+R03 follow-up: `MESHSTRATA_PRODUCT_COMMIT` may explicitly select another full
+40-character product commit and its separate artifact directory; omitting it
+still selects the original T03 product. R03 also retries only known busy/backoff/unavailable observation admission
+states within20s, sharing the original total30s observation budget with current
+evidence (refusal assertions remain unchanged), and corrects the
+restart comparison to immutable task/artifact/confirmed facts (requiring real
+confirmation while permitting recovery to refresh `confirmed_at`). Original
+T03 evidence/sourceHash remains immutable. See [R03 local regressions](../r03/README.md)
+and the independently dispatched T03-R01 matrix in R03.md; no remote rerun is
+implied by these helper changes.

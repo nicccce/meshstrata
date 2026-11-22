@@ -12,8 +12,11 @@ import (
 )
 
 func (f *wsFixture) dialV2(t *testing.T) (*websocket.Conn, domain.ID) {
+	return f.dialV2Protocol(t, protocol.SubprotocolV2)
+}
+func (f *wsFixture) dialV2Protocol(t *testing.T, selected string) (*websocket.Conn, domain.ID) {
 	t.Helper()
-	d := websocket.Dialer{TLSClientConfig: f.config, Subprotocols: []string{protocol.SubprotocolV2}, HandshakeTimeout: time.Second}
+	d := websocket.Dialer{TLSClientConfig: f.config, Subprotocols: []string{selected}, HandshakeTimeout: time.Second}
 	c, response, err := d.Dial("wss"+strings.TrimPrefix(f.http.URL, "https")+"/control/v1", nil)
 	if response != nil && response.Body != nil {
 		response.Body.Close()
@@ -22,7 +25,7 @@ func (f *wsFixture) dialV2(t *testing.T) (*websocket.Conn, domain.ID) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { c.Close() })
-	if c.Subprotocol() != protocol.SubprotocolV2 {
+	if c.Subprotocol() != selected {
 		t.Fatal("wrong subprotocol")
 	}
 	c.SetReadDeadline(time.Now().Add(time.Second))

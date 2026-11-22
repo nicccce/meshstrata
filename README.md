@@ -354,3 +354,13 @@ flock .local/cache/backend-check.lock env PYTHONDONTWRITEBYTECODE=1 \
 TUN/DNS/路由修改。默认完整配置做 `mihomo -t`；真实请求使用独立 mixed-port、TUN 关闭和显式
 本地测试域映射。标准完整链接经正常 CA 校验下载后加载文件，不等于 GUI 原生 URL 导入。
 详情与未完成门槛见 [I03-C](documents/backend-delivery/I03-C.md)，T03 不在此脚本自动启动。
+
+R03 adds negotiated `meshstrata.control.v2.observation-status` for V2 peers:
+failed advisory observations release only their matching session/request slot
+and enter bounded per-binding retry, while commands and receipts continue.
+Mixed versions fall back to strict `meshstrata.control.v2`; new failure fields
+are never sent to a base V2 peer. Existing opt-in switches and V1 behavior stay
+unchanged. New candidates retain exact policies used by remaining listeners and
+newly reviewed publications, without editing historical routes/artifacts. Local
+regressions/build instructions: [R03](scripts/integration/r03/README.md).
+Cross-host reacceptance is separate; see [R03 report](documents/backend-delivery/R03.md).

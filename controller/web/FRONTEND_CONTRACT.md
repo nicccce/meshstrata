@@ -495,3 +495,13 @@ recreate reviewed identities before changing that configuration. Egress detail
 observations explicitly scope success to a fresh TCP canary. Business UDP stays
 not_checked. Operations are bounded to 1024 in a subscription detail, preparation
 dependencies to 201; neither is an unlimited history API.
+
+R03 observation compatibility: preparation/target validation still returns
+202/pending without claiming verified evidence. A 409 `OBSERVATION_BUSY` means
+one observation is outstanding for that node; `OBSERVATION_BACKOFF` means the
+same failed node/DNS/target binding is waiting for its bounded retry. Preserve
+pins/CAS and use a bounded retry, then read the current observation DTO. These
+add safe error codes without changing DTO shapes. The opt-in control extension
+`meshstrata.control.v2.observation-status` is between Controller and Agent;
+frontend clients do not send it. V1 and base V2 remain supported. Frontend mode
+remains demo; no live UI phase is enabled by R03.

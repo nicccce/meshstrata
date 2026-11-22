@@ -921,3 +921,57 @@ func TestI03ConfirmedOfflineRestrictionAllowsLaterCleanup(t *testing.T) {
 	must(t, e)
 	j.cleanup(two.Entity.ID)
 }
+
+// A published one-node route has an explicit policy but no runtime listener yet.
+// Its historical policy must not become an observation dependency of a different
+// route. The catalog and old immutable artifact remain intact.
+func TestI03UnusedPriorEgressDoesNotBlockNewRoute(t *testing.T) {
+	j := jointFor(t, 1)
+	var node domain.ID
+	for n := range j.reports {
+		node = n
+	}
+	probe := netip.MustParseAddrPort("203.0.113.20:443")
+	j.s.options.EgressProbes = []netip.AddrPort{probe}
+	policy := func(kind, key string) control.Pin {
+		target := control.EgressTarget{NodeID: node, Type: kind, Host: "203.0.113.10", DialIP: "203.0.113.10", Port: 1080}
+		pin, err := j.egress.SaveTarget(j.ctx, domain.Mutation{IdempotencyKey: key}, stage3.EgressTargetInput{Name: key, Spec: target})
+		must(t, err)
+		r := j.reports[node]
+		must(t, j.s.RecordEgressObservation(j.ctx, EgressObservation{NodeID: node, NodeRevision: r.NodeRevision, DNS: r.DNS.Pin, Target: pin, Interface: "eth0", SourceIP: netip.MustParseAddr("192.0.2.1"), Probe: probe, ObservedAt: j.now, ExpiresAt: j.now.Add(time.Minute)}))
+		p, err := j.egress.SavePolicy(j.ctx, domain.Mutation{IdempotencyKey: key + "-policy"}, stage3.EgressDraft{Name: key, Spec: control.EgressSpec{NodeID: node, DNS: r.DNS.Pin, Targets: []control.PinnedEgressTarget{{Pin: pin, Spec: target}}, Rules: []control.EgressRule{{Destination: "MATCH", Target: &pin}}}})
+		must(t, err)
+		return p
+	}
+	old := policy("http", "old-http")
+	d := j.draft("old-http-route", []domain.ID{node})
+	d.Egress = old
+	d.EgressIsDefault = false
+	historical := j.publish(d)
+	next := policy("socks5", "new-socks")
+	d = j.draft("new-socks-route", []domain.ID{node})
+	d.Egress = next
+	d.EgressIsDefault = false
+	pin, err := j.routes.SaveDraft(j.ctx, domain.Mutation{IdempotencyKey: "new-route"}, d)
+	must(t, err)
+	review, err := j.routes.ValidateDraft(j.ctx, pin)
+	must(t, err)
+	if len(review.Blocking) != 0 {
+		t.Fatalf("unused old policy blocked current target: %+v", review.Blocking)
+	}
+	accepted, err := j.routes.PublishDraft(j.ctx, domain.Mutation{ExpectedRevision: pin.Revision, IdempotencyKey: "new-route-publish"}, pin, j.now.Add(time.Minute))
+	must(t, err)
+	j.finish(accepted.TaskID, false)
+	snap, err := j.s.NodeSnapshot(j.ctx, node)
+	must(t, err)
+	b := snap.Extended
+	if b == nil {
+		t.Fatal("no real new artifact")
+	}
+	if len(b.Terminal) != 1 || b.Terminal[0].Pin != next {
+		t.Fatal("unused prior policy retained in new artifact")
+	}
+	if _, err := j.routes.PublishedRoute(j.ctx, historical.Pin); err != nil {
+		t.Fatal("old route history lost", err)
+	}
+}

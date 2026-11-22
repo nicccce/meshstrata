@@ -41,3 +41,30 @@ func TestV2EnvelopeStrictSessionAndCapability(t *testing.T) {
 		t.Fatal("welcome invented agent capability")
 	}
 }
+
+func TestObservationFailureHasNoArbitraryPayloadOrSuccess(t *testing.T) {
+	node := bid("node")
+	report := ObservationReportV2{ID: bid("observation"), Failure: &ObservationFailureV2{Code: "OBSERVATION_UNAVAILABLE"}}
+	if !report.Valid(node) {
+		t.Fatal("failure rejected")
+	}
+	report.Egress = &EgressObservationV2{}
+	if report.Valid(node) {
+		t.Fatal("failure combined with successful evidence")
+	}
+	report.Egress = nil
+	report.Failure.Code = "private arbitrary error"
+	if report.Valid(node) {
+		t.Fatal("arbitrary diagnostic accepted")
+	}
+	m := SessionV2{Message: Message{Version: 2, Type: "observation", NodeID: node, MessageID: bid("msg"), SentAt: time.Now()}, SessionID: bid("session"), ObservationReport: &report}
+	report.Failure.Code = "OBSERVATION_CANCELLED"
+	data, _ := json.Marshal(m)
+	if _, err := DecodeSessionV2(data, node); err != nil {
+		t.Fatal(err)
+	}
+	data = bytes.Replace(data, []byte(`"code":"OBSERVATION_CANCELLED"`), []byte(`"code":"OBSERVATION_CANCELLED","raw":"secret"`), 1)
+	if _, err := DecodeSessionV2(data, node); err == nil {
+		t.Fatal("raw failure payload accepted")
+	}
+}

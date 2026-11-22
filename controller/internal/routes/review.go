@@ -589,5 +589,6 @@ func restrictBase(b *control.BundleV2, tombs []control.Tombstone) {
 		}
 		b.Listeners = slices.DeleteFunc(b.Listeners, func(l control.ListenerV2) bool { return l.Entry != nil && l.Entry.IdentityID == t.IdentityID })
 	}
+	b.KeepListenerPolicies()
 	sortBundle(b)
 }

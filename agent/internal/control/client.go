@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"math/big"
 	"net/http"
 	"net/url"
@@ -182,7 +183,11 @@ func (c *Client) runOnce(ctx context.Context, markEstablished func()) error {
 		}
 		selected = protocol.SubprotocolV2
 	}
-	dialer := websocket.Dialer{TLSClientConfig: config, Subprotocols: []string{selected}, HandshakeTimeout: 10 * time.Second, ReadBufferSize: 4096, WriteBufferSize: 4096, EnableCompression: false}
+	subprotocols := []string{selected}
+	if c.o.EnableV2 {
+		subprotocols = []string{protocol.SubprotocolV2ObservationStatus, protocol.SubprotocolV2}
+	}
+	dialer := websocket.Dialer{TLSClientConfig: config, Subprotocols: subprotocols, HandshakeTimeout: 10 * time.Second, ReadBufferSize: 4096, WriteBufferSize: 4096, EnableCompression: false}
 	conn, resp, e := dialer.DialContext(ctx, c.o.URL, http.Header{})
 	if resp != nil && resp.Body != nil {
 		resp.Body.Close()
@@ -191,7 +196,8 @@ func (c *Client) runOnce(ctx context.Context, markEstablished func()) error {
 		return ErrUnavailable
 	}
 	defer conn.Close()
-	if conn.Subprotocol() != selected {
+	observationStatus := c.o.EnableV2 && conn.Subprotocol() == protocol.SubprotocolV2ObservationStatus
+	if conn.Subprotocol() != selected && !observationStatus {
 		return ErrUnavailable
 	}
 	var session domain.ID
@@ -329,13 +335,37 @@ func (c *Client) runOnce(ctx context.Context, markEstablished func()) error {
 			case m := <-jobs:
 				switch m.Type {
 				case "observe":
-					if c.o.ObserveV2 == nil || m.request == nil || !m.request.Deadline.After(c.o.Now()) || m.request.Deadline.After(c.o.Now().Add(30*time.Second)) {
+					if c.o.ObserveV2 == nil || m.request == nil || m.request.Deadline.After(c.o.Now().Add(30*time.Second)) {
 						return
 					}
 					probe, cancelProbe := context.WithDeadline(local, m.request.Deadline)
-					report, err := c.o.ObserveV2(probe, *m.request)
+					var report protocol.ObservationReportV2
+					var err error
+					if !m.request.Deadline.After(c.o.Now()) {
+						err = context.DeadlineExceeded
+					} else {
+						report, err = c.o.ObserveV2(probe, *m.request)
+					}
 					cancelProbe()
-					if err != nil || report.ID != m.request.ID || !report.Valid(c.o.NodeID) {
+					if err != nil {
+						// Advisory failure cannot cancel commands/receipts. Base V2 retains
+						// its deadline-bound slot; negotiated peers release the exact ID now.
+						code := "OBSERVATION_UNAVAILABLE"
+						if errors.Is(err, context.DeadlineExceeded) {
+							code = "OBSERVATION_EXPIRED"
+						}
+						if errors.Is(err, context.Canceled) {
+							code = "OBSERVATION_CANCELLED"
+						}
+						slog.Warn("Observation unavailable", "request", m.request.ID, "stage", "collect", "code", code)
+						if !observationStatus {
+							continue
+						}
+						report = protocol.ObservationReportV2{ID: m.request.ID, Failure: &protocol.ObservationFailureV2{Code: code}}
+					} else if report.Failure != nil {
+						return
+					}
+					if report.ID != m.request.ID || !report.Valid(c.o.NodeID) {
 						return
 					}
 					id, err := domain.NewID("msg")

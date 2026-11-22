@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/netip"
@@ -58,8 +59,20 @@ func matchesObservationPin(pin control.Pin, value any) bool {
 
 // ObserveV2 reports actual host/owned-process inventory or a bounded TCP echo
 // through one exact egress target. TCP success never attests business UDP.
-func (r *Runtime) ObserveV2(ctx context.Context, req control.ObservationRequestV2) (control.ObservationReportV2, error) {
-	var out control.ObservationReportV2
+func (r *Runtime) ObserveV2(ctx context.Context, req control.ObservationRequestV2) (out control.ObservationReportV2, resultErr error) {
+	started := time.Now()
+	stage := "preparation"
+	defer func() {
+		if resultErr != nil {
+			code := "OBSERVATION_UNAVAILABLE"
+			if errors.Is(resultErr, context.Canceled) {
+				code = "OBSERVATION_CANCELLED"
+			} else if errors.Is(resultErr, context.DeadlineExceeded) {
+				code = "OBSERVATION_EXPIRED"
+			}
+			slog.Warn("Observation collection failed", "request", req.ID, "stage", stage, "elapsed_ms", time.Since(started).Milliseconds(), "code", code)
+		}
+	}()
 	o := r.o.Observations
 	if !r.available() || !r.o.EnableV2 || o == nil || o.Plan == nil || !req.Valid() || !req.Deadline.After(r.o.Now()) || req.Deadline.After(r.o.Now().Add(30*time.Second)) {
 		return out, ErrUnavailable
@@ -116,6 +129,7 @@ func (r *Runtime) ObserveV2(ctx context.Context, req control.ObservationRequestV
 	}
 	// Serialize owned-process observation with apply/recovery. A failed or busy
 	// observation never changes the execution ledger or grants capability.
+	stage = "kernel_gate"
 	if err := acquire(ctx, r.kernelGate); err != nil {
 		return out, err
 	}
@@ -123,6 +137,7 @@ func (r *Runtime) ObserveV2(ctx context.Context, req control.ObservationRequestV
 	if r.urgent.Load() {
 		return out, errRestricted
 	}
+	stage = "inventory"
 	topology, err := r.loopInventory(ctx)
 	if err != nil {
 		return out, err
@@ -137,6 +152,7 @@ func (r *Runtime) ObserveV2(ctx context.Context, req control.ObservationRequestV
 	}
 	out.ID = req.ID
 	if req.Target == nil {
+		stage = "sockets"
 		f, err := pinnedBinary(o.Binary)
 		if err != nil {
 			return control.ObservationReportV2{}, err
@@ -183,11 +199,13 @@ func (r *Runtime) ObserveV2(ctx context.Context, req control.ObservationRequestV
 		if control.CheckEgressTargetLoops(canary, loops, nil) != nil {
 			return control.ObservationReportV2{}, ErrUnavailable
 		}
+		stage = "positive_echo"
 		source, err := probeObservedTarget(ctx, *selected, probe)
 		if err != nil {
 			return control.ObservationReportV2{}, err
 		}
 		if selected.Auth != nil {
+			stage = "negative_auth"
 			bad := *selected
 			auth := *selected.Auth
 			var secret [24]byte
@@ -203,6 +221,7 @@ func (r *Runtime) ObserveV2(ctx context.Context, req control.ObservationRequestV
 				return control.ObservationReportV2{}, ErrUnavailable
 			}
 		}
+		stage = "source_interface"
 		iface := ""
 		for _, i := range interfaces {
 			if i.Up && i.Address == source && (selected.Spec.Type != "interface" || i.Name == selected.Spec.Interface) {
@@ -216,6 +235,7 @@ func (r *Runtime) ObserveV2(ctx context.Context, req control.ObservationRequestV
 		now := r.o.Now().UTC()
 		out.Egress = &control.EgressObservationV2{NodeID: plan.NodeID, NodeRevision: plan.Revision, DNS: plan.DNS.Pin, Target: selected.Pin, Interface: iface, SourceIP: source, Probe: probe, ObservedAt: now, ExpiresAt: now.Add(time.Minute), BusinessUDP: false}
 	}
+	stage = "local_plan_fence"
 	latest, err := o.Plan(ctx)
 	if err != nil || !reflect.DeepEqual(original, latest) || ctx.Err() != nil || !out.Valid(r.o.NodeID) {
 		return control.ObservationReportV2{}, ErrUnavailable

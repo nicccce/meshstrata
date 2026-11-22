@@ -551,6 +551,7 @@ func (s *Service) compileEntry(ctx context.Context, c stage3.EntryChange, route 
 			b.Tombstones = append(b.Tombstones, control.Tombstone{IdentityID: auth.IdentityID, Generation: auth.Generation, Epoch: c.Epoch, At: at, Reason: reason})
 		}
 		b.Listeners = fresh
+		b.KeepListenerPolicies()
 	}
 	sortBundle(&b)
 	if err = s.checkBundle(ctx, b, in, checkTail, s.now()); err != nil {

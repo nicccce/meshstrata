@@ -9,7 +9,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
+	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -22,6 +24,29 @@ import (
 const Subprotocol = "meshstrata.control.v1"
 
 var ErrUnavailable = errors.New("control dependency unavailable")
+var ErrObservationBusy = errors.New("observation already pending")
+var ErrObservationBackoff = errors.New("observation retry not due")
+
+type observationKey struct {
+	target   protocol.Pin
+	revision domain.Revision
+	dns      protocol.Pin
+}
+type observationRetry struct {
+	failures uint
+	next     time.Time
+}
+
+func observationBinding(r protocol.ObservationRequestV2) observationKey {
+	var key observationKey
+	if r.Target != nil {
+		key.target = *r.Target
+	}
+	if r.Preparation != nil {
+		key.revision, key.dns = r.Preparation.NodeRevision, r.Preparation.DNS.Pin
+	}
+	return key
+}
 
 type Authenticator interface {
 	Authenticate(context.Context, *x509.Certificate) (domain.ID, error)
@@ -63,18 +88,20 @@ type Server struct {
 	wg     sync.WaitGroup
 }
 type peer struct {
-	session       domain.ID
-	v2            bool
-	recovery      atomic.Int32
-	ready         atomic.Bool
-	runtime       atomic.Bool
-	conn          *websocket.Conn
-	cert          *x509.Certificate
-	ctx           context.Context
-	cancel        context.CancelFunc
-	write         sync.Mutex
-	observationMu sync.Mutex
-	observation   *protocol.ObservationRequestV2
+	session            domain.ID
+	v2                 bool
+	observationStatus  bool
+	recovery           atomic.Int32
+	ready              atomic.Bool
+	runtime            atomic.Bool
+	conn               *websocket.Conn
+	cert               *x509.Certificate
+	ctx                context.Context
+	cancel             context.CancelFunc
+	write              sync.Mutex
+	observationMu      sync.Mutex
+	observation        *protocol.ObservationRequestV2
+	observationRetries map[observationKey]observationRetry
 }
 
 func New(o Options) (*Server, error) {
@@ -128,7 +155,11 @@ func (s *Server) upgrade(w http.ResponseWriter, r *http.Request) {
 	}
 	supported := false
 	v2 := false
+	observationStatus := false
 	for _, v := range websocket.Subprotocols(r) {
+		if v == protocol.SubprotocolV2ObservationStatus && s.o.EnableV2 {
+			supported, v2, observationStatus = true, true, true
+		}
 		if v == protocol.SubprotocolV2 && s.o.EnableV2 {
 			supported = true
 			v2 = true
@@ -145,6 +176,9 @@ func (s *Server) upgrade(w http.ResponseWriter, r *http.Request) {
 	if v2 {
 		selected = protocol.SubprotocolV2
 	}
+	if observationStatus {
+		selected = protocol.SubprotocolV2ObservationStatus
+	}
 	up := websocket.Upgrader{Subprotocols: []string{selected}, ReadBufferSize: 4096, WriteBufferSize: 4096, HandshakeTimeout: 10 * time.Second, CheckOrigin: func(r *http.Request) bool { return r.Header.Get("Origin") == "" }, EnableCompression: false}
 	conn, e := up.Upgrade(w, r, http.Header{"Cache-Control": []string{"no-store"}, "Referrer-Policy": []string{"no-referrer"}})
 	if e != nil {
@@ -158,7 +192,7 @@ func (s *Server) upgrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx = protocol.WithSession(ctx, session)
-	p := &peer{conn: conn, cert: cert, ctx: ctx, cancel: cancel, session: session, v2: v2}
+	p := &peer{conn: conn, cert: cert, ctx: ctx, cancel: cancel, session: session, v2: v2, observationStatus: observationStatus}
 	s.mu.Lock()
 	if s.closed {
 		s.mu.Unlock()
@@ -346,6 +380,9 @@ func (s *Server) sendV2(p *peer, v protocol.SessionV2) error {
 // One outstanding request per connection bounds both work and replay state.
 func (s *Server) ObserveV2(ctx context.Context, node domain.ID, request protocol.ObservationRequestV2) error {
 	now := s.o.Now()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if s.o.Observations == nil || !request.Valid() || !request.Deadline.After(now) || request.Deadline.After(now.Add(30*time.Second)) {
 		return ErrUnavailable
 	}
@@ -353,6 +390,7 @@ func (s *Server) ObserveV2(ctx context.Context, node domain.ID, request protocol
 	p := s.peers[node]
 	s.mu.Unlock()
 	if p == nil || !p.v2 || p.recovery.Load() != 2 || !p.ready.Load() || !p.runtime.Load() || !s.current(node, p) {
+		slog.Warn("Observation unavailable", "node", node, "request", request.ID, "stage", "connection", "code", "OBSERVATION_UNAVAILABLE")
 		return ErrUnavailable
 	}
 	if _, e := s.o.Authenticator.Authenticate(ctx, p.cert); e != nil {
@@ -361,19 +399,34 @@ func (s *Server) ObserveV2(ctx context.Context, node domain.ID, request protocol
 	p.observationMu.Lock()
 	defer p.observationMu.Unlock()
 	if p.observation != nil && p.observation.Deadline.After(now) {
-		return ErrUnavailable
+		return ErrObservationBusy
+	}
+	if p.observationRetries[observationBinding(request)].next.After(now) {
+		return ErrObservationBackoff
+	}
+	if p.observation != nil {
+		slog.Warn("Observation slot expired", "node", node, "request", p.observation.ID, "stage", "deadline", "code", "OBSERVATION_EXPIRED")
 	}
 	copy := request
 	if request.Target != nil {
 		target := *request.Target
 		copy.Target = &target
 	}
-	p.observation = &copy
 	id, e := domain.NewID("msg")
 	if e != nil {
 		return e
 	}
-	return s.sendV2(p, protocol.SessionV2{Message: protocol.Message{Version: 2, Type: "observe", MessageID: id, NodeID: node, SentAt: now}, SessionID: p.session, ObservationRequest: &copy})
+	p.observation = &copy
+	if e = s.sendV2(p, protocol.SessionV2{Message: protocol.Message{Version: 2, Type: "observe", MessageID: id, NodeID: node, SentAt: now}, SessionID: p.session, ObservationRequest: &copy}); e != nil {
+		p.observation = nil
+	} else {
+		revision := domain.Revision(0)
+		if copy.Preparation != nil {
+			revision = copy.Preparation.NodeRevision
+		}
+		slog.Info("Observation requested", "node", node, "session", p.session, "request", copy.ID, "node_revision", revision, "egress", copy.Target != nil, "stage", "sent")
+	}
+	return e
 }
 
 func (s *Server) recordObservation(p *peer, node domain.ID, report protocol.ObservationReportV2) error {
@@ -381,16 +434,95 @@ func (s *Server) recordObservation(p *peer, node domain.ID, report protocol.Obse
 		return ErrUnavailable
 	}
 	p.observationMu.Lock()
+	defer p.observationMu.Unlock()
 	r := p.observation
-	p.observation = nil
-	p.observationMu.Unlock()
-	if r == nil || r.ID != report.ID || !r.Deadline.After(s.o.Now()) || !report.Valid(node) {
+	if r == nil || !report.Valid(node) {
 		return ErrUnavailable
+	}
+	if report.Failure != nil && !p.observationStatus {
+		return ErrUnavailable
+	}
+	// A reply to an expired/replaced request must never consume the current slot
+	// or disconnect the session carrying its replacement and durable task receipts.
+	if r.ID != report.ID {
+		slog.Warn("Observation not recorded", "node", node, "request", report.ID, "stage", "correlation", "code", "OBSERVATION_SUPERSEDED")
+		return nil
+	}
+	p.observation = nil
+	if report.Failure != nil {
+		p.failedObservation(*r, s.o.Now())
+		slog.Warn("Observation failed", "node", node, "session", p.session, "request", report.ID, "stage", "collect", "code", report.Failure.Code)
+		return nil
+	}
+	if !r.Deadline.After(s.o.Now()) {
+		slog.Warn("Observation not recorded", "node", node, "request", report.ID, "stage", "deadline", "code", "OBSERVATION_EXPIRED")
+		return nil
 	}
 	if r.Target == nil && report.Inventory == nil || r.Target != nil && (report.Egress == nil || *r.Target != report.Egress.Target) {
 		return ErrUnavailable
 	}
-	return s.o.Observations.RecordObservation(p.ctx, node, report)
+	if prep := r.Preparation; prep != nil {
+		if v := report.Inventory; v != nil {
+			if v.NodeRevision != prep.NodeRevision || !reflect.DeepEqual(v.DNS, prep.DNS) || !reflect.DeepEqual(v.Sockets, prep.Sockets) {
+				return ErrUnavailable
+			}
+		} else if v := report.Egress; v.NodeRevision != prep.NodeRevision || v.DNS != prep.DNS.Pin {
+			return ErrUnavailable
+		}
+	}
+	// Keep the slot serialized through persistence. The caller's short scheduling
+	// context ends after send; persistence belongs to this authenticated session.
+	ctx, cancel := context.WithTimeout(p.ctx, 5*time.Second)
+	defer cancel()
+	err := s.o.Observations.RecordObservation(ctx, node, report)
+	if err != nil {
+		code := domain.ErrorCode("INTERNAL_ERROR")
+		var problem *domain.Problem
+		if errors.As(err, &problem) {
+			code = problem.Code
+		}
+		observed, expires := time.Time{}, time.Time{}
+		revision := domain.Revision(0)
+		if v := report.Inventory; v != nil {
+			observed, expires, revision = v.ObservedAt, v.ExpiresAt, v.NodeRevision
+		} else if v := report.Egress; v != nil {
+			observed, expires, revision = v.ObservedAt, v.ExpiresAt, v.NodeRevision
+		}
+		slog.Warn("Observation not recorded", "node", node, "session", p.session, "request", report.ID, "node_revision", revision, "stage", "persist", "code", code, "age_ms", s.o.Now().Sub(observed).Milliseconds(), "ttl_ms", expires.Sub(s.o.Now()).Milliseconds())
+		// A node CAS may advance during a real probe. Rejection is not a protocol
+		// violation; the next current request can use the same authenticated session.
+		if problem != nil {
+			return nil
+		}
+	} else {
+		delete(p.observationRetries, observationBinding(*r))
+		slog.Info("Observation recorded", "node", node, "session", p.session, "request", report.ID, "stage", "persist")
+	}
+	return err
+}
+
+// Bounded session-local scheduling metadata, never evidence. Credential/target,
+// node revision and DNS changes use distinct keys; a failed proxy cannot delay
+// inventory or another target. Persistent operations remain the facts to retry.
+func (p *peer) failedObservation(r protocol.ObservationRequestV2, now time.Time) {
+	if p.observationRetries == nil {
+		p.observationRetries = map[observationKey]observationRetry{}
+	}
+	key := observationBinding(r)
+	prior := p.observationRetries[key]
+	prior.failures = min(prior.failures+1, 5)
+	prior.next = now.Add(time.Second * time.Duration(1<<prior.failures))
+	if len(p.observationRetries) >= 128 {
+		var oldest observationKey
+		var earliest time.Time
+		for k, v := range p.observationRetries {
+			if earliest.IsZero() || v.next.Before(earliest) {
+				oldest, earliest = k, v.next
+			}
+		}
+		delete(p.observationRetries, oldest)
+	}
+	p.observationRetries[key] = prior
 }
 func (s *Server) result(p *peer, id domain.ID, r protocol.Result) error {
 	if s.o.Results == nil || !s.current(id, p) {

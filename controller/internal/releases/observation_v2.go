@@ -11,7 +11,7 @@ import (
 // RecordObservation is the authenticated control adapter. A report never proves
 // recovery capability and is accepted only under the current V2 connection.
 func (s *Service) RecordObservation(ctx context.Context, node domain.ID, report control.ObservationReportV2) error {
-	if control.SessionFromContext(ctx) == "" || s.checkObservationSession(ctx, node) != nil || !report.Valid(node) {
+	if control.SessionFromContext(ctx) == "" || s.checkObservationSession(ctx, node) != nil || report.Failure != nil || !report.Valid(node) {
 		return problem(domain.RevisionConflict)
 	}
 	if v := report.Inventory; v != nil {

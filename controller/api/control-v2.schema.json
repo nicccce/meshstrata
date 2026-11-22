@@ -1095,6 +1095,10 @@
         },
         "egress": {
           "$ref": "#/$defs/EgressObservationV2"
+        },
+        "failure": {
+          "$ref": "#/$defs/ObservationFailureV2",
+          "description": "Only permitted when meshstrata.control.v2.observation-status was negotiated; never inventory or successful evidence."
         }
       },
       "required": [
@@ -1107,8 +1111,17 @@
             "inventory"
           ],
           "not": {
-            "required": [
-              "egress"
+            "anyOf": [
+              {
+                "required": [
+                  "egress"
+                ]
+              },
+              {
+                "required": [
+                  "failure"
+                ]
+              }
             ]
           }
         },
@@ -1117,8 +1130,36 @@
             "egress"
           ],
           "not": {
-            "required": [
-              "inventory"
+            "anyOf": [
+              {
+                "required": [
+                  "inventory"
+                ]
+              },
+              {
+                "required": [
+                  "failure"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "failure"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "inventory"
+                ]
+              },
+              {
+                "required": [
+                  "egress"
+                ]
+              }
             ]
           }
         }
@@ -1253,9 +1294,26 @@
           "$ref": "#/$defs/EgressAuth"
         }
       }
+    },
+    "ObservationFailureV2": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "enum": [
+            "OBSERVATION_UNAVAILABLE",
+            "OBSERVATION_EXPIRED",
+            "OBSERVATION_CANCELLED"
+          ]
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "additionalProperties": false
     }
   },
   "description": "Explicit authenticated V2 subprotocol with current-session recovery and bounded observation requests. Production composition remains disabled. V1 messages and persisted artifact bytes retain their original contract.",
   "x-production-enabled": true,
-  "x-production-opt-in": "secure.enable_v2 / runtime.enable_v2"
+  "x-production-opt-in": "secure.enable_v2 / runtime.enable_v2",
+  "x-observation-status-subprotocol": "meshstrata.control.v2.observation-status"
 }

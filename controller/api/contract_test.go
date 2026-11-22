@@ -162,7 +162,7 @@ func TestV2SessionAndObservationContract(t *testing.T) {
 	if len(formats) != 2 || formats[0] != float64(1) || formats[1] != float64(2) {
 		t.Fatal("dual format contract missing")
 	}
-	models := map[string]any{"ObservationRequestV2": control.ObservationRequestV2{}, "ObservationReportV2": control.ObservationReportV2{}, "InventoryV2": control.InventoryV2{}, "EgressObservationV2": control.EgressObservationV2{}, "InterfaceObservationV2": control.InterfaceObservationV2{}, "PinnedSocketSpecV2": control.PinnedSocketSpecV2{}, "ProtocolCapabilityV2": control.ProtocolCapabilityV2{}, "SocketSpec": control.SocketSpec{}, "PreparationV2": control.PreparationV2{}, "PreparedTargetV2": control.PreparedTargetV2{}}
+	models := map[string]any{"ObservationFailureV2": control.ObservationFailureV2{}, "ObservationRequestV2": control.ObservationRequestV2{}, "ObservationReportV2": control.ObservationReportV2{}, "InventoryV2": control.InventoryV2{}, "EgressObservationV2": control.EgressObservationV2{}, "InterfaceObservationV2": control.InterfaceObservationV2{}, "PinnedSocketSpecV2": control.PinnedSocketSpecV2{}, "ProtocolCapabilityV2": control.ProtocolCapabilityV2{}, "SocketSpec": control.SocketSpec{}, "PreparationV2": control.PreparationV2{}, "PreparedTargetV2": control.PreparedTargetV2{}}
 	for name, model := range models {
 		spec := schema(t, root, "$defs", name)
 		props := spec["properties"].(map[string]any)

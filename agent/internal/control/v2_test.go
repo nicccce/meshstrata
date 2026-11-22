@@ -2,8 +2,10 @@ package control
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/netip"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -15,6 +17,15 @@ import (
 )
 
 func TestAgentV2ObservationWorkerKeepsSessionBinding(t *testing.T) {
+	testObservationSession(t, false, false)
+}
+func TestAgentV2ObservationFailureKeepsSession(t *testing.T) {
+	testObservationSession(t, true, false)
+}
+func TestAgentV2NegotiatedObservationFailure(t *testing.T) {
+	testObservationSession(t, true, true)
+}
+func testObservationSession(t *testing.T, failFirst, status bool) {
 	session, _ := domain.NewID("session")
 	stale, _ := domain.NewID("session")
 	target := controltest.Pin("target", "provisioned")
@@ -26,7 +37,11 @@ func TestAgentV2ObservationWorkerKeepsSessionBinding(t *testing.T) {
 			w.WriteHeader(503)
 			return
 		}
-		up := websocket.Upgrader{Subprotocols: []string{protocol.SubprotocolV2}}
+		selected := protocol.SubprotocolV2
+		if status {
+			selected = protocol.SubprotocolV2ObservationStatus
+		}
+		up := websocket.Upgrader{Subprotocols: []string{selected}}
 		conn, err := up.Upgrade(w, r, nil)
 		if err != nil {
 			done <- err
@@ -50,6 +65,52 @@ func TestAgentV2ObservationWorkerKeepsSessionBinding(t *testing.T) {
 		if err := conn.WriteJSON(envelope); err != nil {
 			done <- err
 			return
+		}
+		if failFirst {
+			if status {
+				_, raw, err := conn.ReadMessage()
+				if err != nil {
+					done <- err
+					return
+				}
+				failure, err := protocol.DecodeSessionV2(raw, testNode())
+				if err != nil || failure.SessionID != session || failure.ObservationReport == nil || failure.ObservationReport.ID != request.ID || failure.ObservationReport.Failure == nil || failure.ObservationReport.Failure.Code != "OBSERVATION_UNAVAILABLE" {
+					done <- ErrUnavailable
+					return
+				}
+			}
+			if status {
+				command := testMessage("command")
+				command.Version = 2
+				command.Command = &protocol.Command{TaskID: testTask(), NodeID: testNode(), Kind: domain.QueryStatus, TargetRevision: 1, TargetDigest: strings.Repeat("a", 64), IdempotencyKey: "after-failed-observation", Deadline: time.Now().Add(time.Second), DependsOn: []domain.ID{}, RevocationEpoch: 1}
+				if err := conn.WriteJSON(protocol.SessionV2{Message: command, SessionID: session}); err != nil {
+					done <- err
+					return
+				}
+				_, raw, err := conn.ReadMessage()
+				if err != nil {
+					done <- err
+					return
+				}
+				result, err := protocol.DecodeSessionV2(raw, testNode())
+				if err != nil || result.Result == nil || result.Result.TaskID != testTask() || result.SessionID != session {
+					done <- ErrUnavailable
+					return
+				}
+				receipt := testMessage("receipt")
+				receipt.Version = 2
+				receipt.Receipt = &protocol.Receipt{TaskID: testTask(), NodeID: testNode(), Sequence: result.Result.Sequence}
+				if err := conn.WriteJSON(protocol.SessionV2{Message: receipt, SessionID: session}); err != nil {
+					done <- err
+					return
+				}
+			}
+			// The first collector failure is an external proxy boundary. A second
+			// bounded request must succeed on this very connection, without Hello.
+			if err := conn.WriteJSON(envelope); err != nil {
+				done <- err
+				return
+			}
 		}
 		_, raw, err := conn.ReadMessage()
 		if err != nil {
@@ -75,7 +136,9 @@ func TestAgentV2ObservationWorkerKeepsSessionBinding(t *testing.T) {
 	o := clientOptions(server, config, &v2Runtime{fakeRuntime: &fakeRuntime{}})
 	o.EnableV2 = true
 	o.ObserveV2 = func(_ context.Context, req protocol.ObservationRequestV2) (protocol.ObservationReportV2, error) {
-		collected.Add(1)
+		if collected.Add(1) == 1 && failFirst {
+			return protocol.ObservationReportV2{}, errors.New("private external failure must never be logged")
+		}
 		now := time.Now().UTC()
 		return protocol.ObservationReportV2{ID: req.ID, Egress: &protocol.EgressObservationV2{NodeID: testNode(), NodeRevision: 1, DNS: controltest.Chain()[2].DNS.Pin, Target: target, Interface: "lo", SourceIP: netip.MustParseAddr("127.0.0.1"), Probe: netip.MustParseAddrPort("127.0.0.1:12345"), ObservedAt: now, ExpiresAt: now.Add(time.Minute)}}, nil
 	}
@@ -95,8 +158,12 @@ func TestAgentV2ObservationWorkerKeepsSessionBinding(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Fatal("observation worker stalled")
 	}
-	if collected.Load() != 1 {
-		t.Fatal("old session reached local collector")
+	want := int32(1)
+	if failFirst {
+		want = 2
+	}
+	if collected.Load() != want {
+		t.Fatal("wrong session reached collector or failed collector disconnected")
 	}
 }
 
